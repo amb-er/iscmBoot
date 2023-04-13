@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurreturns">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurreturns.findAll" resultType="ScmPurReturns2" >
+	    SELECT * FROM scmpurreturns WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurreturns.findAllPage" resultType="ScmPurReturns2" parameterType="Map"> 
+	    SELECT DISTINCT scmpurreturns.*,scmsupplier.vendorName as vendorName
+	    FROM scmpurreturns left join scmsupplier
+	    on scmpurreturns.vendorId=scmsupplier.id,
+	    scmpurreturnsentry,scmmaterial
+	    WHERE  scmpurreturns.id=scmpurreturnsentry.rtId and scmpurreturnsentry.itemId=scmmaterial.id 
+	    ORDER BY scmpurreturns.rtNo DESC
+	</select> 
+	
+	<select id="scmpurreturns.selectById" resultType="ScmPurReturns2" parameterType="Long">
+		SELECT ScmPurReturns.*,scmsupplier.vendorName as vendorName,
+		Exists(Select 1 From ScmPurReturnsEntry Where rtId=ScmPurReturns.id and sourceDtlId &gt; 0) as existsSource
+		FROM scmpurreturns left join scmsupplier
+		on scmpurreturns.vendorId=scmsupplier.id
+		WHERE scmpurreturns.id = #{value}
+	</select>
+	 
+	<select id="scmpurreturns.selectMaxIdByDate" resultType="ScmPurReturns2" parameterType="String">
+		SELECT ScmPurReturns.*,scmsupplier.vendorName as vendorName
+		FROM ScmPurReturns  left join scmsupplier
+		on scmpurreturns.vendorId=scmsupplier.id
+		WHERE ScmPurReturns.createDate &gt;=#{createDate} And ScmPurReturns.createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And ScmPurReturns.controlUnitNo=#{controlUnitNo} Order BY ScmPurReturns.rtNo Desc Limit 1
+	</select> 
+	
+	<select id="scmpurreturns.selectByPurInwareHouse" resultType="ScmPurReturns2" parameterType="Map">
+		SELECT Distinct ScmPurReturns.* FROM ScmPurReturns,ScmPurReturnsEntry 
+		Where ScmPurReturns.id = ScmPurReturnsEntry.rtId And ScmPurReturnsEntry.sourceDtlId in 
+		(Select A.sourceBillDtlId FROM ScmInvPurInWarehsBillEntry A,ScmInvPurInWarehsBill B Where A.sourceBillDtlId &gt;0 and A.wrId=B.wrId And B.wrId=#{wrId})
+	</select>
+	<select id="scmpurreturns.selectByPurInwareHouseReturn" resultType="ScmPurReturns2" parameterType="Map">
+		SELECT Distinct ScmPurReturns.* FROM ScmPurReturns,ScmPurReturnsEntry,ScmInvPurInWarehsBillEntry 
+		Where ScmPurReturns.id = ScmPurReturnsEntry.rtId And ScmPurReturnsEntry.id=ScmInvPurInWarehsBillEntry.sourceBillDtlId
+		And ScmInvPurInWarehsBillEntry.wrId=#{wrId}
+	</select>
+
+	<insert id="scmpurreturns.add" parameterType="ScmPurReturns"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurreturns (
+        rtNo,
+        bizType,
+        finOrgUnitNo,
+        orgUnitNo,
+        purOrgUnitNo,
+        vendorId,
+        bizDate,
+        billTypeId,
+        unified,
+        currencyNo,
+        exchangeRate,
+        amt,
+        taxAmt,
+        periodId,
+        accountYear,
+        accountPeriod,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        checker,
+        checkDate,
+        prtcount,
+        unitedBill,
+        status,
+        remarks,
+        workFlowNo,
+        stepNo,
+        controlUnitNo        )
+		VALUES (
+        #{rtNo},
+        #{bizType},
+        #{finOrgUnitNo},
+        #{orgUnitNo},
+        #{purOrgUnitNo},
+        #{vendorId},
+        #{bizDate},
+        #{billTypeId},
+        #{unified},
+        #{currencyNo},
+        #{exchangeRate},
+        #{amt},
+        #{taxAmt},
+        #{periodId},
+        #{accountYear},
+        #{accountPeriod},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{checker},
+        #{checkDate},
+        #{prtcount},
+        #{unitedBill},
+        #{status},
+        #{remarks},
+        #{workFlowNo},
+        #{stepNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpurreturns.update" parameterType="ScmPurReturns">
+		UPDATE scmpurreturns set
+        rtNo=#{rtNo},
+        bizType=#{bizType},
+        finOrgUnitNo=#{finOrgUnitNo},
+        orgUnitNo=#{orgUnitNo},
+        purOrgUnitNo=#{purOrgUnitNo},
+        vendorId=#{vendorId},
+        bizDate=#{bizDate},
+        billTypeId=#{billTypeId},
+        unified=#{unified},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        amt=#{amt},
+        taxAmt=#{taxAmt},
+        periodId=#{periodId},
+        accountYear=#{accountYear},
+        accountPeriod=#{accountPeriod},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        prtcount=#{prtcount},
+        unitedBill=#{unitedBill},
+        status=#{status},
+        remarks=#{remarks},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurreturns.delete" parameterType="String">
+		DELETE FROM scmpurreturns WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

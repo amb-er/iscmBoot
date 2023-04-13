@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmmaterialcostcardtype">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmmaterialcostcardtype.findAll" resultType="ScmMaterialCostCardType2" >
+	    SELECT * FROM ScmMaterialCostCardType WHERE  1=1  
+	</select>
+ 
+	<select id="scmmaterialcostcardtype.findAllPage" resultType="ScmMaterialCostCardType2" parameterType="Map"> 
+		SELECT * FROM ScmMaterialCostCardType WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmmaterialcostcardtype.selectById" resultType="ScmMaterialCostCardType2" parameterType="Long">
+		SELECT * FROM ScmMaterialCostCardType WHERE id = #{value}
+	</select> 
+	<insert id="scmmaterialcostcardtype.add" parameterType="ScmMaterialCostCardType"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmMaterialCostCardType (
+        classCode,
+        className,
+        cstUnitId,
+        convrate,
+        unitId,
+        parentId,
+        longNo,
+        description,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        flag,
+        controlUnitNo        )
+		VALUES (
+        #{classCode},
+        #{className},
+        #{cstUnitId},
+        #{convrate},
+        #{unitId},
+        #{parentId},
+        #{longNo},
+        #{description},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{flag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmmaterialcostcardtype.update" parameterType="ScmMaterialCostCardType">
+		UPDATE ScmMaterialCostCardType set
+        classCode=#{classCode},
+        className=#{className},
+        cstUnitId=#{cstUnitId},
+        convrate=#{convrate},
+        unitId=#{unitId},
+        parentId=#{parentId},
+        longNo=#{longNo},
+        description=#{description},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        flag=#{flag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmmaterialcostcardtype.delete" parameterType="String">
+		DELETE FROM ScmMaterialCostCardType WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

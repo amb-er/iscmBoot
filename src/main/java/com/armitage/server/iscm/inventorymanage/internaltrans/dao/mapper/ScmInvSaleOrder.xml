@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvsaleorder">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvsaleorder.findAll" resultType="ScmInvSaleOrder2" >
+	    SELECT * FROM scminvsaleorder WHERE  1=1  
+	</select>
+ 
+	<select id="scminvsaleorder.findAllPage" resultType="ScmInvSaleOrder2" parameterType="Map"> 
+		SELECT *,IFNULL((Select sum(saleTaxAmt) FROM scminvsaleorderentry where otId=scminvsaleorder.otId),0) as saleTaxAmt 
+		FROM scminvsaleorder WHERE  1=1 ORDER BY otNo DESC 
+	</select> 
+	<select id="scminvsaleorder.selectById" resultType="ScmInvSaleOrder2" parameterType="Long">
+		SELECT *,IFNULL((Select sum(saleTaxAmt) FROM scminvsaleorderentry where otId=scminvsaleorder.otId),0) as saleTaxAmt
+		FROM scminvsaleorder WHERE otId = #{value}
+	</select> 
+	
+	<select id="scminvsaleorder.selectMaxIdByDate" resultType="ScmInvSaleOrder" parameterType="String">
+		SELECT * FROM scminvsaleorder 
+		WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY otNo Desc Limit 1
+    </select>
+	<select id="scminvsaleorder.selectByPoId" resultType="ScmInvSaleOrder2" parameterType="Map">
+	    Select distinct scminvsaleorder.* FROM scminvsaleorder,scminvsaleorderentry,scmpurorderentry,scmpurorder
+		Where scminvsaleorder.otId=scminvsaleorderentry.otId And scminvsaleorderentry.sourceBillDtlId=scmpurorderentry.Id
+		And scmpurorderentry.poId=scmpurorder.id And scmpurorder.id=#{poId}
+    </select>
+	<select id="scminvsaleorder.selectBySaleIssue" resultType="ScmInvSaleOrder2" parameterType="Map">
+	    Select distinct scminvsaleorder.* FROM scminvsaleorder,scminvsaleorderentry,ScmInvSaleIssueBillEntry
+		Where scminvsaleorder.otId=scminvsaleorderentry.otId And scminvsaleorderentry.id=ScmInvSaleIssueBillEntry.sourceBillDtlId
+		And ScmInvSaleIssueBillEntry.otId=#{otId}
+    </select>
+    
+	<insert id="scminvsaleorder.add" parameterType="ScmInvSaleOrder"  keyProperty="otId" useGeneratedKeys="true"> 
+		INSERT INTO  scminvsaleorder (
+        otNo,
+        orgUnitNo,
+        finOrgUnitNo,
+        bizType,
+        bargained,
+        custId,
+        bizDate,
+        reqDate,
+        billType,
+        saleOrgUnitNo,
+        salesId,
+        currencyNo,
+        exchangeRate,
+        periodId,
+        accountYear,
+        accountPeriod,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        checker,
+        checkDate,
+        prtcount,
+        status,
+        remarks,
+        workFlowNo,
+        stepNo,
+        controlUnitNo        )
+		VALUES (
+        #{otNo},
+        #{orgUnitNo},
+        #{finOrgUnitNo},
+        #{bizType},
+        #{bargained},
+        #{custId},
+        #{bizDate},
+        #{reqDate},
+        #{billType},
+        #{saleOrgUnitNo},
+        #{salesId},
+        #{currencyNo},
+        #{exchangeRate},
+        #{periodId},
+        #{accountYear},
+        #{accountPeriod},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{checker},
+        #{checkDate},
+        #{prtcount},
+        #{status},
+        #{remarks},
+        #{workFlowNo},
+        #{stepNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvsaleorder.update" parameterType="ScmInvSaleOrder">
+		UPDATE scminvsaleorder set
+        otNo=#{otNo},
+        orgUnitNo=#{orgUnitNo},
+        finOrgUnitNo=#{finOrgUnitNo},
+        bizType=#{bizType},
+        bargained=#{bargained},
+        custId=#{custId},
+        bizDate=#{bizDate},
+        reqDate=#{reqDate},
+        billType=#{billType},
+        saleOrgUnitNo=#{saleOrgUnitNo},
+        salesId=#{salesId},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        periodId=#{periodId},
+        accountYear=#{accountYear},
+        accountPeriod=#{accountPeriod},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        prtcount=#{prtcount},
+        status=#{status},
+        remarks=#{remarks},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE otId = #{otId}
+	</update>
+ 
+	<delete id="scminvsaleorder.delete" parameterType="String">
+		DELETE FROM scminvsaleorder WHERE otId IN (${value})
+	</delete> 
+
+</mapper>
+ 

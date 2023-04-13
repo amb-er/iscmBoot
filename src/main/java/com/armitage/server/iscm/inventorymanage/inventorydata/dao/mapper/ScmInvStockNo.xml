@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvstockno">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvstockno.findAll" resultType="scminvstockno" >
+	    SELECT * FROM scminvstockno WHERE  1=1  
+	</select>
+ 
+	<select id="scminvstockno.findAllPage" resultType="scminvstockno" parameterType="Map"> 
+		SELECT * FROM scminvstockno WHERE  1=1 ORDER BY id ASC 
+	</select>
+	<select id="scminvstockno.findAllForScmInvStockPage" resultType="scminvstock2" parameterType="Map"> 
+		SELECT scminvstock.*,scminvStockNo.invstockNo,scminvStockNo.id as invStockNoId FROM scminvstock,scminvStockNo 
+		WHERE  1=1 
+			and	 scminvstock.id = scminvStockNo.invStockId
+		ORDER BY id ASC 
+	</select>  
+	<select id="scminvstockno.selectById" resultType="scminvstockno" parameterType="Long">
+		SELECT * FROM scminvstockno WHERE id = #{value}
+	</select> 
+
+	<insert id="scminvstockno.add" parameterType="scminvstockno"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvstockno (
+        invStockId,
+        invStockNo,
+        controlUnitNo        )
+		VALUES (
+        #{invStockId},
+        #{invStockNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvstockno.update" parameterType="scminvstockno">
+		UPDATE scminvstockno set
+        invStockId=#{invStockId},
+        invStockNo=#{invStockNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+        
+	<delete id="scminvstockno.delete" parameterType="String">
+		DELETE FROM scminvstockno WHERE id IN (${value})
+	</delete> 
+</mapper>

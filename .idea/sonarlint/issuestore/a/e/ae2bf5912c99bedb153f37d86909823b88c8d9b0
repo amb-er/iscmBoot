@@ -1,0 +1,60 @@
+
+o
+java:S1104"TMake CHAR_SET a static final constant or non-public and provide accessors if needed.(ĞºÓòşÿÿÿÿ
+u
+java:S1488>"_Immediately return this expression instead of assigning it to the temporary variable "bverify".(æ‘÷Æ
+v
+java:S1104"[Make SIGN_ALGORITHMS a static final constant or non-public and provide accessors if needed.(Û£úÿÿÿÿ
+[	java:S1127"FDefine and throw a dedicated exception instead of using a generic one.(ú»÷‰
+?
+java:S1148¢"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+a
+java:S1854®"CRemove this useless assignment to local variable "publicKeyString".(è²Şí8Îğ®‚0
+>
+java:S5542w"#Use secure mode and padding scheme.(»¦µªúÿÿÿÿ
+W
+java:S4426¥"@Use a key length of at least 2048 bits for RSA cipher algorithm.(ˆñ˜Á
+`	java:S112J"FDefine and throw a dedicated exception instead of using a generic one.(Ñàåëşÿÿÿÿ
+I
+java:S1444".Make this "public static CHAR_SET" field final(ĞºÓòşÿÿÿÿ
+>
+java:S5542i"#Use secure mode and padding scheme.(»¦µªúÿÿÿÿ
+n
+java:S3008"SRename this field "CHAR_SET" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(ĞºÓòşÿÿÿÿ
+u
+java:S3008"ZRename this field "SIGN_ALGORITHMS" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Û£úÿÿÿÿ
+[	java:S112"FDefine and throw a dedicated exception instead of using a generic one.(¿¸·»
+?
+java:S1148²"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+K
+java:S1172œ"/Remove this unused method parameter "filePath".(½ğĞàùÿÿÿÿ
+Z	java:S112Y"FDefine and throw a dedicated exception instead of using a generic one.(§£¸w
+?
+java:S5542„"#Use secure mode and padding scheme.(»¦µªúÿÿÿÿ
+?
+java:S5542’"#Use secure mode and padding scheme.(»¦µªúÿÿÿÿ
+b
+java:S1854°"DRemove this useless assignment to local variable "privateKeyString".(”ÉëŒ8Îğ®‚0
+S
+java:S1481°"5Remove this unused "privateKeyString" local variable.(”ÉëŒ8Îğ®‚0
+v
+java:S1488”"_Immediately return this expression instead of assigning it to the temporary variable "deBytes".(˜ä—È
+_
+java:S2259¥"HA "NullPointerException" could be thrown; "keyPairGen" is nullable here.(ˆñ˜Á
+f	java:S1177"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(ú»÷‰
+U
+java:S1118":Add a private constructor to hide the implicit public one.(¤–Éôıÿÿÿÿ
+R
+java:S1481®"4Remove this unused "publicKeyString" local variable.(è²Şí8Îğ®‚0
+u
+java:S1488k"_Immediately return this expression instead of assigning it to the temporary variable "enBytes".(È÷„Ë
+v
+java:S1488†"_Immediately return this expression instead of assigning it to the temporary variable "enBytes".(È÷„Ë
+|
+java:S1488O"aImmediately return this expression instead of assigning it to the temporary variable "publicKey".(êáØùÿÿÿÿ
+x
+java:S1488^"bImmediately return this expression instead of assigning it to the temporary variable "privateKey".(‘Åøª
+u
+java:S1488y"_Immediately return this expression instead of assigning it to the temporary variable "deBytes".(˜ä—È
+P
+java:S1444"5Make this "public static SIGN_ALGORITHMS" field final(Û£úÿÿÿÿ

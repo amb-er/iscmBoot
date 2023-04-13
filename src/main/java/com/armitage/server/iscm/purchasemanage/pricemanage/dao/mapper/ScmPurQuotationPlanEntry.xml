@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurquotationplanentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurquotationplanentry.findAll" resultType="ScmPurQuotationPlanEntry" >
+	    SELECT * FROM ScmPurQuotationPlanEntry WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurquotationplanentry.findAllPage" resultType="ScmPurQuotationPlanEntry" parameterType="Map"> 
+		SELECT * FROM ScmPurQuotationPlanEntry WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	
+	<select id="scmpurquotationplanentry.selectPurChasIngQuery" resultType="ScmPurQuotationPlanEntry2" parameterType="Map"> 
+	SELECT scmmaterial.id as itemId,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,ScmPurReceiveEntry.purUnit,A.unitName as purUnitName, sum(ScmPurReceiveEntry.qty) as purChaseQty,sum(ScmPurReceiveEntry.amt) as purChaseAmt
+		FROM ScmPurReceive,ScmPurReceiveEntry left join ScmMeasureUnit A on ScmPurReceiveEntry.purUnit=A.id,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard  
+		WHERE ScmPurReceive.id=ScmPurReceiveEntry.pvId
+		And ScmPurReceive.status in ('E','C')
+		And ScmPurReceiveEntry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+        and ScmMaterialGroupStandard.standardType='1'
+		<if test="groupIds!=null and groupIds!='' ">
+			AND ScmMaterialGroup.id in (${groupIds})
+		</if> 
+		AND ScmPurReceive.receiveDate BETWEEN #{beginDateTo} AND #{endDateTo} 
+		AND ScmPurReceive.purOrgUnitNo=#{purOrgUnitNo}
+		group by itemNo
+		<if test="sort != null and sort =='qty' "> 
+			order by purChaseQty desc
+		</if> 
+		<if test="sort != null and sort =='amt' "> 
+			order by purChaseAmt desc
+		</if> 
+		 limit ${qtyRecord}
+	</select>
+	<select id="scmpurquotationplanentry.selectById" resultType="ScmPurQuotationPlanEntry" parameterType="Long">
+		SELECT * FROM ScmPurQuotationPlanEntry WHERE id = #{value}
+	</select> 
+	<select id="scmpurquotationplanentry.selectByPlanId" resultType="ScmPurQuotationPlanEntry2" parameterType="Map"> 
+		SELECT ScmPurQuotationPlanEntry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as purUnitName
+		FROM ScmPurQuotationPlanEntry
+		left join scmmaterial on ScmPurQuotationPlanEntry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on ScmPurQuotationPlanEntry.purUnit=ScmMeasureUnit.id
+		WHERE ScmPurQuotationPlanEntry.planId=#{planId} 
+		ORDER BY ScmPurQuotationPlanEntry.lineId ASC
+	</select> 
+	<insert id="scmpurquotationplanentry.add" parameterType="ScmPurQuotationPlanEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurQuotationPlanEntry (
+        planId,
+        lineId,
+        itemId,
+        purUnit,
+        placeRequire,
+        remarks        )
+		VALUES (
+        #{planId},
+        #{lineId},
+        #{itemId},
+        #{purUnit},
+        #{placeRequire},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scmpurquotationplanentry.update" parameterType="ScmPurQuotationPlanEntry">
+		UPDATE ScmPurQuotationPlanEntry set
+        planId=#{planId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        purUnit=#{purUnit},
+        placeRequire=#{placeRequire},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurquotationplanentry.delete" parameterType="String">
+		DELETE FROM ScmPurQuotationPlanEntry WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

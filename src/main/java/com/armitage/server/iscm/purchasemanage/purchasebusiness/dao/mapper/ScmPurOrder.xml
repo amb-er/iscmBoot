@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurorder">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurorder.findAll" resultType="ScmPurOrder2" >
+	    SELECT * FROM scmpurorder WHERE  1=1  
+	</select>
+ 	 	 
+	<select id="scmpurorder.findAllPage" resultType="ScmPurOrder2" parameterType="Map"> 
+		SELECT Distinct ScmPurOrder.*,ScmSupplierGroup.className as groupName,
+			case when ScmPurOrder.pushed=1 then ScmSupplierConfirmData.status else null end as confirmStatus,
+			case when ScmPurOrder.pushed=1 then ScmSupplierConfirmData.confirmTime else null end as confirmTime
+		FROM 
+		 ScmPurOrder LEFT JOIN ScmSupplierConfirmData ON ScmPurOrder.poNo = ScmSupplierConfirmData.billNo AND ScmSupplierConfirmData.billType = 'PurOrder' AND ScmPurOrder.orgUnitNo = ScmSupplierConfirmData.orgUnitNo,
+		 ScmSupplier,ScmSupplierGroupDetail,ScmSupplierGroup,ScmSupplierGroupStandard,ScmMaterial,scmpurorderentry
+		WHERE scmsupplier.id=ScmSupplierGroupDetail.vendorId AND ScmSupplierGroupDetail.classId=ScmSupplierGroup.id
+		AND ScmSupplierGroup.standardId=ScmSupplierGroupStandard.id And ScmSupplierGroupStandard.standardType='1'
+		And scmpurorder.vendorId=scmsupplier.id and ScmPurOrder.id=scmpurorderentry.poId and scmpurorderentry.itemId=ScmMaterial.id
+		GROUP BY ScmPurOrder.id
+		<choose>
+			<when test="sortByDate != null and sortByDate !='' "> 
+				ORDER BY scmpurorder.orderDate Desc,scmpurorder.poNo Desc 
+			</when>
+			<otherwise>
+				ORDER BY scmpurorder.poNo DESC
+			</otherwise>
+		</choose>
+		
+	</select> 
+	<select id="scmpurorder.selectById" resultType="ScmPurOrder2" parameterType="Long">
+		SELECT *,Exists(Select 1 From ScmPurOrderEntry Where poId=ScmPurOrder.id and prDtlId &gt; 0) as existsSource
+		FROM ScmPurOrder WHERE id = #{value}
+	</select> 
+	<select id="scmpurorder.selectMaxIdByDate" resultType="ScmPurOrder2" parameterType="Map">
+		SELECT * FROM scmpurorder 
+		WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY poNo Desc Limit 1
+	</select> 
+	<select id="scmpurorder.getPreUseQty" resultType="ScmPurOrderEntry2" parameterType="Map">
+		Select IFNULL(sum(scmpurorderentry.receiveQty),0) as receiveQty 
+		from ScmPurOrder,ScmPurOrderEntry where ScmPurOrder.id=ScmPurOrderEntry.poId
+		And ScmPurOrder.orgUnitNo=#{orgUnitNo} And ScmPurOrderEntry.itemId=${itemId} 
+		and ScmPurOrder.orderDate &gt;=#{begDate} and scmpurorder.orderDate &lt; #{endDate}
+		And ScmPurOrder.status in ('E','C','F','T')
+	</select> 
+	<select id="scmpurorder.selectDrillBills" resultType="ScmPurBillDrillResult" parameterType="Map">
+		SELECT scmpurorderentry.itemId,scmmaterial.itemNo,scmmaterial.itemName,
+		a.prNo,a.prIds,a.status as prStatus,b.pvNo,b.pvIds,b.status as pvStatus,c.wrNo,c.wrIds,c.status as wrStatus,
+		case when scmpurprice.pmNo is null then scmpurquotation.pqNo else scmpurprice.pmNo end as priceBillNo,
+		case when scmpurprice.status is null then scmpurquotation.status else scmpurprice.status end as priceBillStatus,
+		scmpurorderentry.refPriceStatus
+ 		from scmpurorder,scmpurorderentry 
+		LEFT JOIN (select scmpurrequire.prNo,scmpurrequire.status,group_concat(distinct scmpurrequire.id) as prIds,
+		scmpurrequireentry.itemId
+ 		from scmpurrequire,scmpurrequireentry,scmpurorderentry where scmpurrequire.id=scmpurrequireentry.prId
+		and scmpurorderentry.prDtlId=scmpurrequireentry.id and scmpurorderentry.poId=${poId}
+		group by scmpurrequireentry.itemId order by scmpurrequire.id asc) a on scmpurorderentry.itemId=a.itemId
+		LEFT JOIN (select scmpurreceive.pvNo,scmpurreceive.status,group_concat(distinct scmpurreceive.id) as pvIds,
+		scmpurreceiveentry.itemId
+ 		from scmpurreceive,scmpurreceiveentry,scmpurorderentry where scmpurreceive.id=scmpurreceiveentry.pvId
+		and scmpurreceiveentry.poDtlId=scmpurorderentry.id and scmpurorderentry.poId=${poId}
+		group by scmpurreceiveentry.itemId order by scmpurreceive.id asc) b on scmpurorderentry.itemId=b.itemId
+		LEFT JOIN (select scminvpurinwarehsbill.wrNo,scminvpurinwarehsbill.status,group_concat(distinct scminvpurinwarehsbill.wrId) as wrIds,
+	    scminvpurinwarehsbillentry.itemId
+	    from scminvpurinwarehsbill left join scminvpurinwarehsbillentry on scminvpurinwarehsbill.wrId=scminvpurinwarehsbillentry.wrId
+	    left join scmpurreceiveentry on scminvpurinwarehsbillentry.sourceBillDtlId=scmpurreceiveentry.id
+	    left join scmpurorderentry on scmpurreceiveentry.poDtlId=scmpurorderentry.id
+	    left join scmpurrequireentry on scmpurorderentry.prDtlId=scmpurrequireentry.id where scmpurorderentry.poId=${poId}
+	    group by scminvpurinwarehsbillentry.itemId order by scminvpurinwarehsbill.wrId asc) c on scmpurorderentry.itemId=c.itemId
+		LEFT JOIN scmpurprice on scmpurorderentry.priceBillId=scmpurprice.id and IFNULL(scmpurorderentry.refPriceStatus,'')!='' and scmpurorderentry.refPriceStatus!='1'
+		LEFT JOIN scmpurquotation on scmpurorderentry.priceBillId=scmpurquotation.id and IFNULL(scmpurorderentry.refPriceStatus,'')!='' and scmpurorderentry.refPriceStatus='1',
+		scmmaterial
+		where scmpurorder.id=scmpurorderentry.poId
+		and scmpurorder.id=${poId}
+		and scmpurorderentry.itemId=scmmaterial.id
+		group by scmpurorderentry.itemId
+	</select> 
+	<select id="scmpurorder.selectBySaleIssueBill" resultType="ScmPurOrder2" parameterType="Map">
+		Select Distinct ScmPurOrder.* FROM ScmInvSaleIssueBillEntry,ScmInvSaleOrderEntry,ScmPurOrderEntry,ScmPurOrder
+		Where ScmInvSaleIssueBillEntry.otId=#{otId} And ScmInvSaleIssueBillEntry.sourceBillDtlId=ScmInvSaleOrderEntry.id
+		And ScmInvSaleOrderEntry.sourceBillDtlId=ScmPurOrderEntry.Id And ScmPurOrderEntry.poId=ScmPurOrder.id
+	</select> 
+	<select id="scmpurorder.selectByOtherIssueBill" resultType="ScmPurOrder2" parameterType="Map">
+		Select Distinct ScmPurOrder.* FROM ScmInvOtherIssueBillEntry,ScmPurOrderEntry,ScmPurOrder
+		Where ScmInvOtherIssueBillEntry.otId=#{otId} And ScmInvOtherIssueBillEntry.sourceBillDtlId=ScmPurOrderEntry.id
+		And ScmPurOrderEntry.poId=ScmPurOrder.id
+	</select> 
+	<select id="scmpurorder.getTotalOrderQty" resultType="BigDecimal" parameterType="Map">
+		SELECT sum(scmpurorderentry.qty) as qty FROM scmpurorder,scmpurorderentry where scmpurorder.id=scmpurorderentry.poId
+		And scmpurorderentry.itemId=${itemId} and scmpurorder.orderDate &gt;=#{begDate} and scmpurorder.orderDate &lt;=#{endDate}
+		And scmpurorderentry.rowStatus in ('E','C') 
+	</select> 
+	
+	<select id="scmpurorder.selectForPushPage" resultType="ScmPurOrder2" parameterType="Map">
+		SELECT * FROM ScmPurOrder WHERE controlUnitNo=#{controlUnitNo} ORDER BY updateTimeStamp ASC
+	</select> 
+	<select id="scmpurorder.selectByPoNo" resultType="ScmPurOrder2" parameterType="Map">
+		select * From ScmPurOrder Where poNo=#{poNo} and controlUnitNo=#{controlUnitNo}
+	</select>
+	<select id="scmpurorder.selectByEntryIds" resultType="ScmPurOrder2" parameterType="Map">
+		Select Distinct ScmPurOrder.* FROM ScmPurOrder,ScmPurOrderEntry
+		Where ScmPurOrderEntry.poId=ScmPurOrder.id and ScmPurOrderEntry.id in (${entryIds})
+		and ScmPurOrder.sended=#{sended}
+	</select>
+	<insert id="scmpurorder.add" parameterType="ScmPurOrder"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurorder (
+        poNo,
+        bizType,
+        finOrgUnitNo,
+        orgUnitNo,
+        vendorId,
+        orderDate,
+        reqDate,
+        payment,
+        settlement,
+        storageOrgUnitNo,
+        centeralBalance,
+        directPurchase,
+        unified,
+        buyerId,
+        purGroupId,
+        currencyNo,
+        exchangeRate,
+        amt,
+        taxAmt,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        checker,
+        checkDate,
+        releaseDate,
+        sendDate,
+        prtcount,
+        status,
+        sended,
+        pushed,
+        remarks,
+        version,
+        workFlowNo,
+        contractNo,
+        prNos,
+        lockStatus,
+        stepNo,
+        pendingUsr,
+        controlUnitNo        )
+		VALUES (
+        #{poNo},
+        #{bizType},
+        #{finOrgUnitNo},
+        #{orgUnitNo},
+        #{vendorId},
+        #{orderDate},
+        #{reqDate},
+        #{payment},
+        #{settlement},
+        #{storageOrgUnitNo},
+        #{centeralBalance},
+        #{directPurchase},
+        #{unified},
+        #{buyerId},
+        #{purGroupId},
+        #{currencyNo},
+        #{exchangeRate},
+        #{amt},
+        #{taxAmt},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{checker},
+        #{checkDate},
+        #{releaseDate},
+        #{sendDate},
+        #{prtcount},
+        #{status},
+        #{sended},
+        #{pushed},
+        #{remarks},
+        #{version},
+        #{workFlowNo},
+        #{contractNo},
+        #{prNos},
+        #{lockStatus},
+        #{stepNo},
+        #{pendingUsr},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpurorder.update" parameterType="ScmPurOrder">
+		UPDATE scmpurorder set
+        poNo=#{poNo},
+        bizType=#{bizType},
+        finOrgUnitNo=#{finOrgUnitNo},
+        orgUnitNo=#{orgUnitNo},
+        vendorId=#{vendorId},
+        orderDate=#{orderDate},
+        reqDate=#{reqDate},
+        payment=#{payment},
+        settlement=#{settlement},
+        storageOrgUnitNo=#{storageOrgUnitNo},
+        centeralBalance=#{centeralBalance},
+        directPurchase=#{directPurchase},
+        unified=#{unified},
+        buyerId=#{buyerId},
+        purGroupId=#{purGroupId},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        amt=#{amt},
+        taxAmt=#{taxAmt},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        releaseDate=#{releaseDate},
+        sendDate=#{sendDate},
+        prtcount=#{prtcount},
+        status=#{status},
+        sended=#{sended},
+        pushed=#{pushed},
+        remarks=#{remarks},
+        version=#{version},
+        workFlowNo=#{workFlowNo},
+        contractNo=#{contractNo},
+        prNos=#{prNos},
+        lockStatus=#{lockStatus},
+        stepNo=#{stepNo},
+        pendingUsr=#{pendingUsr},
+        controlUnitNo=#{controlUnitNo} WHERE id = #{id}
+	</update>
+ 	<update id="scmpurorder.updateBillNoChangeTime" parameterType="ScmPurOrder">
+		UPDATE scmpurorder set
+        poNo=#{poNo},
+        bizType=#{bizType},
+        finOrgUnitNo=#{finOrgUnitNo},
+        orgUnitNo=#{orgUnitNo},
+        vendorId=#{vendorId},
+        orderDate=#{orderDate},
+        reqDate=#{reqDate},
+        payment=#{payment},
+        settlement=#{settlement},
+        storageOrgUnitNo=#{storageOrgUnitNo},
+        centeralBalance=#{centeralBalance},
+        unified=#{unified},
+        buyerId=#{buyerId},
+        purGroupId=#{purGroupId},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        amt=#{amt},
+        taxAmt=#{taxAmt},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        releaseDate=#{releaseDate},
+        sendDate=#{sendDate},
+        prtcount=#{prtcount},
+        status=#{status},
+        sended=#{sended},
+        pushed=#{pushed},
+        remarks=#{remarks},
+        version=#{version},
+        workFlowNo=#{workFlowNo},
+        contractNo=#{contractNo},
+        prNos=#{prNos},
+        lockStatus=#{lockStatus},
+        stepNo=#{stepNo},
+        pendingUsr=#{pendingUsr},
+        controlUnitNo=#{controlUnitNo},
+        updateTimeStamp=updateTimeStamp		 WHERE id = #{id}
+	</update>
+ 	<update id="scmpurorder.updateSendedStaus" parameterType="Map">
+ 		UPDATE scmpurorder set sended=1,sendDate=#{sendDate},updateTimeStamp=updateTimeStamp WHERE id = #{poId} and sended=0
+	</update>
+	<update id="scmpurorder.updatePushed" parameterType="Map">
+ 		UPDATE scmpurorder set pushed=#{pushed},updateTimeStamp=updateTimeStamp WHERE id = #{poId}
+	</update>
+	<update id="scmpurorder.updateVersion" parameterType="Map">
+ 		UPDATE scmpurorder set version=version+1 WHERE id = #{poId} and version=#{version}
+	</update>
+	<update id="scmpurorder.updateLockStatusOrContractNo" parameterType="Map">
+ 		UPDATE scmpurorder set lockStatus=#{lockStatus},contractNo=#{contractNo},updateTimeStamp=updateTimeStamp WHERE id = #{poId}
+	</update>
+ 	<update id="scmpurorder.updateStaus" parameterType="Map">
+ 		UPDATE scmpurorder set status=#{status},updateTimeStamp=updateTimeStamp WHERE id = #{poId}
+	</update>
+	<update id="scmpurorder.updateUnSendedStaus" parameterType="Map">
+ 		UPDATE scmpurorder set sended=0,updateTimeStamp=updateTimeStamp WHERE id = #{poId} and sended=1
+	</update>
+	<delete id="scmpurorder.delete" parameterType="String">
+		DELETE FROM scmpurorder WHERE id IN (${value})
+	</delete> 
+	<select id="scmpurorder.selectByTypeCode" resultType="ScmPurOrder2" parameterType="Map">
+		SELECT * FROM scmpurorder where bizType=#{bizType} and controlUnitNo=#{controlUnitNo} LIMIT 1
+	</select>
+</mapper>

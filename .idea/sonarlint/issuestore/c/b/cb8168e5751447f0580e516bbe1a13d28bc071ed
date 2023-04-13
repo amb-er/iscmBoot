@@ -1,0 +1,25 @@
+
+r
+java:S1192@"WDefine a constant instead of duplicating this literal "webservice.params.null" 3 times.(«ıÀËøÿÿÿÿ
+>
+java:S1148L"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+>
+java:S1148m"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+S
+java:S2589"7Remove this expression which always evaluates to "true"(Š²¯ûÿÿÿÿ
+`
+java:S44885"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(˜™•
+F
+java:S18746"0Remove this use of "position"; it is deprecated.(‚ÈçÜ
+`
+java:S4488S"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(„¨ùŞ
+K
+java:S1874T"0Remove this use of "position"; it is deprecated.(Ò“çîúÿÿÿÿ
+m
+java:S3776v"RRefactor this method to reduce its Cognitive Complexity from 18 to the 15 allowed.(ı÷¶ôşÿÿÿÿ
+`
+java:S4488t"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(«ïêÙ
+F
+java:S1874u"0Remove this use of "position"; it is deprecated.(ÌêãÌ
+u
+java:S2293’"YReplace the type specification in this constructor call with the diamond operator ("<>").(Ş¤¡şÿÿÿÿ

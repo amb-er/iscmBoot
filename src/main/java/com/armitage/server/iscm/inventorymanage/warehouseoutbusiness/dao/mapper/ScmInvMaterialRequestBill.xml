@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvmaterialrequestbill">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvmaterialrequestbill.findAll" resultType="ScmInvMaterialRequestBill2" >
+	    SELECT * FROM scminvmaterialrequestbill WHERE  1=1  
+	</select>
+ 
+ 	<select id="scminvmaterialrequestbill.selectMaxIdByDate" resultType="ScmInvMaterialRequestBill2" parameterType="String">
+		SELECT * FROM scminvmaterialrequestbill 
+		WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY reqNo DESC Limit 1
+	</select>
+ 	
+	<select id="scminvmaterialrequestbill.findAllPage" resultType="ScmInvMaterialRequestBill2" parameterType="Map"> 
+		SELECT ScmInvMaterialRequestBill.*,A.amt as totalAmt,A.taxAmt as totalTaxAmt,(taxAmt-amt) as taxAmount
+		FROM ScmInvMaterialRequestBill 
+		LEFT JOIN
+		(SELECT ScmInvMaterialRequestBillentry.reqId,sum(ScmInvMaterialRequestBillentry.amt) as amt,sum(ScmInvMaterialRequestBillentry.taxAmt) as taxAmt FROM ScmInvMaterialRequestBill,ScmInvMaterialRequestBillentry
+		WHERE ScmInvMaterialRequestBill.reqId=ScmInvMaterialRequestBillentry.reqId group by ScmInvMaterialRequestBillentry.reqId) A
+		on ScmInvMaterialRequestBill.reqId=A.reqId
+		WHERE  1=1
+		<choose>
+			<when test="sortByDate != null and sortByDate !='' "> 
+				ORDER BY bizDate Desc,reqNo Desc 
+			</when>
+			<otherwise>
+				ORDER BY reqNo Desc 
+			</otherwise>
+		</choose> 
+	</select> 
+	<select id="scminvmaterialrequestbill.selectById" resultType="ScmInvMaterialRequestBill2" parameterType="Long">
+		SELECT ScmInvMaterialRequestBill.*,A.amt as totalAmt,A.taxAmt as totalTaxAmt,(taxAmt-amt) as taxAmount
+		FROM ScmInvMaterialRequestBill 
+		LEFT JOIN
+		(SELECT ScmInvMaterialRequestBillentry.reqId,sum(ScmInvMaterialRequestBillentry.amt) as amt,sum(ScmInvMaterialRequestBillentry.taxAmt) as taxAmt FROM ScmInvMaterialRequestBill,ScmInvMaterialRequestBillentry
+		WHERE ScmInvMaterialRequestBill.reqId=ScmInvMaterialRequestBillentry.reqId group by ScmInvMaterialRequestBillentry.reqId) A
+		on ScmInvMaterialRequestBill.reqId=A.reqId
+		WHERE ScmInvMaterialRequestBill.reqId = #{value}
+	</select> 
+	<select id="scminvmaterialrequestbill.selectDrillBills" resultType="com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialDrillResult" parameterType="Map">
+	    SELECT cast(scminvmaterialrequestbillentry.id as char) as reqDetailId,scminvmaterialrequestbillentry.itemId,scmmaterial.itemNo,scmmaterial.itemName,
+	    a.otNo,a.otIds,a.status as otStatus from scminvmaterialrequestbill,scminvmaterialrequestbillentry
+	    LEFT JOIN (SELECT scminvmaterialreqbill.otNo,scminvmaterialreqbill.status,group_concat(distinct scminvmaterialreqbill.otId) as otIds,
+	    scminvmaterialreqbillentry.itemId
+	    from scminvmaterialreqbill,scminvmaterialreqbillentry,scminvmaterialrequestbillentry 
+	    where scminvmaterialreqbill.otId=scminvmaterialreqbillentry.otId
+	    and scminvmaterialreqbillentry.sourceBillDtlId=scminvmaterialrequestbillentry.id
+	    and scminvmaterialrequestbillentry.reqId=${reqId}
+	    group by scminvmaterialreqbillentry.itemId order by scminvmaterialreqbill.otId asc)
+	    as a on scminvmaterialrequestbillentry.itemId=a.itemId
+	    ,scmmaterial
+	    where scminvmaterialrequestbill.reqId=scminvmaterialrequestbillentry.reqId
+	    and scminvmaterialrequestbill.reqId=${reqId}
+	    and scminvmaterialrequestbillentry.itemId=scmmaterial.id
+	    group by scminvmaterialrequestbillentry.itemId
+	</select>
+	<insert id="scminvmaterialrequestbill.add" parameterType="ScmInvMaterialRequestBill2"  keyProperty="reqId" useGeneratedKeys="true"> 
+		INSERT INTO  scminvmaterialrequestbill (
+        reqNo,
+        bizDate,
+        orgUnitNo,
+        wareHouseId,
+        finOrgUnitNo,
+        invOrgUnitNo,
+        requestPerson,
+        currencyNo,
+        exchangeRate,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        checker,
+        checkDate,
+        prtcount,
+        status,
+        remarks,
+        workFlowNo,
+        stepNo,
+        controlUnitNo        )
+		VALUES (
+        #{reqNo},
+        #{bizDate},
+        #{orgUnitNo},
+        #{wareHouseId},
+        #{finOrgUnitNo},
+        #{invOrgUnitNo},
+        #{requestPerson},
+        #{currencyNo},
+        #{exchangeRate},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{checker},
+        #{checkDate},
+        #{prtcount},
+        #{status},
+        #{remarks},
+        #{workFlowNo},
+        #{stepNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvmaterialrequestbill.update" parameterType="ScmInvMaterialRequestBill2">
+		UPDATE scminvmaterialrequestbill set
+        reqNo=#{reqNo},
+        bizDate=#{bizDate},
+        orgUnitNo=#{orgUnitNo},
+        wareHouseId=#{wareHouseId},
+        finOrgUnitNo=#{finOrgUnitNo},
+        invOrgUnitNo=#{invOrgUnitNo},
+        requestPerson=#{requestPerson},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        prtcount=#{prtcount},
+        status=#{status},
+        remarks=#{remarks},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE reqId = #{reqId}
+	</update>
+ 
+	<delete id="scminvmaterialrequestbill.delete" parameterType="String">
+		DELETE FROM scminvmaterialrequestbill WHERE reqId IN (${value})
+	</delete> 
+
+</mapper>

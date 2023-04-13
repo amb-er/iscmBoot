@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsupplierreginvitation">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsupplierreginvitation.findAll" resultType="ScmSupplierRegInvitation" >
+	    SELECT * FROM ScmSupplierRegInvitation WHERE  1=1  
+	</select>
+ 
+	<select id="scmsupplierreginvitation.findAllPage" resultType="ScmSupplierRegInvitation" parameterType="Map"> 
+		SELECT * FROM ScmSupplierRegInvitation WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmsupplierreginvitation.selectById" resultType="ScmSupplierRegInvitation" parameterType="Long">
+		SELECT * FROM ScmSupplierRegInvitation WHERE id = #{value}
+	</select> 
+	<select id="scmsupplierreginvitation.selectByVendorIdAndCtrl" resultType="ScmSupplierRegInvitation" parameterType="Map">
+		SELECT * FROM ScmSupplierRegInvitation 
+		WHERE 1=1 and vendorId = #{vendorId}
+		and controlUnitNo = #{controlUnitNo}
+		Limit 1
+	</select>
+	<select id="scmsupplierreginvitation.selectByPlatVendorIdAndCtrl" resultType="ScmSupplierRegInvitation" parameterType="Map">
+		SELECT * FROM ScmSupplierRegInvitation 
+		WHERE 1=1 and platSupplierId = #{platVendorId}
+		and controlUnitNo = #{controlUnitNo}
+		Limit 1
+	</select> 
+	<select id="scmsupplierreginvitation.selectByCtrl" resultType="ScmSupplierRegInvitation" parameterType="Map">
+		SELECT * FROM ScmSupplierRegInvitation 
+		WHERE 1=1 and controlUnitNo = #{controlUnitNo}
+		ORDER BY id ASC 
+		Limit 1
+	</select> 
+	<select id="scmsupplierreginvitation.selectBindedByCtrl" resultType="ScmSupplierRegInvitation" parameterType="Map"> 
+		SELECT * FROM ScmSupplierRegInvitation 
+		WHERE 1=1 and controlUnitNo = #{controlUnitNo}
+		and platSupplierId &gt;0 and vendorId &gt;0
+		ORDER BY vendorId ASC
+	</select>
+	<select id="scmsupplierreginvitation.selectBindedByCtrlAndVendor" resultType="ScmSupplierRegInvitation" parameterType="Map"> 
+		SELECT * FROM ScmSupplierRegInvitation 
+		WHERE 1=1 and controlUnitNo = #{controlUnitNo}
+		and platSupplierId &gt;0 and vendorId &gt;0
+		and vendorId in (${vendorIds})
+		ORDER BY vendorId ASC
+	</select> 
+	<insert id="scmsupplierreginvitation.add" parameterType="ScmSupplierRegInvitation"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmSupplierRegInvitation (
+        vendorId,
+        invitationContent,
+        expiryDate,
+        sendTime,
+        uesed,
+        platSupplierId,
+        addAdmin,
+        adminCode,
+        adminName,
+        approval,
+        approvedBy,
+        approvalDate,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        controlUnitNo        )
+		VALUES (
+        #{vendorId},
+        #{invitationContent},
+        #{expiryDate},
+        #{sendTime},
+        #{uesed},
+        #{platSupplierId},
+        #{addAdmin},
+        #{adminCode},
+        #{adminName},
+        #{approval},
+        #{approvedBy},
+        #{approvalDate},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsupplierreginvitation.update" parameterType="ScmSupplierRegInvitation">
+		UPDATE ScmSupplierRegInvitation set
+        vendorId=#{vendorId},
+        invitationContent=#{invitationContent},
+        expiryDate=#{expiryDate},
+        sendTime=#{sendTime},
+        uesed=#{uesed},
+        platSupplierId=#{platSupplierId},
+        addAdmin=#{addAdmin},
+        adminCode=#{adminCode},
+        adminName=#{adminName},
+        approval=#{approval},
+        approvedBy=#{approvedBy},
+        approvalDate=#{approvalDate},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsupplierreginvitation.delete" parameterType="String">
+		DELETE FROM ScmSupplierRegInvitation WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

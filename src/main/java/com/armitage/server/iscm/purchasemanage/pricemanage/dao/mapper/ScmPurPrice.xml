@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurprice">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurprice.findAll" resultType="ScmPurPrice2" >
+	    SELECT * FROM scmpurprice WHERE  1=1  
+	</select>
+	
+	<select id="scmpurprice.getPrePriceList" resultType="ScmMaterialPrePrice" parameterType="Map">
+		SELECT scmPurPriceentry.itemId,scmPurPriceentry.price FROM ScmPurPriceentry,
+		(SELECT max(scmPurPriceentry.id) as id
+		 FROM scmPurPrice,scmPurPriceentry WHere scmPurPrice.Id=scmPurPriceentry.pmId
+		And scmPurPrice.orgUnitNo=#{orgUnitNo} and scmPurPrice.status='E' And scmPurPrice.begDate &lt; #{begDate}
+		And scmPurPriceentry.itemId in (${itemIds}) GROUP BY scmPurPriceentry.itemId) B
+		WHERE scmPurPriceentry.id = B.id
+	</select>
+	<select id="scmpurprice.selectPrePrice" resultType="ScmMaterialPrePrice" parameterType="Map">
+		SELECT scmPurPriceentry.itemId,scmPurPriceentry.price FROM ScmPurPriceentry,
+		(SELECT max(scmPurPriceentry.id) as id
+		 FROM scmPurPrice,scmPurPriceentry WHere scmPurPrice.Id=scmPurPriceentry.pmId
+		And scmPurPrice.orgUnitNo=#{orgUnitNo} and scmPurPrice.status='E' And scmPurPrice.begDate &lt;= #{begDate}
+		And scmPurPriceentry.itemId in (${itemIds}) GROUP BY scmPurPriceentry.itemId) B
+		WHERE scmPurPriceentry.id = B.id
+	</select>
+	<select id="scmpurprice.findAllPage" resultType="ScmPurPrice2" parameterType="Map"> 
+		SELECT scmpurprice.*,scmsupplier.vendorName as vendorName,
+		(select group_concat(distinct selVndrId) selVndrId from scmpurpriceentry
+			where scmpurprice.id = scmpurpriceentry.pmId
+			group by scmpurpriceentry.pmId) as selVndrIdDtl
+		FROM scmpurprice left join scmsupplier
+		on scmpurprice.selVndrId=scmsupplier.id
+		WHERE  1=1 ORDER BY scmpurprice.pmNo DESC 
+	</select> 
+	<select id="scmpurprice.selectById" resultType="ScmPurPrice2" parameterType="Long">
+		SELECT scmpurprice.*,scmsupplier.vendorName as vendorName
+		FROM scmpurprice left join scmsupplier
+		on scmpurprice.selVndrId=scmsupplier.id WHERE scmpurprice.id = #{value}
+	</select> 
+	<select id="scmpurprice.selectMaxIdByDate" resultType="ScmPurPrice2" parameterType="Map">
+		SELECT scmpurprice.*,scmsupplier.vendorName as vendorName 
+		FROM scmpurprice left join scmsupplier
+		on scmpurprice.selVndrId=scmsupplier.id
+		WHERE scmpurprice.createDate &gt;=#{createDate} And scmpurprice.createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And scmpurprice.controlUnitNo=#{controlUnitNo} Order BY scmpurprice.pmNo Desc Limit 1
+	</select> 
+	<select id="scmpurprice.getPrice" resultType="ScmMaterialPrice" parameterType="Map">
+		Select B.itemId,A.id as priceBillId,A.pmNo as priceBillNo,
+			B.selVndrId as vendorId,
+		case when #{priceType}='1' Then round(B.price/(1+B.taxRate),#{pricePrec}) else price end as price,
+		B.taxRate,case when #{priceType}='1' Then B.price else round(B.price*(1+B.taxRate),#{pricePrec}) end as taxPrice,B.purUnit,
+		A.bizType
+ 			from scmPurPrice A,scmPurPriceentry B,
+			(Select Max(B.id) as id
+					from scmPurPriceentry B, scmPurPrice A 
+					left join scmPurPriceAssign C on A.id = C.pmId 
+				Where A.id=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' 
+				<if test="pmId == null or pmId =='' "> 
+					And A.begDate &lt;=#{bizDate}
+					And A.endDate &gt;=#{bizDate} 
+				</if>  
+				And B.itemId in (${itemIds})
+				And (A.isAssignOrg = 0 or (A.isAssignOrg = 1 and C.finOrgUnitNo = #{finOrgUnitNo}))
+				<if test="pmId != null and pmId !='' "> 
+					And A.Id = #{pmId}   
+				</if>  
+				GROUP BY B.itemId ORDER BY A.pmDate Desc,B.id Desc) C
+		Where A.id=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' 
+		<if test="pmId == null or pmId =='' "> 
+			And A.begDate &lt;=#{bizDate}
+			And A.endDate &gt;=#{bizDate} 
+		</if>	
+		And B.itemId in (${itemIds})
+		And B.id=C.id
+	</select>
+	
+	<select id="scmpurprice.getPriceByVendor" resultType="ScmMaterialPrice" parameterType="Map">
+		Select B.itemId,A.id as priceBillId,
+			B.selVndrId as vendorId,
+		case when #{priceType}='1' Then round(B.price/(1+B.taxRate),#{pricePrec}) else price end as price,
+		B.taxRate,case when #{priceType}='1' Then B.price else round(B.price*(1+B.taxRate),#{pricePrec}) end as taxPrice,B.purUnit,
+		A.bizType
+ 			from scmPurPrice A,scmPurPriceentry B,
+			(Select Max(B.id) as id
+					from scmPurPriceentry B, scmPurPrice A 
+					left join scmPurPriceAssign C on A.id = C.pmId 
+				Where A.id=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' 
+				<if test="pmId == null or pmId =='' "> 
+					And A.begDate &lt;=#{bizDate}
+					And A.endDate &gt;=#{bizDate} 
+				</if>  
+				And B.itemId in (${itemIds})
+				<if test="vendorId != null and vendorId !='' "> 
+					And B.selVndrId=${vendorId}   
+				</if>  
+				And (A.isAssignOrg = 0 or (A.isAssignOrg = 1 and C.finOrgUnitNo = #{finOrgUnitNo}))
+				<if test="pmId != null and pmId !='' "> 
+					And A.Id = #{pmId}   
+				</if>  
+				GROUP BY B.itemId ORDER BY A.pmDate Desc,B.id Desc) C
+		Where A.id=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' 
+		<if test="pmId == null or pmId =='' "> 
+			And A.begDate &lt;=#{bizDate}
+			And A.endDate &gt;=#{bizDate} 
+		</if>	
+		And B.itemId in (${itemIds})
+		<if test="vendorId != null and vendorId !='' "> 
+			And B.selVndrId=${vendorId}   
+		</if>
+		And B.id=C.id
+	</select>
+	
+	<select id="scmpurprice.getPreParePriceByVendorId" resultType="ScmMaterialPrice" parameterType="Map">
+		Select B.itemId,A.id as priceBillId,
+			B.preSelVndrId as vendorId,
+		case when #{priceType}='1' Then round(B.price/(1+B.taxRate),#{pricePrec}) else price end as price,
+		B.taxRate,case when #{priceType}='1' Then B.price else round(B.price*(1+B.taxRate),#{pricePrec}) end as taxPrice,B.purUnit,
+		A.bizType
+ 			from scmPurPrice A,(SELECT *,case when vendorId1=preSelVndrId Then prePrice1 else case when vendorId2=preSelVndrId Then prePrice2 else prePrice3 end end as price,
+			case when vendorId1=preSelVndrId Then preTaxRate1 else case when vendorId2=preSelVndrId Then preTaxRate2 else preTaxRate3 end end as taxRate
+			from scmPurPricePrepareentry where preSelVndrId=#{vendorId} and preSelVndrId >0) B,
+			(Select Max(B.id) as id
+					from scmPurPricePrepareentry B, scmPurPrice A 
+					left join scmPurPriceAssign C on A.id = C.pmId 
+				Where A.id=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' 
+				<if test="pmId == null or pmId =='' "> 
+					And A.begDate &lt;=#{bizDate}
+					And A.endDate &gt;=#{bizDate} 
+				</if>  
+				And B.itemId in (${itemIds})
+				And B.preSelVndrId=#{vendorId}
+				And (A.isAssignOrg = 0 or (A.isAssignOrg = 1 and C.finOrgUnitNo = #{finOrgUnitNo}))
+				<if test="pmId != null and pmId !='' "> 
+					And A.Id = #{pmId}   
+				</if>  
+				GROUP BY B.itemId ORDER BY A.pmDate Desc,B.id Desc) C
+		Where A.id=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' 
+		<if test="pmId == null or pmId =='' "> 
+			And A.begDate &lt;=#{bizDate}
+			And A.endDate &gt;=#{bizDate} 
+		</if>	
+		And B.itemId in (${itemIds})
+		And B.id=C.id
+	</select>  
+	<select id="scmpurprice.getPreParePrice" resultType="ScmMaterialPrice" parameterType="Map">
+		Select B.itemId,A.id as priceBillId,
+			B.selVndrId as vendorId,case when D.preSelVndrId=D.vendorId1 then ifnull(D.vendorId1,0) else 0 end as preVendorId1,
+			case when D.preSelVndrId=D.vendorId2 then ifnull(D.vendorId2,0) else 0 end as preVendorId2,
+			case when D.preSelVndrId=D.vendorId3 then ifnull(D.vendorId3,0) else 0 end as preVendorId3,
+		case when #{priceType}='1' Then round(B.price/(1+B.taxRate),#{pricePrec}) else B.price end as price,
+		B.taxRate,case when #{priceType}='1' Then B.price else round(B.price*(1+B.taxRate),#{pricePrec}) end as taxPrice,B.purUnit,
+		case when ifnull(D.prePrice1,0)!=0 then case when #{priceType}='1' 
+		Then D.prePrice1 else round(D.prePrice1*(1+D.preTaxRate1),#{pricePrec}) end else 0 end as preTaxPrice1,
+		case when ifnull(D.prePrice2,0)!=0 then case when #{priceType}='1' 
+		Then D.prePrice2 else round(D.prePrice2*(1+D.preTaxRate2),#{pricePrec}) end else 0 end as preTaxPrice2,
+		case when ifnull(D.prePrice3,0)!=0 then case when #{priceType}='1' 
+		Then D.prePrice3 else round(D.prePrice3*(1+D.preTaxRate3),#{pricePrec}) end else 0 end as preTaxPrice3,
+		A.bizType
+ 			from scmPurPrice A,scmPurPriceentry B 
+ 			left join scmPurPricePrepareentry D on B.itemId = D.itemId
+ 			and B.pmId = D.pmId and (D.vendorId1 &gt;0 or D.vendorId2 &gt;0 or D.vendorId3 &gt;0) 
+ 			and (D.prePrice1 &gt;0 or D.prePrice2 &gt;0 or D.prePrice3 &gt;0) and D.flag=1 and D.preSelVndrId &gt;0,
+			(Select Max(B.id) as id
+					from scmPurPriceentry B, scmPurPrice A 
+					left join scmPurPriceAssign C on A.id = C.pmId 
+				Where A.id=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' 
+				<if test="pmId == null or pmId =='' "> 
+					And A.begDate &lt;=#{bizDate}
+					And A.endDate &gt;=#{bizDate} 
+				</if>  
+				And B.itemId in (${itemIds})
+				And (A.isAssignOrg = 0 or (A.isAssignOrg = 1 and C.finOrgUnitNo = #{finOrgUnitNo}))
+				<if test="pmId != null and pmId !='' "> 
+					And A.Id = #{pmId}   
+				</if>  
+				GROUP BY B.itemId ORDER BY A.pmDate Desc,B.id Desc) C
+		Where A.id=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' 
+		<if test="pmId == null or pmId =='' "> 
+			And A.begDate &lt;=#{bizDate}
+			And A.endDate &gt;=#{bizDate} 
+		</if>	
+		And B.itemId in (${itemIds})
+		And B.id=C.id
+	</select> 
+	
+	<select id="scmpurprice.getPreParePriceByVendor" resultType="ScmMaterialPrice" parameterType="Map">
+		Select B.itemId,A.id as priceBillId,
+			B.selVndrId as vendorId,case when D.preSelVndrId=D.vendorId1 then ifnull(D.vendorId1,0) else 0 end as preVendorId1,
+			case when D.preSelVndrId=D.vendorId2 then ifnull(D.vendorId2,0) else 0 end as preVendorId2,
+			case when D.preSelVndrId=D.vendorId3 then ifnull(D.vendorId3,0) else 0 end as preVendorId3,
+		case when #{priceType}='1' Then round(B.price/(1+B.taxRate),#{pricePrec}) else B.price end as price,
+		B.taxRate,case when #{priceType}='1' Then B.price else round(B.price*(1+B.taxRate),#{pricePrec}) end as taxPrice,B.purUnit,
+		case when ifnull(D.prePrice1,0)!=0 then case when #{priceType}='1' 
+		Then D.prePrice1 else round(D.prePrice1*(1+D.preTaxRate1),#{pricePrec}) end else 0 end as preTaxPrice1,
+		case when ifnull(D.prePrice2,0)!=0 then case when #{priceType}='1' 
+		Then D.prePrice2 else round(D.prePrice2*(1+D.preTaxRate2),#{pricePrec}) end else 0 end as preTaxPrice2,
+		case when ifnull(D.prePrice3,0)!=0 then case when #{priceType}='1' 
+		Then D.prePrice3 else round(D.prePrice3*(1+D.preTaxRate3),#{pricePrec}) end else 0 end as preTaxPrice3,
+		A.bizType
+ 			from scmPurPrice A,scmPurPriceentry B 
+ 			left join scmPurPricePrepareentry D on B.itemId = D.itemId
+ 			and B.pmId = D.pmId and (D.vendorId1 &gt;0 or D.vendorId2 &gt;0 or D.vendorId3 &gt;0) 
+ 			and (D.prePrice1 &gt;0 or D.prePrice2 &gt;0 or D.prePrice3 &gt;0) and D.flag=1 and D.preSelVndrId &gt;0,
+			(Select Max(B.id) as id
+					from scmPurPriceentry B, scmPurPrice A 
+					left join scmPurPriceAssign C on A.id = C.pmId 
+				Where A.id=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' 
+				<if test="pmId == null or pmId =='' "> 
+					And A.begDate &lt;=#{bizDate}
+					And A.endDate &gt;=#{bizDate} 
+				</if>  
+				And B.itemId in (${itemIds})
+				<if test="vendorId != null and vendorId !='' "> 
+					And B.selVndrId=${vendorId}   
+				</if>
+				And (A.isAssignOrg = 0 or (A.isAssignOrg = 1 and C.finOrgUnitNo = #{finOrgUnitNo}))
+				<if test="pmId != null and pmId !='' "> 
+					And A.Id = #{pmId}   
+				</if>  
+				GROUP BY B.itemId ORDER BY A.pmDate Desc,B.id Desc) C
+		Where A.id=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' 
+		<if test="pmId == null or pmId =='' "> 
+			And A.begDate &lt;=#{bizDate}
+			And A.endDate &gt;=#{bizDate} 
+		</if>
+		<if test="vendorId != null and vendorId !='' "> 
+			And B.selVndrId=${vendorId} 
+		</if>	
+		And B.itemId in (${itemIds})
+		And B.id=C.id
+	</select> 
+	
+	<select id="scmpurprice.getPreMaterialPrice" resultType="ScmMaterialPrePrice" parameterType="Map">
+		Select B.itemId,A.id as priceBillId,
+			B.vendorId1 as preVendorId1,B.vendorId2 as preVendorId2,B.vendorId3 as preVendorId3,
+		case when #{priceType}='1' Then round(B.prePrice1/(1+B.preTaxRate1),#{pricePrec}) else B.prePrice1 end as prePrice1,
+		B.preTaxRate1,case when #{priceType}='1' Then B.prePrice1 else round(B.prePrice1*(1+B.preTaxRate1),#{pricePrec}) end as preTaxPrice1,
+		case when #{priceType}='1' Then round(B.prePrice2/(1+B.preTaxRate2),#{pricePrec}) else B.prePrice2 end as prePrice2,
+		B.preTaxRate2,case when #{priceType}='1' Then B.prePrice2 else round(B.prePrice2*(1+B.preTaxRate2),#{pricePrec}) end as preTaxPrice2,
+		case when #{priceType}='1' Then round(B.prePrice3/(1+B.preTaxRate3),#{pricePrec}) else B.prePrice3 end as prePrice3,
+		B.preTaxRate3,case when #{priceType}='1' Then B.prePrice3 else round(B.prePrice3*(1+B.preTaxRate3),#{pricePrec}) end as preTaxPrice3,
+		B.purUnit,A.bizType
+ 			from scmPurPrice A,scmPurPricePrepareentry B,
+			(Select Max(B.id) as id
+					from scmPurPricePrepareentry B, scmPurPrice A 
+					left join scmPurPriceAssign C on A.id = C.pmId 
+				Where A.id=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' 
+				<if test="pmId == null or pmId =='' "> 
+					And A.begDate &lt;=#{bizDate}
+					And A.endDate &gt;=#{bizDate} 
+				</if>  
+				And B.itemId in (${itemIds})
+				And (A.isAssignOrg = 0 or (A.isAssignOrg = 1 and C.finOrgUnitNo = #{finOrgUnitNo}))
+				<if test="pmId != null and pmId !='' "> 
+					And A.Id = #{pmId}   
+				</if>  
+				GROUP BY B.itemId ORDER BY A.pmDate Desc,B.id Desc) C
+		Where A.id=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' 
+		<if test="pmId == null or pmId =='' "> 
+			And A.begDate &lt;=#{bizDate}
+			And A.endDate &gt;=#{bizDate} 
+		</if>	
+		And B.itemId in (${itemIds})
+		And B.flag=1
+		And B.id=C.id
+	</select>
+	<select id="scmpurprice.getPrePrice" resultType="ScmPurPrice2" parameterType="Map">
+		SELECT scmPurPriceentry.price
+		 FROM scmPurPrice,scmPurPriceentry WHere scmPurPrice.Id=scmPurPriceentry.pmId
+		And scmPurPrice.orgUnitNo=#{orgUnitNo} and scmPurPrice.status='E' And scmPurPrice.begDate &lt; #{bizDate}
+		And scmPurPriceentry.itemId=${itemId} ORDER BY scmPurPriceentry.id Desc LIMIT 1;
+	</select> 
+	<select id="scmpurprice.getLastYearPrice" resultType="ScmPurPrice2" parameterType="Map">
+		SELECT scmPurPriceentry.price
+		 FROM scmPurPrice,scmPurPriceentry Where scmPurPrice.Id=scmPurPriceentry.pmId
+		And scmPurPrice.orgUnitNo=#{orgUnitNo} and scmPurPrice.status='E' And scmPurPrice.begDate &lt;= DATE_ADD(#{endDate},INTERVAL -1 YEAR)
+		And scmPurPrice.endDate &gt;= DATE_ADD(#{begDate},INTERVAL -1 YEAR)
+		And scmPurPriceentry.itemId=${itemId} ORDER BY scmPurPriceentry.id Desc LIMIT 1;
+	</select>
+	<select id="scmpurprice.selectForPushPage" resultType="ScmPurPrice2" parameterType="Map">
+		SELECT * FROM ScmPurPrice WHERE controlUnitNo=#{controlUnitNo} ORDER BY updateTimeStamp ASC
+	</select>
+	<select id="scmpurprice.selectByPmNo" resultType="ScmPurPrice2" parameterType="Map">
+		SELECT * FROM ScmPurPrice WHERE pmNo=#{pmNo} and controlUnitNo=#{controlUnitNo}
+	</select>  
+	<select id="scmpurprice.selectPrePriceByVendor" resultType="ScmMaterialPrePrice" parameterType="Map">
+		<foreach collection="ScmPurPriceQuery" item="item" separator="union">
+			SELECT scmPurPriceentry.itemId,scmPurPriceentry.price,scmPurPriceentry.selVndrId FROM ScmPurPriceentry,
+			(SELECT max(scmPurPriceentry.id) as id
+			 FROM scmPurPrice,scmPurPriceentry WHere scmPurPrice.Id=scmPurPriceentry.pmId
+			And scmPurPrice.orgUnitNo=#{item.purOrgUnitNo} and scmPurPrice.status='E' And scmPurPrice.begDate &lt;= #{item.beginDate}
+			And scmPurPriceentry.itemId = ${item.itemId} GROUP BY scmPurPriceentry.itemId) B
+			WHERE scmPurPriceentry.id = B.id
+		</foreach>
+	</select>
+	<select id="scmpurprice.selectLastYearPriceByVendor" resultType="ScmMaterialPrePrice" parameterType="Map">
+		<foreach collection="ScmPurPriceQuery" item="item" separator="union">
+			(SELECT scmPurPriceentry.price,scmPurPriceentry.itemid,scmPurPriceentry.selVndrId
+			FROM scmPurPrice,scmPurPriceentry Where scmPurPrice.Id=scmPurPriceentry.pmId
+			And scmPurPrice.orgUnitNo=#{item.purOrgUnitNo} and scmPurPrice.status='E' And scmPurPrice.begDate &lt;= DATE_ADD(#{item.endDate},INTERVAL -1 YEAR)
+			And scmPurPrice.endDate &gt;= DATE_ADD(#{item.beginDate},INTERVAL -1 YEAR)
+			<if test="getPriceWay != null and getPriceWay !='' "> 
+				And scmpurpriceentry.selvndrid=${item.vendorId}
+			</if>
+			And scmPurPriceentry.itemId=${item.itemId} ORDER BY scmPurPriceentry.id Desc LIMIT 1)
+		</foreach>
+	</select>
+	<select id="scmpurprice.getMaterialPriceByItemidsAndVendorIdsList" resultType="ScmMaterialPrice" parameterType="Map">
+		<foreach collection="ScmPurPriceQuery" item="item" separator="union">
+			Select B.itemId,A.id as priceBillId,
+			B.selVndrId as vendorId,case when D.preSelVndrId=D.vendorId1 then ifnull(D.vendorId1,0) else 0 end as preVendorId1,
+			case when D.preSelVndrId=D.vendorId2 then ifnull(D.vendorId2,0) else 0 end as preVendorId2,
+			case when D.preSelVndrId=D.vendorId3 then ifnull(D.vendorId3,0) else 0 end as preVendorId3,
+		case when #{priceType}='1' Then round(B.price/(1+B.taxRate),#{pricePrec}) else B.price end as price,
+		B.taxRate,case when #{priceType}='1' Then B.price else round(B.price*(1+B.taxRate),#{pricePrec}) end as taxPrice,B.purUnit,
+		case when ifnull(D.prePrice1,0)!=0 then case when #{priceType}='1' 
+		Then D.prePrice1 else round(D.prePrice1*(1+D.preTaxRate1),#{pricePrec}) end else 0 end as preTaxPrice1,
+		case when ifnull(D.prePrice2,0)!=0 then case when #{priceType}='1' 
+		Then D.prePrice2 else round(D.prePrice2*(1+D.preTaxRate2),#{pricePrec}) end else 0 end as preTaxPrice2,
+		case when ifnull(D.prePrice3,0)!=0 then case when #{priceType}='1' 
+		Then D.prePrice3 else round(D.prePrice3*(1+D.preTaxRate3),#{pricePrec}) end else 0 end as preTaxPrice3,
+		A.bizType
+ 			from scmPurPrice A,scmPurPriceentry B 
+ 			left join scmPurPricePrepareentry D on B.itemId = D.itemId
+ 			and B.pmId = D.pmId and (D.vendorId1 &gt;0 or D.vendorId2 &gt;0 or D.vendorId3 &gt;0) 
+ 			and (D.prePrice1 &gt;0 or D.prePrice2 &gt;0 or D.prePrice3 &gt;0) and D.flag=1 and D.preSelVndrId &gt;0,
+			(Select Max(B.id) as id
+					from scmPurPriceentry B, scmPurPrice A 
+					left join scmPurPriceAssign C on A.id = C.pmId 
+				Where A.id=B.pmId And A.orgUnitNo=#{item.purOrgUnitNo} and A.status='E' 
+				<if test="item.pmId == null or item.pmId =='' "> 
+					And A.begDate &lt;=#{item.bizDate}
+					And A.endDate &gt;=#{item.bizDate} 
+				</if>  
+				And B.itemId =${item.itemId}
+				<if test="getPriceWay != null and getPriceWay !='' "> 
+					And B.selVndrId=${item.vendorId}   
+				</if>
+				And (A.isAssignOrg = 0 or (A.isAssignOrg = 1 and C.finOrgUnitNo = #{item.finOrgUnitNo}))
+				<if test="item.pmId != null and item.pmId !='' "> 
+					And A.Id = #{item.pmId}   
+				</if>  
+				GROUP BY B.itemId ORDER BY A.pmDate Desc,B.id Desc) C
+		Where A.id=B.pmId And A.orgUnitNo=#{item.purOrgUnitNo} and A.status='E' 
+		<if test="item.pmId == null or item.pmId =='' "> 
+			And A.begDate &lt;=#{item.bizDate}
+			And A.endDate &gt;=#{item.bizDate} 
+		</if>
+		<if test="getPriceWay != null and getPriceWay !='' "> 
+			And B.selVndrId=${item.vendorId}   
+		</if>
+		And B.itemId =${item.itemId}
+		And B.id=C.id
+		</foreach>
+	</select>
+	<insert id="scmpurprice.add" parameterType="ScmPurPrice"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurprice (
+        pmNo,
+        bizType,
+        orgUnitNo,
+        finOrgUnitNo,
+        pmDate,
+        begDate,
+        endDate,
+        quotationExpiryDate,
+        groupId1,
+        groupId2,
+        groupId3,
+        vendorId1,
+        vendorId2,
+        vendorId3,
+        pqId1,
+        pqId2,
+        pqId3,
+        vendorPqDate1,
+        vendorPqDate2,
+        vendorPqDate3,
+        selVndrId,
+        priceName,
+        inclueTax,
+        currencyNo,
+        exchangeRate,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        checker,
+        checkDate,
+        prtcount,
+        status,
+        confirmStatus,
+        remarks,
+        workFlowNo,
+        stepNo,
+        isAssignOrg,
+        businessAutoQuotation,
+        controlUnitNo        )
+		VALUES (
+        #{pmNo},
+        #{bizType},
+        #{orgUnitNo},
+        #{finOrgUnitNo},
+        #{pmDate},
+        #{begDate},
+        #{endDate},
+        #{quotationExpiryDate},
+        #{groupId1},
+        #{groupId2},
+        #{groupId3},
+        #{vendorId1},
+        #{vendorId2},
+        #{vendorId3},
+        #{pqId1},
+        #{pqId2},
+        #{pqId3},
+        #{vendorPqDate1},
+        #{vendorPqDate2},
+        #{vendorPqDate3},
+        #{selVndrId},
+        #{priceName},
+        #{inclueTax},
+        #{currencyNo},
+        #{exchangeRate},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{checker},
+        #{checkDate},
+        #{prtcount},
+        #{status},
+        #{confirmStatus},
+        #{remarks},
+        #{workFlowNo},
+        #{stepNo},
+        #{isAssignOrg},
+        #{businessAutoQuotation},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpurprice.update" parameterType="ScmPurPrice">
+		UPDATE scmpurprice set
+        pmNo=#{pmNo},
+        bizType=#{bizType},
+        orgUnitNo=#{orgUnitNo},
+        finOrgUnitNo=#{finOrgUnitNo},
+        pmDate=#{pmDate},
+        begDate=#{begDate},
+        endDate=#{endDate},
+        quotationExpiryDate=#{quotationExpiryDate},
+        groupId1=#{groupId1},
+        groupId2=#{groupId2},
+        groupId3=#{groupId3},
+        vendorId1=#{vendorId1},
+        vendorId2=#{vendorId2},
+        vendorId3=#{vendorId3},
+        pqId1=#{pqId1},
+        pqId2=#{pqId2},
+        pqId3=#{pqId3},
+        vendorPqDate1=#{vendorPqDate1},
+        vendorPqDate2=#{vendorPqDate2},
+        vendorPqDate3=#{vendorPqDate3},
+        selVndrId=#{selVndrId},
+        priceName=#{priceName},
+        inclueTax=#{inclueTax},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        prtcount=#{prtcount},
+        status=#{status},
+        confirmStatus=#{confirmStatus},
+        remarks=#{remarks},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        isAssignOrg=#{isAssignOrg},
+        businessAutoQuotation=#{businessAutoQuotation},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 	<update id="scmpurprice.updateVendorPqData" parameterType="Map">
+ 		UPDATE scmpurprice set updateTimeStamp=updateTimeStamp
+ 		<if test="vendorPqDate1!=null and vendorPqDate1!=''">
+			,vendorPqDate1 = #{vendorPqDate1}
+		</if>
+ 		<if test="pqId1!=null and pqId1!=''">
+			,pqId1 = #{pqId1}
+		</if>
+		<if test="vendorPqDate2!=null and vendorPqDate2!=''">
+			,vendorPqDate2 = #{vendorPqDate2}
+		</if>
+ 		<if test="pqId2!=null and pqId2!=''">
+			,pqId2 = #{pqId2}
+		</if>
+		<if test="vendorPqDate3!=null and vendorPqDate3!=''">
+			,vendorPqDate3 = #{vendorPqDate3}
+		</if>
+ 		<if test="pqId3!=null and pqId3!=''">
+			,pqId3 = #{pqId3}
+		</if>
+		<if test="confirmStatus!=null and confirmStatus!=''">
+			,confirmStatus = #{confirmStatus}
+		</if>
+ 		WHERE id = #{pmId} and controlUnitNo=#{controlUnitNo}
+	</update>
+	<delete id="scmpurprice.delete" parameterType="String">
+		DELETE FROM scmpurprice WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvcountingcostcenter">
+ 
+    <!-- default parameterType="HashMap" -->
+    <select id="scminvcountingcostcenter.findAll" resultType="ScmInvCountingCostCenter2" >
+        SELECT * FROM ScmInvCountingCostCenter WHERE  1=1  
+    </select>
+ 
+    <select id="scminvcountingcostcenter.findAllPage" resultType="ScmInvCountingCostCenter2" parameterType="Map"> 
+        SELECT ScmInvCountingCostCenter.*,
+        ScmInvCountingTask.taskNo, ScmInvCountingTask.remarks as taskRemarks, ScmInvCountingTask.countingBegTime, ScmInvCountingTask.countingEndTime
+        FROM ScmInvCountingCostCenter,ScmInvCountingTask
+        WHERE ScmInvCountingTask.taskId = ScmInvCountingCostCenter.taskId
+        ORDER BY tableId ASC
+    </select> 
+    <select id="scminvcountingcostcenter.selectById" resultType="ScmInvCountingCostCenter2" parameterType="Long">
+        SELECT *,ifnull((Select sum(amt) from ScmInvCountingCostCenterEntry Where tableId=ScmInvCountingCostCenter.tableId),0) as amt,
+        	ifnull((Select sum(taxAmt) from ScmInvCountingCostCenterEntry Where tableId=ScmInvCountingCostCenter.tableId),0) as taxAmt
+         FROM ScmInvCountingCostCenter WHERE tableId = #{value}
+    </select> 
+    <select id="scminvcountingcostcenter.findDifference" resultType="ScmInvCountingCostCenter2" parameterType="Map">
+		SELECT distinct ScmInvCountingCostCenter.*,
+		ScmInvCountingTask.taskNo as taskNo
+		FROM ScmInvCountingCostCenter
+		left join ScmInvCountingTask on ScmInvCountingCostCenter.taskId=ScmInvCountingTask.taskId,ScmInvCountingCostCenterentry
+		WHERE ScmInvCountingCostCenter.taskId = #{taskId}
+		and ScmInvCountingCostCenter.tableId=ScmInvCountingCostCenterentry.tableId
+		and ScmInvCountingCostCenterentry.differQty != 0
+	</select> 
+	<select id="scminvcountingcostcenter.selectByTaskNo" resultType="ScmInvCountingCostCenter2" parameterType="Map">
+		SELECT ScmInvCountingCostCenter.* FROM ScmInvCountingCostCenter,ScmInvCountingTask
+		WHERE ScmInvCountingCostCenter.taskId=ScmInvCountingTask.taskId
+		AND ScmInvCountingTask.taskNo = #{taskNo} And ScmInvCountingTask.controlUnitNo=#{controlUnitNo}
+	</select> 
+	<select id="scminvcountingcostcenter.selectByTaskIdPage" resultType="ScmInvCountingCostCenter2" parameterType="Map">
+		SELECT ScmInvCountingCostCenter.*,ScmInvCountingTask.taskNo FROM ScmInvCountingCostCenter,ScmInvCountingTask
+		WHERE ScmInvCountingTask.taskId = ScmInvCountingCostCenter.taskId And ScmInvCountingCostCenter.taskId=#{taskId}
+		ORDER BY ScmInvCountingCostCenter.tableId ASC
+	</select> 
+	<select id="scminvcountingcostcenter.selectByTaskNoAndUseOrgUnitNo" resultType="ScmInvCountingCostCenter2" parameterType="Map">
+		SELECT ScmInvCountingCostCenter.* FROM ScmInvCountingCostCenter,ScmInvCountingTask
+		WHERE ScmInvCountingCostCenter.taskId=ScmInvCountingTask.taskId And ScmInvCountingCostCenter.useOrgUnitNo=#{useOrgUnitNo}
+		AND ScmInvCountingTask.taskNo = #{taskNo} And ScmInvCountingTask.controlUnitNo=#{controlUnitNo}
+	</select>
+    <insert id="scminvcountingcostcenter.add" parameterType="ScmInvCountingCostCenter"  keyProperty="tableId" useGeneratedKeys="true"> 
+        INSERT INTO  ScmInvCountingCostCenter (
+        taskId,
+        orgUnitNo,
+        useOrgUnitNo,
+        bizDate,
+        taskBegTime,
+        taskEndTime,
+        countingPerson,
+        countingAgainPerson,
+        countingMonitorer,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        status,
+        remarks,
+        controlUnitNo        )
+        VALUES (
+        #{taskId},
+        #{orgUnitNo},
+        #{useOrgUnitNo},
+        #{bizDate},
+        #{taskBegTime},
+        #{taskEndTime},
+        #{countingPerson},
+        #{countingAgainPerson},
+        #{countingMonitorer},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{status},
+        #{remarks},
+        #{controlUnitNo}        )
+    </insert>
+ 
+    <update id="scminvcountingcostcenter.update" parameterType="ScmInvCountingCostCenter">
+        UPDATE ScmInvCountingCostCenter set
+        taskId=#{taskId},
+        orgUnitNo=#{orgUnitNo},
+        useOrgUnitNo=#{useOrgUnitNo},
+        bizDate=#{bizDate},
+        taskBegTime=#{taskBegTime},
+        taskEndTime=#{taskEndTime},
+        countingPerson=#{countingPerson},
+        countingAgainPerson=#{countingAgainPerson},
+        countingMonitorer=#{countingMonitorer},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        status=#{status},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}       WHERE tableId = #{tableId}
+    </update>
+ 
+    <delete id="scminvcountingcostcenter.delete" parameterType="String">
+        DELETE FROM ScmInvCountingCostCenter WHERE tableId IN (${value})
+    </delete> 
+    
+    <delete id="scminvcountingcostcenter.deleteNotExist" parameterType="Map">
+		DELETE FROM ScmInvCountingCostCenter WHERE TableID not in (select distinct TableID from ScmInvCountingCostCenterentry group by TableID)
+		and taskId = #{taskId}
+	</delete>
+
+</mapper>

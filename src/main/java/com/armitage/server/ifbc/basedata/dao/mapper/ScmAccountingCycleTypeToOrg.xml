@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmaccountingcycletypetoorg">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmaccountingcycletypetoorg.findAll" resultType="ScmAccountingCycleTypeToOrg2" >
+	    SELECT * FROM ScmAccountingCycleTypeToOrg WHERE  1=1  
+	</select>
+ 
+	<select id="scmaccountingcycletypetoorg.findAllPage" resultType="ScmAccountingCycleTypeToOrg2" parameterType="Map"> 
+		SELECT * FROM ScmAccountingCycleTypeToOrg WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmaccountingcycletypetoorg.selectById" resultType="ScmAccountingCycleTypeToOrg2" parameterType="Long">
+		SELECT * FROM ScmAccountingCycleTypeToOrg WHERE id = #{value}
+	</select> 
+	<select id="scmaccountingcycletypetoorg.selectByOrgUnit" resultType="ScmAccountingCycleTypeToOrg2" parameterType="Map">
+		SELECT * FROM ScmAccountingCycleTypeToOrg WHERE orgUnitNo = #{orgUnitNo}
+	</select> 
+	<insert id="scmaccountingcycletypetoorg.add" parameterType="ScmAccountingCycleTypeToOrg"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmAccountingCycleTypeToOrg (
+        typeId,
+        orgUnitNo        )
+		VALUES (
+        #{typeId},
+        #{orgUnitNo}        )
+	</insert>
+ 
+	<update id="scmaccountingcycletypetoorg.update" parameterType="ScmAccountingCycleTypeToOrg">
+		UPDATE ScmAccountingCycleTypeToOrg set
+        typeId=#{typeId},
+        orgUnitNo=#{orgUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmaccountingcycletypetoorg.delete" parameterType="String">
+		DELETE FROM ScmAccountingCycleTypeToOrg WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

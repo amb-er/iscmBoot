@@ -1,0 +1,921 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvcost">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvcost.findAll" resultType="ScmInvCost" >
+	    SELECT * FROM scminvcost WHERE  1=1  
+	</select>
+ 
+	<select id="scminvcost.findAllPage" resultType="ScmInvCost" parameterType="Map"> 
+		SELECT * FROM scminvcost WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scminvcost.selectById" resultType="ScmInvCost" parameterType="Long">
+		SELECT * FROM scminvcost WHERE id = #{value}
+	</select> 
+	<insert id="scminvcost.addByOtherInWarehsBill" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into scminvcost(FinOrgUnitNo, OrgUnitNo, WareHouseID,
+		CostOrgUnitNo, costCenter, itemId, Qty, Price, Amt,
+		Unit,taxRate,taxPrice,taxAmt)
+		Select
+		T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,'','0',T1.itemId,T1.Qty,case when T1.Qty = 0 then 0 else ROUND(T1.Amt/T1.Qty,4) end,T1.Amt,T1.Unit,T1.taxRate,case when T1.Qty = 0 then 0 else ROUND(T1.taxAmt/T1.Qty,4) end,T1.taxAmt
+		From
+		(select
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit,sum(T.qty)
+		as qty,sum(T.amt) as amt,T.taxRate,T.taxPrice,sum(T.taxAmt) as taxAmt
+		from (SELECT M.wrId,d.lineId,M.bizdate as
+		invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,D.baseUnit,D.baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		Where M.wrId = #{wrId} And M.status = 'A' And M.wrId = D.wrId order by d.lineid) T
+		group by
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemno,T.unit) T1
+		Left Join scminvcost T2
+		On T1.itemId = T2.itemId And T1.FinOrgUnitNo = T2.FinOrgUnitNo And
+		T2.OrgUnitNo = T1.OrgUnitNo And T1.WareHouseID = T2.WareHouseID And
+		T1.CostOrgUnitNo = T2.CostOrgUnitNo And
+		T1.Unit = T2.Unit
+		Where T2.itemId is Null
+	</insert>
+	<insert id="scminvcost.addByPurInWarehsBill" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into scminvcost(FinOrgUnitNo, OrgUnitNo, WareHouseID,
+		CostOrgUnitNo, costCenter, ItemId, Qty, Price, Amt,
+		Unit,taxRate,taxPrice,taxAmt)
+		Select T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case
+		when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0
+		end),T1.ItemId,T1.Qty,case when T1.Qty = 0 then 0 else
+		ROUND(T1.Amt/T1.Qty,4) end,T1.Amt,T1.Unit,T1.taxRate,case when T1.Qty =
+		0 then 0 else ROUND(T1.taxAmt/T1.Qty,4) end,T1.taxAmt
+		From
+		(select
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit,sum(T.qty)
+		as qty,sum(T.amt) as amt,T.taxRate,sum(T.taxAmt) as taxAmt
+		from (select M.WRID,M.BizDate as InvDate,D.FinOrgUnitNo,(CASE IFNULL(D.WareHouseID,0)
+		WHEN 0 THEN D.UseOrgUnitNo ELSE D.OrgUnitNo END) as OrgUnitNo,
+		IFNULL(D.WareHouseID,0) as WareHouseID,IFNULL(D.CostOrgUnitNo,'') as
+		CostOrgUnitNo,D.ItemId,D.Unit,D.PieUnit,D.Lot,IFNULL(D.Qty,0) as
+		Qty,IFNULL(D.PieQty,0) as PieQty,
+		IFNULL(D.Price,0) as Price,IFNULL(D.Amt,0) as Amt,D.TaxRate,D.taxPrice,D.taxAmt,D.ExpDate,
+		D.sourceBillDtlId as sourceBillID,D.BaseUnit,IFNULL(D.BaseQty,0) as BaseQty,(CASE M.biztype
+		WHEN '2' THEN 0 ELSE M.VendorId END) as
+		VendorId,M.accountYear as fYear,M.accountPeriod as period
+		From scminvpurinwarehsbill as M,scminvpurinwarehsbillEntry as D,scmmaterial as A
+		Where M.WRID = #{wrId} And	M.Status = 'A' And	M.WRID = D.WRID And	D.ItemId = A.id) T
+		group by
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit)
+		T1
+		Left Join scminvcost T2
+		On T1.itemId = T2.itemId And T1.FinOrgUnitNo = T2.FinOrgUnitNo And
+		T2.OrgUnitNo = T1.OrgUnitNo And T1.WareHouseID = T2.WareHouseID And
+		T1.CostOrgUnitNo = T2.CostOrgUnitNo And
+		T1.Unit = T2.Unit
+		Where T2.itemId is Null
+	</insert>
+
+    <insert id="scminvcost.addByMoveBillIn" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		insert into scminvcost(finOrgUnitNo, orgUnitNo, wareHouseId, costOrgUnitNo, costCenter, 
+		    itemId, qty, price, amt, unit, taxAmt, taxRate, taxPrice)
+		    select 
+		        T1.finOrgUnitNo, T1.inOrgUnitNo, 0, T1.inCstOrgUnitNo, 1, T1.itemId, t1.qty, T1.amt/T1.qty, T1.amt, T1.unit,
+		        T1.taxAmt, T1.taxRate, T1.taxAmt/T1.qty
+		    from 
+		        (select 
+		            M.finOrgUnitNo, M.inOrgUnitNo, M.inCstOrgUnitNo, D.itemId, SUM(D.qty) as qty, SUM(D.amt) as amt, D.unit, 
+		            SUM(D.taxAmt) as taxAmt, D.taxRate
+		        from 
+		            scminvmovebill M, scminvmovebillentry D, 
+		            scmmaterial as A
+		        where 
+		            M.wtId = #{wtId}
+		            and M.wtId = D.wtId
+		            and M.`status` = 'A'
+		            and D.itemId = A.id
+		        group by M.finOrgUnitNo, M.inOrgUnitNo, M.inCstOrgUnitNo, D.itemId, D.unit) T1
+		    left join scminvcost T2 on T2.itemId = T1.itemId
+		    and T2.finOrgUnitNo = T1.finOrgUnitNo
+		    and T2.orgUnitNo = T1.inOrgUnitNo
+		    and T2.costOrgUnitNo = T2.costOrgUnitNo
+		    and T2.unit = T1.unit
+		where T2.itemId is null
+    </insert>
+
+    <insert id="scminvcost.addByMoveBillOut" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+        insert into scminvcost(finOrgUnitNo, orgUnitNo, wareHouseId, costOrgUnitNo, costCenter, 
+            itemId, qty, price, amt, unit, taxAmt, taxRate, taxPrice)
+            select 
+                T1.finOrgUnitNo, T1.outOrgUnitNo, 0, T1.outCstOrgUnitNo, 1, T1.itemId, t1.qty, T1.amt/T1.qty, T1.amt, T1.unit,
+                T1.taxAmt, T1.taxRate, T1.taxAmt/T1.qty
+            from 
+                (select 
+                    M.finOrgUnitNo, M.outOrgUnitNo, M.outCstOrgUnitNo, D.itemId, SUM(D.qty) as qty, SUM(D.amt) as amt, D.unit, 
+                    SUM(D.taxAmt) as taxAmt, D.taxRate
+                from 
+                    scminvmovebill M, scminvmovebillentry D, 
+                    scmmaterial as A
+                where 
+                    M.wtId = #{wtId}
+                    and M.wtId = D.wtId
+                    and M.`status` = 'E'
+                    and D.itemId = A.id
+                group by M.finOrgUnitNo, M.outOrgUnitNo, M.outCstOrgUnitNo, D.itemId, D.unit) T1
+            left join scminvcost T2 on T2.itemId = T1.itemId
+            and T2.finOrgUnitNo = T1.finOrgUnitNo
+            and T2.orgUnitNo = T1.outOrgUnitNo
+            and T2.costOrgUnitNo = T2.costOrgUnitNo
+            and T2.unit = T1.unit
+        where T2.itemId is null
+    </insert>
+    
+	<insert id="scminvcost.addByMaterialReqBillOutOrgunitNo" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into scminvcost(FinOrgUnitNo, OrgUnitNo, WareHouseID,
+		CostOrgUnitNo, costCenter, itemId, Qty, Price, Amt, Unit, taxAmt,
+		taxRate, taxPrice)
+		Select
+		T1.FinOrgUnitNo,T1.OrgUnitNo,0,T1.CostOrgUnitNo,0,T1.itemId,T1.Qty,ROUND(T1.Amt/T1.Qty,4),T1.Amt,T1.Unit,T1.taxAmt,T1.taxRate,ROUND(T1.taxAmt/T1.qty,4)
+		From
+		(select M.FinOrgUnitNo,M.UseOrgUnitNo AS
+		orgunitno,M.CostOrgUnitNo,D.itemId,D.UNIT,sum(D.qty) as qty,sum(D.amt)
+		as amt,sum(D.taxAmt) as taxAmt,D.taxRate
+		from scminvmaterialreqbill M,scminvmaterialreqbillEntry D,scmmaterial as
+		A,scmmaterialCompanyInfo B
+		where M.OTID = D.OTID and
+		M.OTID = #{otId} And
+		M.Status = 'A' And
+		D.itemId = A.id And
+		A.id = B.ItemID And
+		B.orgunitno = M.FinOrgUnitNo And
+		B.Costing = 'WMA'
+		group by M.FinOrgUnitNo,M.UseOrgUnitNo,M.CostOrgUnitNo,D.itemId,D.UNIT) T1
+		Left Join scminvcost T2
+		On T1.itemId = T2.itemId And T1.FinOrgUnitNo = T2.FinOrgUnitNo And
+		T2.OrgUnitNo = T1.OrgUnitNo And T1.CostOrgUnitNo = T2.CostOrgUnitNo And
+		T1.Unit = T2.Unit
+		Where T2.itemId is Null      
+    </insert>
+    
+	<insert id="scminvcost.add" parameterType="ScmInvCost"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvcost (
+        finOrgUnitNo,
+        orgUnitNo,
+        wareHouseId,
+        costOrgUnitNo,
+        costCenter,
+        itemId,
+        qty,
+        unit,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt        )
+		VALUES (
+        #{finOrgUnitNo},
+        #{orgUnitNo},
+        #{wareHouseId},
+        #{costOrgUnitNo},
+        #{costCenter},
+        #{itemId},
+        #{qty},
+        #{unit},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt}        )
+	</insert>
+ 
+	<update id="scminvcost.update" parameterType="ScmInvCost">
+		UPDATE scminvcost set
+        finOrgUnitNo=#{finOrgUnitNo},
+        orgUnitNo=#{orgUnitNo},
+        wareHouseId=#{wareHouseId},
+        costOrgUnitNo=#{costOrgUnitNo},
+        costCenter=#{costCenter},
+        itemId=#{itemId},
+        qty=#{qty},
+        unit=#{unit},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt}		 WHERE id = #{id}
+	</update>
+	
+	<update id="scminvcost.updateByOtherInWarehsBill" parameterType="Map">
+		Update scminvcost T2,
+		(select
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit,sum(T.qty)
+		as qty,sum(T.amt) as amt,T.taxRate,T.taxPrice,sum(T.taxAmt) as taxAmt
+		from (SELECT M.wrId,d.lineId,M.bizdate as
+		invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,D.baseUnit,D.baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		Where M.wrId = #{wrId} And	M.status = 'A' And M.wrId = D.wrId order by d.lineid) T
+		group by
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemno,T.unit) T1
+		Set T2.Qty = T2.Qty + T1.Qty,T2.Amt = T2.Amt + T1.Amt,
+		T2.Price = case when (T2.Qty + T1.Qty) = 0 then 0 else Round((T2.Amt +
+		T1.Amt)/(T2.Qty + T1.Qty),4) end,T2.taxRate = T1.taxRate,T2.taxAmt = T2.taxAmt + T1.taxAmt,
+		T2.taxPrice = case when (T2.Qty + T1.Qty) = 0 then 0 else Round((T2.taxAmt + T1.taxAmt)/(T2.Qty + T1.Qty),4) end
+		Where T1.FinOrgUnitNo = T2.FinOrgUnitNo And T2.OrgUnitNo = T1.OrgUnitNo And
+		IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0) And
+		IFNULL(T1.CostOrgUnitNo,0) = IFNULL(T2.CostOrgUnitNo,0) And
+		T2.itemId = T1.itemId And T1.Unit = T2.Unit
+	</update>
+	
+	<update id="scminvcost.updateByCancelOtherInWarehsBill" parameterType="Map">
+		Update scminvcost T2,
+		(select
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit,sum(T.qty)
+		as qty,sum(T.amt) as amt,T.taxRate,T.taxPrice,sum(T.taxAmt) as taxAmt
+		from (SELECT M.wrId,d.lineId,M.bizdate as
+		invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,D.baseUnit,D.baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		Where M.wrId = #{wrId} And	M.status = 'E' And M.wrId = D.wrId order by d.lineid) T
+		group by
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemno,T.unit) T1
+		Set T2.Qty = T2.Qty - T1.Qty,T2.Amt = T2.Amt - T1.Amt,
+		T2.Price = case when (T2.Qty - T1.Qty) = 0 then 0 else Round((T2.Amt -
+		T1.Amt)/(T2.Qty - T1.Qty),4) end,T2.taxRate = T1.taxRate,T2.taxAmt = T2.taxAmt - T1.taxAmt,
+		T2.taxPrice = case when (T2.Qty - T1.Qty) = 0 then 0 else Round((T2.taxAmt - T1.taxAmt)/(T2.Qty - T1.Qty),4) end
+		Where T1.FinOrgUnitNo = T2.FinOrgUnitNo And T2.OrgUnitNo = T1.OrgUnitNo And
+		IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0) And
+		IFNULL(T1.CostOrgUnitNo,0) = IFNULL(T2.CostOrgUnitNo,0) And
+		T2.itemId = T1.itemId And T1.Unit = T2.Unit
+	</update>
+	
+	<update id="scminvcost.updateByPurInWarehsBill" parameterType="Map">
+		Update scminvcost T2,(select
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit,sum(T.qty)
+		as qty,sum(T.amt) as amt,T.taxRate,sum(T.taxAmt) as taxAmt
+		from (select M.WRID,M.BizDate as InvDate,D.FinOrgUnitNo,(CASE IFNULL(D.WareHouseID,0)
+		WHEN 0 THEN D.UseOrgUnitNo ELSE D.OrgUnitNo END) as OrgUnitNo,
+		IFNULL(D.WareHouseID,0) as WareHouseID,IFNULL(D.CostOrgUnitNo,'') as
+		CostOrgUnitNo,D.ItemId,D.Unit,D.PieUnit,D.Lot,IFNULL(D.Qty,0) as
+		Qty,IFNULL(D.PieQty,0) as PieQty,
+		IFNULL(D.Price,0) as Price,IFNULL(D.Amt,0) as Amt,D.TaxRate,D.taxPrice,D.taxAmt,D.ExpDate,
+		D.sourceBillDtlId as sourceBillID,D.BaseUnit,IFNULL(D.BaseQty,0) as BaseQty,(CASE M.biztype
+		WHEN '2' THEN 0 ELSE M.VendorId END) as
+		VendorId,M.accountYear as fYear,M.accountPeriod as period
+		From scminvpurinwarehsbill as M,scminvpurinwarehsbillEntry as D,scmmaterial	as A
+		Where M.WRID = #{wrId} And	M.Status = 'A' And	M.WRID = D.WRID And	D.ItemId = A.id) T
+		group by
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit)	T1
+		Set T2.Qty = T2.Qty + T1.Qty,T2.Amt = T2.Amt + T1.Amt,
+		T2.Price = case when (T2.Qty + T1.Qty) = 0 then 0 else Round((T2.Amt +
+		T1.Amt)/(T2.Qty + T1.Qty),4) end,T2.taxRate = T1.taxRate,T2.taxAmt =
+		T2.taxAmt + T1.taxAmt,T2.taxPrice = case when (T2.Qty + T1.Qty) = 0
+		then 0 else Round((T2.taxAmt + T1.taxAmt)/(T2.Qty + T1.Qty),4) end
+		Where T1.FinOrgUnitNo = T2.FinOrgUnitNo And T2.OrgUnitNo = T1.OrgUnitNo
+		And
+		IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0) And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And
+		T2.itemId = T1.itemId And T1.Unit = T2.Unit
+	</update>
+	
+	<update id="scminvcost.updateByCancelPurInWarehsBill" parameterType="Map">
+		Update scminvcost T2,(select
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit,sum(T.qty)
+		as qty,sum(T.amt) as amt,T.taxRate,sum(T.taxAmt) as taxAmt
+		from (select M.WRID,M.BizDate as InvDate,D.FinOrgUnitNo,(CASE IFNULL(D.WareHouseID,0)
+		WHEN 0 THEN D.UseOrgUnitNo ELSE D.OrgUnitNo END) as OrgUnitNo,
+		IFNULL(D.WareHouseID,0) as WareHouseID,IFNULL(D.CostOrgUnitNo,'') as
+		CostOrgUnitNo,D.ItemId,D.Unit,D.PieUnit,D.Lot,IFNULL(D.Qty,0) as
+		Qty,IFNULL(D.PieQty,0) as PieQty,
+		IFNULL(D.Price,0) as Price,IFNULL(D.Amt,0) as Amt,D.TaxRate,D.taxPrice,D.taxAmt,D.ExpDate,
+		D.sourceBillDtlId as sourceBillID,D.BaseUnit,IFNULL(D.BaseQty,0) as BaseQty,(CASE M.biztype
+		WHEN '2' THEN 0 ELSE M.VendorId END) as
+		VendorId,M.accountYear as fYear,M.accountPeriod as period
+		From scminvpurinwarehsbill as M,scminvpurinwarehsbillEntry as D,scmmaterial	as A
+		Where M.WRID = #{wrId} And	M.Status = 'E' And	M.WRID = D.WRID And	D.ItemId = A.id) T
+		group by
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit)	T1
+		Set T2.Qty = T2.Qty - T1.Qty,T2.Amt = T2.Amt - T1.Amt,
+		T2.Price = case when (T2.Qty - T1.Qty) = 0 then 0 else Round((T2.Amt -
+		T1.Amt)/(T2.Qty - T1.Qty),4) end,T2.taxRate = T1.taxRate,T2.taxAmt =
+		T2.taxAmt - T1.taxAmt,T2.taxPrice = case when (T2.Qty - T1.Qty) = 0
+		then 0 else Round((T2.taxAmt - T1.taxAmt)/(T2.Qty - T1.Qty),4) end
+		Where T1.FinOrgUnitNo = T2.FinOrgUnitNo And T2.OrgUnitNo = T1.OrgUnitNo
+		And
+		IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0) And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And
+		T2.itemId = T1.itemId And T1.Unit = T2.Unit
+	</update>
+	
+	<update id="scminvcost.updateByPurInWarehsBillOut" parameterType="Map">
+		Update scminvcost T2,(select
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit,sum(T.qty)
+		as qty,sum(T.amt) as amt,T.taxRate,sum(T.taxAmt) as taxAmt
+		from (select M.WRID,M.BizDate as InvDate,D.FinOrgUnitNo,(CASE IFNULL(D.WareHouseID,0)
+		WHEN 0 THEN D.UseOrgUnitNo ELSE D.OrgUnitNo END) as OrgUnitNo,
+		IFNULL(D.WareHouseID,0) as WareHouseID,IFNULL(D.CostOrgUnitNo,'') as
+		CostOrgUnitNo,D.ItemId,D.Unit,D.PieUnit,D.Lot,IFNULL(D.Qty,0) as
+		Qty,IFNULL(D.PieQty,0) as PieQty,
+		IFNULL(D.Price,0) as Price,IFNULL(D.Amt,0) as Amt,D.TaxRate,D.taxPrice,D.taxAmt,D.ExpDate,
+		D.sourceBillDtlId as sourceBillID,D.BaseUnit,IFNULL(D.BaseQty,0) as BaseQty,(CASE M.biztype
+		WHEN '2' THEN 0 ELSE M.VendorId END) as
+		VendorId,M.accountYear as fYear,M.accountPeriod as period
+		From scminvpurinwarehsbill as M,scminvpurinwarehsbillEntry as D,scmmaterial	as A
+		Where M.WRID = #{wrId} And	M.Status = 'A' And	M.WRID = D.WRID And	D.ItemId = A.id) T
+		group by
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit)	T1
+		Set T2.Qty = T2.Qty - T1.Qty,T2.Amt = T2.Amt - T1.Amt,
+		T2.Price = case when (T2.Qty - T1.Qty) = 0 then 0 else Round((T2.Amt -
+		T1.Amt)/(T2.Qty - T1.Qty),4) end,T2.taxRate = T1.taxRate,T2.taxAmt =
+		T2.taxAmt - T1.taxAmt,T2.taxPrice = case when (T2.Qty - T1.Qty) = 0
+		then 0 else Round((T2.taxAmt - T1.taxAmt)/(T2.Qty - T1.Qty),4) end
+		Where T1.FinOrgUnitNo = T2.FinOrgUnitNo And T2.OrgUnitNo = T1.OrgUnitNo
+		And
+		IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0) And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And
+		T2.itemId = T1.itemId And T1.Unit = T2.Unit
+	</update>
+	
+	<update id="scminvcost.updateByCancelPurInWarehsBillOut" parameterType="Map">
+		Update scminvcost T2,(select
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit,sum(T.qty)
+		as qty,sum(T.amt) as amt,T.taxRate,sum(T.taxAmt) as taxAmt
+		from (select M.WRID,M.BizDate as InvDate,D.FinOrgUnitNo,(CASE IFNULL(D.WareHouseID,0)
+		WHEN 0 THEN D.UseOrgUnitNo ELSE D.OrgUnitNo END) as OrgUnitNo,
+		IFNULL(D.WareHouseID,0) as WareHouseID,IFNULL(D.CostOrgUnitNo,'') as
+		CostOrgUnitNo,D.ItemId,D.Unit,D.PieUnit,D.Lot,IFNULL(D.Qty,0) as
+		Qty,IFNULL(D.PieQty,0) as PieQty,
+		IFNULL(D.Price,0) as Price,IFNULL(D.Amt,0) as Amt,D.TaxRate,D.taxPrice,D.taxAmt,D.ExpDate,
+		D.sourceBillDtlId as sourceBillID,D.BaseUnit,IFNULL(D.BaseQty,0) as BaseQty,(CASE M.biztype
+		WHEN '2' THEN 0 ELSE M.VendorId END) as
+		VendorId,M.accountYear as fYear,M.accountPeriod as period
+		From scminvpurinwarehsbill as M,scminvpurinwarehsbillEntry as D,scmmaterial	as A
+		Where M.WRID = #{wrId} And	M.Status = 'E' And	M.WRID = D.WRID And	D.ItemId = A.id) T
+		group by
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit)	T1
+		Set T2.Qty = T2.Qty + T1.Qty,T2.Amt = T2.Amt + T1.Amt,
+		T2.Price = case when (T2.Qty + T1.Qty) = 0 then 0 else Round((T2.Amt +
+		T1.Amt)/(T2.Qty + T1.Qty),4) end,T2.taxRate = T1.taxRate,T2.taxAmt =
+		T2.taxAmt + T1.taxAmt,T2.taxPrice = case when (T2.Qty + T1.Qty) = 0
+		then 0 else Round((T2.taxAmt + T1.taxAmt)/(T2.Qty + T1.Qty),4) end
+		Where T1.FinOrgUnitNo = T2.FinOrgUnitNo And T2.OrgUnitNo = T1.OrgUnitNo
+		And
+		IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0) And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And
+		T2.itemId = T1.itemId And T1.Unit = T2.Unit
+	</update>
+	
+    <update id="scminvcost.updateByMoveBillOutSub" parameterType="Map">
+		update scminvcost T2,
+		(select 
+		    M.finOrgUnitNo, M.outOrgUnitNo, M.outCstOrgUnitNo, D.itemId, D.unit, SUM(D.qty) as qty, SUM(D.amt) as amt, SUM(D.taxAmt) as taxAmt
+		from 
+		    scminvmovebill M, scminvmovebillentry D,
+		    scmmaterial as A
+		where
+		    M.wtId = #{wtId}
+		    and M.wtId = D.wtId
+		    and M.`status` = 'A'
+		    and D.itemId = A.id
+		group by 
+		    M.finOrgUnitNo, M.outOrgUnitNo, M.outCstOrgUnitNo, D.itemId, D.unit) T1
+		SET
+		    T2.qty = T2.qty - T1.qty,
+		    T2.amt = T2.amt - T1.amt,
+		    price = CASE WHEN T2.qty - T1.qty = 0 then 0 ELSE (T2.amt - T1.amt)/(T2.qty - t1.qty) END,
+		    T2.taxAmt = T2.taxAmt - T1.taxAmt,
+		    taxPrice = CASE WHEN T2.qty - T1.qty = 0 then 0 ELSE (T2.taxAmt - T1.taxAmt)/(T2.qty - t1.qty) END
+		where 
+		    T1.finOrgUnitNo = T2.finOrgUnitNo
+		    and T2.orgUnitNo = T1.outOrgUnitNo
+		    and T2.costOrgUnitNo = T1.outCstOrgUnitNo
+		    and T2.itemId = T1.itemId
+		    and T2.costCenter = TRUE
+		    and T1.unit = T2.unit
+    </update>
+    
+    <update id="scminvcost.updateByMoveBillInPlus" parameterType="Map">
+		update scminvcost T2,
+		(select 
+		    M.finOrgUnitNo, M.inOrgUnitNo, M.inCstOrgUnitNo, D.itemId, D.unit, SUM(D.qty) as qty, SUM(D.amt) as amt, SUM(D.taxAmt) as taxAmt
+		from 
+		    scminvmovebill M, scminvmovebillentry D,
+		    scmmaterial as A
+		where
+		    M.wtId = #{wtId}
+		    and M.wtId = D.wtId
+		    and M.`status` = 'A'
+		    and D.itemId = A.id
+		group by 
+		    M.finOrgUnitNo, M.inOrgUnitNo, M.inCstOrgUnitNo, D.itemId, D.unit) T1
+		SET
+		    T2.qty = T2.qty + T1.qty,
+		    T2.amt = T2.amt + T1.amt,
+		    price = (T2.amt + T1.amt)/(T2.qty + t1.qty),
+		    T2.taxAmt = T2.taxAmt + T1.taxAmt,
+		    taxPrice = (T2.taxAmt + T1.taxAmt)/(T2.qty + t1.qty)
+		where 
+		    T1.finOrgUnitNo = T2.finOrgUnitNo
+		    and T2.orgUnitNo = T1.inOrgUnitNo
+		    and T2.costOrgUnitNo = T1.inCstOrgUnitNo
+		    and T2.itemId = T1.itemId
+		    and T2.costCenter = TRUE
+		    and T1.unit = T2.unit
+    </update>
+
+    <update id="scminvcost.updateByMoveBillOutPlus" parameterType="Map">
+        update scminvcost T2,
+        (select 
+            M.finOrgUnitNo, M.outOrgUnitNo, M.outCstOrgUnitNo, D.itemId, D.unit, SUM(D.qty) as qty, SUM(D.amt) as amt, SUM(D.taxAmt) as taxAmt
+        from 
+            scminvmovebill M, scminvmovebillentry D,
+            scmmaterial as A
+        where
+            M.wtId = #{wtId}
+            and M.wtId = D.wtId
+            and M.`status` = 'E'
+            and D.itemId = A.id
+        group by 
+            M.finOrgUnitNo, M.outOrgUnitNo, M.outCstOrgUnitNo, D.itemId, D.unit) T1
+        SET
+            T2.qty = T2.qty + T1.qty,
+            T2.amt = T2.amt + T1.amt,
+            price = (T2.amt + T1.amt)/(T2.qty + t1.qty),
+            T2.taxAmt = T2.taxAmt + T1.taxAmt,
+            taxPrice = (T2.taxAmt + T1.taxAmt)/(T2.qty + t1.qty)
+        where 
+            T1.finOrgUnitNo = T2.finOrgUnitNo
+            and T2.orgUnitNo = T1.outOrgUnitNo
+            and T2.costOrgUnitNo = T1.outCstOrgUnitNo
+            and T2.itemId = T1.itemId
+            and T2.costCenter = TRUE
+            and T1.unit = T2.unit
+    </update>
+
+
+    <update id="scminvcost.updateByMoveBillInSub" parameterType="Map">
+        update scminvcost T2,
+        (select 
+            M.finOrgUnitNo, M.inOrgUnitNo, M.inCstOrgUnitNo, D.itemId, D.unit, SUM(D.qty) as qty, SUM(D.amt) as amt, SUM(D.taxAmt) as taxAmt
+        from 
+            scminvmovebill M, scminvmovebillentry D,
+            scmmaterial as A
+        where
+            M.wtId = #{wtId}
+            and M.wtId = D.wtId
+            and M.`status` = 'E'
+            and D.itemId = A.id
+        group by 
+            M.finOrgUnitNo, M.inOrgUnitNo, M.inCstOrgUnitNo, D.itemId, D.unit) T1
+        SET            
+            T2.qty = T2.qty - T1.qty,
+            T2.amt = T2.amt - T1.amt,
+            price = CASE WHEN T2.qty - T1.qty = 0 then 0 ELSE (T2.amt - T1.amt)/(T2.qty - t1.qty) END,
+            T2.taxAmt = T2.taxAmt - T1.taxAmt,
+            taxPrice = CASE WHEN T2.qty - T1.qty = 0 then 0 ELSE (T2.taxAmt - T1.taxAmt)/(T2.qty - t1.qty) END            
+        where 
+            T1.finOrgUnitNo = T2.finOrgUnitNo
+            and T2.orgUnitNo = T1.inOrgUnitNo
+            and T2.costOrgUnitNo = T1.inCstOrgUnitNo
+            and T2.itemId = T1.itemId
+            and T2.costCenter = TRUE
+            and T1.unit = T2.unit
+    </update>
+	
+	
+	<update id="scminvcost.updateBySaleIssuePostSub" parameterType="Map">
+		update 
+		    scminvcost T2,
+		    (select 
+		        A.finOrgUnitNo, B.orgUnitNo, B.wareHouseId, B.itemId,
+		        SUM(B.qty) as qty, SUM(B.taxAmt) as taxAmt,
+		        SUM(B.amt) as amt
+		    from
+		        scminvsaleissuebill A, scminvsaleissuebillentry B
+		    where A.otId = B.otId
+		    and A.otId = #{otId}
+		    group by A.finOrgUnitNo, B.orgUnitNo, B.wareHouseId, B.itemId) T1
+		SET
+		    T2.qty = T2.qty - T1.qty,
+		    T2.amt = T2.amt - T1.amt,
+		    T2.taxAmt = T2.taxAmt - T1.taxAmt,
+		    T2.price = CASE WHEN T2.qty - T1.qty = 0 then 0 ELSE (T2.amt - T1.amt)/(T2.qty - t1.qty) END,
+		    T2.taxPrice = CASE WHEN T2.qty - T1.qty = 0 then 0 ELSE (T2.taxAmt - T1.taxAmt)/(T2.qty - t1.qty) END
+		where 
+		    T1.finOrgUnitNo = T2.finOrgUnitNo
+		    and T2.orgUnitNo = T1.orgUnitNo
+		    and T2.wareHouseId = T1.wareHouseId
+		    and T2.itemId = T1.itemId
+		    and T2.costCenter = FALSE
+    </update>
+    
+    <update id="scminvcost.updateBySaleIssueUnPost" parameterType="Map">
+        <choose>
+            <when test='flag == "0"'>
+		        update 
+		            scminvcost T2,
+		            (select 
+		                B.orgUnitNo, B.wareHouseId, B.itemId,
+		                SUM(B.qty) as qty, SUM(B.taxAmt) as taxAmt, SUM(B.amt) as amt
+		            from
+		                scminvsaleissuebill A, scminvsaleissuebillentry B
+		            where A.otId = B.otId
+		            and A.otId = #{otId}
+		            group by B.orgUnitNo, B.wareHouseId, B.itemId) T1
+		        SET
+		            T2.qty = T2.qty + T1.qty,
+		            T2.amt = T2.amt + T1.amt,
+		            T2.taxAmt = T2.taxAmt + T1.taxAmt,
+		            T2.price = CASE WHEN T2.qty + T1.qty = 0 then 0 ELSE (T2.amt + T1.amt)/(T2.qty + t1.qty) END,
+		            T2.taxPrice = CASE WHEN T2.qty + T1.qty = 0 then 0 ELSE (T2.taxAmt + T1.taxAmt)/(T2.qty + t1.qty) END
+		        where 
+		            T2.orgUnitNo = T1.orgUnitNo
+		            and T2.wareHouseId = T1.wareHouseId
+		            and T2.itemId = T1.itemId
+		            and T2.costCenter = FALSE            
+            </when>
+            <otherwise>
+                update 
+                    scminvcost T2,
+                    (select 
+		                B.orgUnitNo, B.wareHouseId, B.itemId,
+		                SUM(B.qty) as qty, SUM(B.taxAmt) as taxAmt, SUM(B.amt) as amt
+                    from
+                        scminvsaleissuebill A, scminvsaleissuebillentry B
+                    where A.otId = B.otId
+                    and A.otId = #{otId}
+                    group by B.orgUnitNo, B.wareHouseId, B.itemId) T1
+                SET
+                    T2.qty = T2.qty - T1.qty,
+                    T2.amt = T2.amt - T1.amt,
+                    T2.taxAmt = T2.taxAmt - T1.taxAmt,
+                    T2.price = CASE WHEN T2.qty - T1.qty = 0 then 0 ELSE (T2.amt - T1.amt)/(T2.qty - t1.qty) END,
+                    T2.taxPrice = CASE WHEN T2.qty - T1.qty = 0 then 0 ELSE (T2.taxAmt - T1.taxAmt)/(T2.qty - t1.qty) END
+                where 
+                    T2.orgUnitNo = T1.orgUnitNo
+                    and T2.wareHouseId = T1.wareHouseId
+                    and T2.itemId = T1.itemId
+                    and T2.costCenter = FALSE                
+            </otherwise>
+        </choose>
+    </update>
+    
+	<delete id="scminvcost.delete" parameterType="String">
+		DELETE FROM scminvcost WHERE id IN (${value})
+	</delete> 
+	
+	<update id="scminvcost.updateByOtherIssueOutSub" parameterType="Map">
+		Update  scminvcost T2, (Select A.finorgUnitNo,B.orgUnitNo,B.wareHouseId,B.itemId,Sum(B.qty) as qty,Sum(B.amt) as amt,B.taxRate
+		From scminvotherissuebill A,scminvotherissuebillentry B    
+		Where A.otId = B.otId And A.otId = #{otId}
+		Group By A.finorgUnitNo,B.orgUnitNo,B.wareHouseId,B.itemId) T1 
+		Set T2.qty = T2.qty - T1.qty,
+		T2.amt = T2.amt - T1.amt,
+		T2.taxRate = T1.taxRate,
+		price = Case When T2.qty - T1.qty =0 then 0 Else (T2.amt - T1.amt)/(T2.qty - T1.qty) End      
+		Where T1.finorgUnitNo = T2.finorgUnitNo 
+		And T2.orgUnitNo = T1.orgUnitNo 
+		And T2.wareHouseId = T1.wareHouseId    
+		And T2.itemId = T1.itemId 
+		And T2.costCenter='0'
+	</update>
+	
+	<update id="scminvcost.updateByOtherIssueInSub" parameterType="Map">
+		Update ScmInvCost T2, (Select A.finorgUnitNo,B.orgUnitNo,B.wareHouseId,B.itemId,Sum(B.qty) as qty,
+		Sum(B.amt) as amt    
+		From ScmInvOtherIssueBill A,ScmInvOtherIssueBillEntry B    
+		Where A.otId = B.otId 
+		And A.otId = #{otId}
+		Group By A.finorgUnitNo,B.orgUnitNo,B.wareHouseId,B.itemId) T1   
+		Set T2.qty = T2.qty + T1.qty,
+		T2.amt = T2.amt + T1.amt,
+		price = Case When T2.qty + T1.qty =0 then 0 Else (T2.amt + T1.amt)/(T2.qty + T1.qty) End        
+		Where T1.finorgUnitNo = T2.finorgUnitNo 
+		And T2.orgUnitNo = T1.orgUnitNo 
+		And T2.wareHouseId = T1.wareHouseId    
+		And T2.itemId = T1.itemId 
+		And T2.costCenter='0' 
+	</update>
+    <insert id="scminvcost.addBySaleIssuePost" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		insert into 
+		    scminvcost(finOrgUnitNo, orgUnitNo, wareHouseId, costOrgUnitNo, costCenter, itemId, qty, price, amt, unit, taxAmt, taxRate, taxPrice)
+		    select 
+		        T.finOrgUnitNo, T.orgUnitNo, T.wareHouseId, T.costOrgUnitNo, T.costCenter, T.itemId, T.qty, T.price, T.amt, T.unit, T.taxAmt, T.taxRate, T.taxPrice
+		    from
+		        (select 
+		            M.finOrgUnitNo, M.orgUnitNo, D.wareHouseId, '' as costOrgUnitNo, 
+		            0 as costCenter,
+		            D.itemId, SUM(D.qty) as qty, D.taxPrice, SUM(D.taxAmt) as taxAmt, D.unit,
+		            SUM(D.amt) as amt, D.taxRate, D.price
+		        from 
+		            scminvsaleissuebill as M, scminvsaleissuebillentry as D, scmmaterial as A
+		        where 
+		                M.otId = #{otId}
+		                and M.otId = D.otId
+		                and M.`status` = 'A'
+		                and D.itemId = A.id
+		        group by M.finOrgUnitNo, M.orgUnitNo, D.wareHouseId, D.itemId, D.unit) T
+		    left join scminvcost T2 on T.itemId = T2.itemId
+		        and T.finOrgUnitNo = T2.finOrgUnitNo
+		        and T.wareHouseId = T2.wareHouseId
+		        and T.unit = T2.unit
+		where T2.itemId is null
+    </insert>
+    
+    
+    <update id="scminvcost.updateBySaleIssuePostPlus" parameterType="Map">
+		update 
+		    scminvcost T2,
+		    (select 
+		        M.finOrgUnitNo, M.orgUnitNo, D.wareHouseId, 
+		        D.itemId, SUM(D.qty) as qty, SUM(D.taxAmt) as taxAmt, D.unit,
+		        SUM(D.amt) as amt
+		    from 
+		        scminvsaleissuebill as M, scminvsaleissuebillentry as D, scmmaterial as A
+		    where 
+		            M.otId = #{otId}
+		            and M.otId = D.otId
+		            and M.`status` = 'A'
+		            and D.itemId = A.id
+		    group by finOrgUnitNo, orgUnitNo, D.wareHouseId, D.itemId, D.unit) T
+		SET
+		    T2.qty = T2.qty + T.qty,
+		    T2.amt = T2.amt + T.amt,
+		    T2.price = case when (T2.qty + T.qty) = 0 THEN 0 else ROUND((T2.amt + T.amt)/(T2.qty + T.qty),4) END,
+		    T2.taxAmt = T2.taxAmt + T.taxAmt,
+		    T2.taxPrice = case when (T2.qty + T.qty) = 0 THEN 0 else ROUND((T2.taxAmt + T.taxAmt)/(T2.qty + T.qty),4) END
+		where
+		    T.finOrgUnitNo = T2.finOrgUnitNo
+		    and T.orgUnitNo = T2.orgUnitNo
+		    and IFNULL(T.wareHouseId,'') = IFNULL(T2.wareHouseId,'')
+		    and T.itemId = T2.itemId
+		    and T.unit = T2.unit      
+    </update>
+    
+	<update id="scminvcost.updateByMaterialReqBillOut" parameterType="Map">
+		Update scminvcost T2,(Select
+		A.FinOrgUnitNo,A.OrgUnitNo,A.WareHouseId,B.itemId,B.Unit,Sum(B.Qty) as
+		Qty,Sum(B.Amt) as Amt,Sum(B.TaxAmt) as TaxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId} Group By
+		A.FinOrgUnitNo,A.OrgUnitNo,A.WareHouseId,B.itemId,B.Unit) T1 Set T2.Qty
+		= T2.Qty - T1.Qty,T2.Amt = T2.Amt - T1.Amt,T2.Price = Case When T2.Qty
+		- T1.Qty =0 then 0 Else (T2.Amt - T1.Amt)/(T2.Qty - T1.Qty)
+		End,T2.TaxAmt = T2.TaxAmt - T1.TaxAmt,T2.TaxPrice = Case When T2.Qty -
+		T1.Qty =0 then 0 Else (T2.TaxAmt - T1.TaxAmt)/(T2.Qty - T1.Qty) End
+		Where T1.FinOrgUnitNo = T2.FinOrgUnitNo And T2.OrgUnitNo = T1.OrgUnitNo
+		And T2.WareHouseId = T1.WareHouseId
+		And T2.itemId = T1.itemId And T2.Unit = T1.Unit And T2.costCenter=0      
+    </update>
+    
+    <update id="scminvcost.updateByMaterialReqBillOutOrgunitNo" parameterType="Map">
+		Update scminvcost T2,(select M.FinOrgUnitNo,M.UseOrgUnitNo AS
+		orgunitno,M.CostOrgUnitNo,D.itemId,D.UNIT,sum(qty) as qty,sum(amt) as
+		amt,sum(taxamt) as taxamt
+		from scminvmaterialreqbill M,scminvmaterialreqbillEntry D,scmmaterial as
+		A,scmmaterialCompanyInfo B
+		where M.OTID = D.OTID and
+		M.OTID = #{otId} And
+		M.Status = 'A' And
+		D.itemId = A.id And
+		A.id = B.ItemID And
+		B.orgunitno = M.FinOrgUnitNo And
+		B.Costing = 'WMA'
+		group by M.FinOrgUnitNo,M.UseOrgUnitNo,M.CostOrgUnitNo,D.itemId,D.UNIT) T1
+		Set T2.Qty = T2.Qty + T1.Qty,T2.Amt = T2.Amt + T1.Amt,
+		T2.Price = case when (T2.Qty + T1.Qty) = 0 then 0 else (T2.Amt +
+		T1.Amt)/(T2.Qty + T1.Qty) end,T2.TaxAmt = T2.TaxAmt + T1.TaxAmt,
+		T2.TaxPrice = case when (T2.Qty + T1.Qty) = 0 then 0 else (T2.TaxAmt +
+		T1.TaxAmt)/(T2.Qty + T1.Qty) end
+		Where T1.FinOrgUnitNo = T2.FinOrgUnitNo And T2.OrgUnitNo = T1.OrgUnitNo And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And
+		T2.itemId = T1.itemId And T1.Unit = T2.Unit      
+    </update>
+    
+	<update id="scminvcost.updateByMaterialReqBillReturnOrgunitNo" parameterType="Map">
+		Update scminvcost T2,(select M.FinOrgUnitNo,M.UseOrgUnitNo AS
+		orgunitno,M.CostOrgUnitNo,D.itemId,D.UNIT,sum(d.qty) as qty,sum(d.amt)
+		as amt,sum(d.taxAmt) as taxAmt
+		from scminvmaterialreqbill M,scminvmaterialreqbillEntry D,scmmaterial as
+		A,scmmaterialCompanyInfo B
+		where M.OTID = D.OTID and
+		M.OTID = #{otId} And
+		M.Status = 'A' And
+		D.itemId = A.id And
+		A.id = B.ItemID And
+		B.orgunitno = M.FinOrgUnitNo And
+		B.Costing = 'WMA'
+		group by M.FinOrgUnitNo,M.UseOrgUnitNo,M.CostOrgUnitNo,D.itemId,D.UNIT) T1
+		Set T2.Qty = T2.Qty - T1.Qty,T2.Amt = T2.Amt - T1.Amt,
+		T2.Price = case when (T2.Qty - T1.Qty) = 0 then 0 else (T2.Amt -
+		T1.Amt)/(T2.Qty - T1.Qty) end,T2.taxAmt = T2.taxAmt - T1.taxAmt,
+		T2.TaxPrice = case when (T2.Qty - T1.Qty) = 0 then 0 else (T2.taxAmt -
+		T1.taxAmt)/(T2.Qty - T1.Qty) end
+		Where T1.FinOrgUnitNo = T2.FinOrgUnitNo And T2.OrgUnitNo = T1.OrgUnitNo And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And
+		T2.itemId = T1.itemId And T1.Unit = T2.Unit and T2.costCenter=1      
+    </update>
+    
+	<update id="scminvcost.updateByMaterialReqBillReturn" parameterType="Map">
+		Update scminvcost T2,(Select
+		A.FinOrgUnitNo,A.OrgUnitNo,A.WareHouseId,B.itemId,b.unit,Sum(B.Qty) as
+		Qty,Sum(B.Amt) as Amt,Sum(B.TaxAmt) as TaxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId} Group By
+		A.FinOrgUnitNo,A.OrgUnitNo,A.WareHouseId,B.itemId,b.unit) T1 Set T2.Qty
+		= T2.Qty + T1.Qty,T2.Amt = T2.Amt + T1.Amt,T2.Price = Case When T2.Qty
+		+ T1.Qty =0 then 0 Else (T2.Amt + T1.Amt)/(T2.Qty + T1.Qty)
+		End,T2.TaxAmt = T2.TaxAmt + T1.TaxAmt,T2.TaxPrice = Case When T2.Qty +
+		T1.Qty =0 then 0 Else (T2.TaxAmt + T1.TaxAmt)/(T2.Qty + T1.Qty) End
+		Where T1.FinOrgUnitNo = T2.FinOrgUnitNo And T2.OrgUnitNo = T1.OrgUnitNo
+		And T2.WareHouseId = T1.WareHouseId
+		And T2.itemId = T1.itemId and t1.unit = t2.unit And T2.costCenter=0        
+    </update>
+    
+    <update id="scminvcost.updateByMoveInWarehsBill" parameterType="Map">
+		Update scminvcost T2,
+		(select
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit,sum(T.qty)
+		as qty,sum(T.amt) as amt,T.taxRate,T.taxPrice,sum(T.taxAmt) as taxAmt
+		from (SELECT M.wrId,d.lineId,M.bizdate as
+		invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,D.baseUnit,D.baseQty
+		From ScmInvMoveInWarehsBill as M,ScmInvMoveInWarehsBillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		Where M.wrId = #{wrId} And	M.status = 'A' And M.wrId = D.wrId order by d.lineid) T
+		group by
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemno,T.unit) T1
+		Set T2.Qty = T2.Qty + T1.Qty,T2.Amt = T2.Amt + T1.Amt,
+		T2.Price = case when (T2.Qty + T1.Qty) = 0 then 0 else Round((T2.Amt +
+		T1.Amt)/(T2.Qty + T1.Qty),4) end,T2.taxRate = T1.taxRate,T2.taxAmt = T2.taxAmt + T1.taxAmt,
+		T2.taxPrice = case when (T2.Qty + T1.Qty) = 0 then 0 else Round((T2.taxAmt + T1.taxAmt)/(T2.Qty + T1.Qty),4) end
+		Where T1.FinOrgUnitNo = T2.FinOrgUnitNo And T2.OrgUnitNo = T1.OrgUnitNo And
+		IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0) And
+		IFNULL(T1.CostOrgUnitNo,0) = IFNULL(T2.CostOrgUnitNo,0) And
+		T2.itemId = T1.itemId And T1.Unit = T2.Unit
+	</update>
+	
+	<insert id="scminvcost.addByMoveInWarehsBill" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into scminvcost(FinOrgUnitNo, OrgUnitNo, WareHouseID,
+		CostOrgUnitNo, costCenter, itemId, Qty, Price, Amt,
+		Unit,taxRate,taxPrice,taxAmt)
+		Select
+		T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,'','0',T1.itemId,T1.Qty,case when T1.Qty = 0 then 0 else ROUND(T1.Amt/T1.Qty,4) end,T1.Amt,T1.Unit,T1.taxRate,case when T1.Qty = 0 then 0 else ROUND(T1.taxAmt/T1.Qty,4) end,T1.taxAmt
+		From
+		(select
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit,sum(T.qty)
+		as qty,sum(T.amt) as amt,T.taxRate,T.taxPrice,sum(T.taxAmt) as taxAmt
+		from (SELECT M.wrId,d.lineId,M.bizdate as
+		invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,D.baseUnit,D.baseQty
+		From ScmInvMoveInWarehsBill as M,ScmInvMoveInWarehsBillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		Where M.wrId = #{wrId} And M.status = 'A' And M.wrId = D.wrId order by d.lineid) T
+		group by
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemno,T.unit) T1
+		Left Join scminvcost T2
+		On T1.itemId = T2.itemId And T1.FinOrgUnitNo = T2.FinOrgUnitNo And
+		T2.OrgUnitNo = T1.OrgUnitNo And T1.WareHouseID = T2.WareHouseID And
+		T1.CostOrgUnitNo = T2.CostOrgUnitNo And
+		T1.Unit = T2.Unit
+		Where T2.itemId is Null
+	</insert>
+	
+	<update id="scminvcost.updateByCancelMoveInWarehsBill" parameterType="Map">
+		Update scminvcost T2,
+		(select
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemId,T.unit,sum(T.qty)
+		as qty,sum(T.amt) as amt,T.taxRate,T.taxPrice,sum(T.taxAmt) as taxAmt
+		from (SELECT M.wrId,d.lineId,M.bizdate as
+		invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,D.baseUnit,D.baseQty
+		From ScmInvMoveInWarehsBill as M,ScmInvMoveInWarehsBillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		Where M.wrId = #{wrId} And	M.status = 'E' And M.wrId = D.wrId order by d.lineid) T
+		group by
+		T.FinOrgUnitNo,T.orgunitno,T.WareHouseID,T.CostOrgUnitNo,T.itemno,T.unit) T1
+		Set T2.Qty = T2.Qty - T1.Qty,T2.Amt = T2.Amt - T1.Amt,
+		T2.Price = case when (T2.Qty - T1.Qty) = 0 then 0 else Round((T2.Amt -
+		T1.Amt)/(T2.Qty - T1.Qty),4) end,T2.taxRate = T1.taxRate,T2.taxAmt = T2.taxAmt - T1.taxAmt,
+		T2.taxPrice = case when (T2.Qty - T1.Qty) = 0 then 0 else Round((T2.taxAmt - T1.taxAmt)/(T2.Qty - T1.Qty),4) end
+		Where T1.FinOrgUnitNo = T2.FinOrgUnitNo And T2.OrgUnitNo = T1.OrgUnitNo And
+		IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0) And
+		IFNULL(T1.CostOrgUnitNo,0) = IFNULL(T2.CostOrgUnitNo,0) And
+		T2.itemId = T1.itemId And T1.Unit = T2.Unit
+	</update>
+	
+	<update id="scminvcost.updateByMoveIssueUnPost" parameterType="Map">
+		Update  scminvcost T2, (Select A.finorgUnitNo,B.orgUnitNo,B.wareHouseId,B.itemId,Sum(B.qty) as qty,Sum(B.amt) as amt,B.taxRate
+		From ScmInvMoveIssueBill A,ScmInvMoveIssueBillEntry B    
+		Where A.otId = B.otId And A.otId = #{otId}
+		Group By A.finorgUnitNo,B.orgUnitNo,B.wareHouseId,B.itemId) T1 
+		Set T2.qty = T2.qty + T1.qty,
+		T2.amt = T2.amt + T1.amt,
+		T2.taxRate = T1.taxRate,
+		price = Case When T2.qty + T1.qty =0 then 0 Else (T2.amt + T1.amt)/(T2.qty + T1.qty) End      
+		Where T1.finorgUnitNo = T2.finorgUnitNo 
+		And T2.orgUnitNo = T1.orgUnitNo 
+		And T2.wareHouseId = T1.wareHouseId    
+		And T2.itemId = T1.itemId 
+		And T2.costCenter='0'
+	</update>
+	
+	<update id="scminvcost.updateByMoveIssuePost" parameterType="Map">
+		Update  scminvcost T2, (Select A.finorgUnitNo,B.orgUnitNo,B.wareHouseId,B.itemId,Sum(B.qty) as qty,Sum(B.amt) as amt,B.taxRate
+		From ScmInvMoveIssueBill A,ScmInvMoveIssueBillEntry B    
+		Where A.otId = B.otId And A.otId = #{otId}
+		Group By A.finorgUnitNo,B.orgUnitNo,B.wareHouseId,B.itemId) T1 
+		Set T2.qty = T2.qty - T1.qty,
+		T2.amt = T2.amt - T1.amt,
+		T2.taxRate = T1.taxRate,
+		price = Case When T2.qty - T1.qty =0 then 0 Else (T2.amt - T1.amt)/(T2.qty - T1.qty) End      
+		Where T1.finorgUnitNo = T2.finorgUnitNo 
+		And T2.orgUnitNo = T1.orgUnitNo 
+		And T2.wareHouseId = T1.wareHouseId    
+		And T2.itemId = T1.itemId 
+		And T2.costCenter='0'
+	</update>
+	<insert id="scminvcost.addByCostCenter" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into ScmInvCost(FinOrgUnitNo, OrgUnitNo, WareHouseID,CostOrgUnitNo, costCenter, itemId, qty, price, amt,Unit,taxRate,taxPrice,taxAmt)
+		Select T1.finOrgUnitNo,T1.orgUnitNo,T1.wareHouseId,T1.costOrgUnitNo,T1.costCenter,T1.itemId,T1.qty,T1.price,T1.amt,T1.unit,T1.taxRate,T1.taxPrice,T1.taxAmt
+		FROM
+		(SELECT #{finOrgUnitNo} as finOrgUnitNo,A.orgUnitNo,0 as wareHouseId,A.orgUnitNo as CostOrgUnitNo,1 as costCenter,B.itemId,B.differQty as qty,
+			B.price,B.differAmt as amt,B.unit,B.taxRate,B.taxPrice,B.differTaxAmt as taxAmt
+				From ScmInvCountingCostCenter as A,ScmInvCountingCostCenterEntry as B
+				Where A.taskId = #{taskId} And A.status = 'B' And A.tableId = B.tableId and B.usrAdd=1) T1
+		Left Join ScmInvCost T2
+		On T1.itemId = T2.itemId And T1.FinOrgUnitNo = T2.FinOrgUnitNo And
+		T2.OrgUnitNo = T1.OrgUnitNo And T1.WareHouseID = T2.WareHouseID And
+		T1.CostOrgUnitNo = T2.CostOrgUnitNo And
+		T1.Unit = T2.Unit And T2.costCenter=1
+		Where T2.itemId is Null
+	</insert>
+	<update id="scminvcost.updateByCostCenter" parameterType="Map">
+		Update  scminvcost T2, (SELECT #{finOrgUnitNo} as finOrgUnitNo,A.orgUnitNo,0 as wareHouseId,A.orgUnitNo as CostOrgUnitNo,1 as costCenter,B.itemId,B.differQty as qty,
+			B.price,B.differAmt as amt,B.unit,B.taxRate,B.taxPrice,B.differTaxAmt as taxAmt
+				From ScmInvCountingCostCenter as A,ScmInvCountingCostCenterEntry as B
+				Where A.taskId = #{taskId}  And A.status = 'B' And A.tableId = B.tableId and B.usrAdd=0) T1 
+		Set T2.qty = T2.qty + T1.qty,
+		T2.amt = T2.amt + T1.amt,
+		T2.taxRate = T1.taxRate,
+		T2.price = Case When T2.qty + T1.qty =0 then 0 Else (T2.amt + T1.amt)/(T2.qty + T1.qty) End,      
+		T2.taxAmt = T2.taxAmt + T1.taxAmt,
+		T2.taxPrice = Case When T2.qty + T1.qty =0 then 0 Else (T2.taxAmt + T1.taxAmt)/(T2.qty + T1.qty) End
+		Where T1.itemId = T2.itemId And T1.FinOrgUnitNo = T2.FinOrgUnitNo And
+		T2.OrgUnitNo = T1.OrgUnitNo And T1.WareHouseID = T2.WareHouseID And
+		T1.CostOrgUnitNo = T2.CostOrgUnitNo And	T1.Unit = T2.Unit And T2.costCenter=1
+	</update>
+	<update id="scminvcost.updateByDepositInReturn" parameterType="Map">
+		Update scminvcost T2,
+		(SELECT M.orgUnitNo,D.wareHouseId,D.itemId,D.unit,sum(D.qty) as qty,D.taxRate,sum(D.taxAmt)as taxAmt,
+		SUM(IFNULL(D.pieQty,0)) as pieQty,sum(D.amt) as amt,sum(D.baseQty) as baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		Where M.wrId = #{wrId} And	M.wrId = D.wrId 
+		group by M.orgunitno,D.WareHouseID,D.itemId,D.unit) T1
+		Set T2.Qty = T2.Qty - T1.Qty,T2.Amt = T2.Amt - T1.Amt,
+		T2.Price = case when (T2.Qty - T1.Qty) = 0 then 0 else Round((T2.Amt - T1.Amt)/(T2.Qty - T1.Qty),4) end,
+		T2.taxRate = T1.taxRate,T2.taxAmt = T2.taxAmt - T1.taxAmt,
+		T2.taxPrice = case when (T2.Qty - T1.Qty) = 0 then 0 else Round((T2.taxAmt - T1.taxAmt)/(T2.Qty - T1.Qty),4) end
+		Where T2.OrgUnitNo = T1.OrgUnitNo And	IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0) And
+		T2.costCenter=0 And	T2.itemId = T1.itemId And T1.Unit = T2.Unit
+	</update>
+	<update id="scminvcost.updateByCancelDepositInReturn" parameterType="Map">
+		Update scminvcost T2,
+		(SELECT M.orgUnitNo,D.wareHouseId,D.itemId,D.unit,sum(D.qty) as qty,D.taxRate,sum(D.taxAmt)as taxAmt,
+		SUM(IFNULL(D.pieQty,0)) as pieQty,sum(D.amt) as amt,sum(D.baseQty) as baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		Where M.wrId = #{wrId} And	M.wrId = D.wrId 
+		group by M.orgunitno,D.WareHouseID,D.itemId,D.unit) T1
+		Set T2.Qty = T2.Qty + T1.Qty,T2.Amt = T2.Amt + T1.Amt,
+		T2.Price = case when (T2.Qty + T1.Qty) = 0 then 0 else Round((T2.Amt + T1.Amt)/(T2.Qty + T1.Qty),4) end,
+		T2.taxRate = T1.taxRate,T2.taxAmt = T2.taxAmt + T1.taxAmt,
+		T2.taxPrice = case when (T2.Qty + T1.Qty) = 0 then 0 else Round((T2.taxAmt + T1.taxAmt)/(T2.Qty + T1.Qty),4) end
+		Where T2.OrgUnitNo = T1.OrgUnitNo And	IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0) And
+		T2.costCenter=0 And	T2.itemId = T1.itemId And T1.Unit = T2.Unit
+	</update>
+</mapper>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmmaterialgroupassign">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmmaterialgroupassign.findAll" resultType="ScmMaterialGroupAssign" >
+	    SELECT * FROM ScmMaterialGroupAssign WHERE  1=1  
+	</select>
+ 
+	<select id="scmmaterialgroupassign.findAllPage" resultType="ScmMaterialGroupAssign" parameterType="Map"> 
+		SELECT * FROM ScmMaterialGroupAssign WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmmaterialgroupassign.selectById" resultType="ScmMaterialGroupAssign" parameterType="Long">
+		SELECT * FROM ScmMaterialGroupAssign WHERE id = #{value}
+	</select> 
+	<insert id="scmmaterialgroupassign.add" parameterType="ScmMaterialGroupAssign"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmMaterialGroupAssign (
+        classId,
+        toCtrUnitNo,
+        fromCtrUnitNo        )
+		VALUES (
+        #{classId},
+        #{toCtrUnitNo},
+        #{fromCtrUnitNo}        )
+	</insert>
+ 
+	<update id="scmmaterialgroupassign.update" parameterType="ScmMaterialGroupAssign">
+		UPDATE ScmMaterialGroupAssign set
+        classId=#{classId},
+        toCtrUnitNo=#{toCtrUnitNo},
+        fromCtrUnitNo=#{fromCtrUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmmaterialgroupassign.delete" parameterType="String">
+		DELETE FROM ScmMaterialGroupAssign WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,21 @@
+
+>
+java:S2201)"(The return value of "trim" must be used.(îìÈ¦
+t
+java:S14889"YImmediately return this expression instead of assigning it to the temporary variable "s".(ÑÉ…Œıÿÿÿÿ
+>
+java:S22017"(The return value of "trim" must be used.(îìÈ¦
+b
+java:S32524"LUse static access with "cn.hutool.core.text.CharSequenceUtil" for "isBlank".(ÍÕöé
+>
+java:S2201D"(The return value of "trim" must be used.(îìÈ¦
+t
+java:S1488+"YImmediately return this expression instead of assigning it to the temporary variable "s".(ÑÉ…Œıÿÿÿÿ
+s
+java:S1488"]Immediately return this expression instead of assigning it to the temporary variable "bytes".(ğ˜Íª
+b
+java:S3252&"LUse static access with "cn.hutool.core.text.CharSequenceUtil" for "isBlank".(ÍÕöé
+P
+java:S1118":Add a private constructor to hide the implicit public one.(Æë…
+b
+java:S3252A"LUse static access with "cn.hutool.core.text.CharSequenceUtil" for "isBlank".(ÍÕöé

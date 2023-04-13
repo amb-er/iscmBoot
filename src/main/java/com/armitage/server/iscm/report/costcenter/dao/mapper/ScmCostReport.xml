@@ -1,0 +1,864 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcostreport">
+
+    <select id="scmcostreport.selectDirectTransDetails" resultType="ScmCostDirectTransfer" parameterType="Map">
+    	SELECT B.costOrgUnitNo,B.useOrgUnitNo,G.itemNo,G.itemName,IFNULL(G.spec,'') as spec,C.unitName,A.bizDate,A.bizType,A.wrNo,            
+		(CASE WHEN A.biztype &lt; '5' THEN SUM(B.Qty) ELSE - SUM(B.Qty) END) AS qty,B.price,            
+		(CASE WHEN A.biztype &lt; '5' THEN SUM(B.Amt) ELSE - SUM(B.Amt) END) AS amt,B.taxPrice, 
+		(CASE WHEN A.biztype &lt; '5' THEN SUM(B.TaxAmt) ELSE - SUM(B.TaxAmt) END) AS taxamt,S.vendorName            
+		FROM ScmInvPurInwarehsBill AS A,ScmInvPurInwarehsBillEntry AS B,ScmMeasureUnit C,            
+		ScmMaterialGroup AS D,ScmMaterialGroupDetail AS E,ScmMaterialGroupStandard F,ScmMaterial AS G ,ScmSupplier AS H,
+		Scmsupplier S        
+		WHERE B.wareHouseId=0 And A.vendorId=S.id
+		<if test="beginDate != null and beginDate !='' "> 
+			AND A.bizDate &gt;= #{beginDate}   
+		</if>          
+		<if test="endDate != null and endDate !='' ">
+			AND A.bizDate &lt;= #{endDate}   
+		</if>
+		AND A.wrId = B.wrId 
+		AND A.vendorId=H.id 
+		AND C.id=B.unit 
+		<if test="vendorName != null and vendorName !='' ">
+			AND H.id =#{vendorName}
+		</if>
+	  	AND A.bizType IN ('1','2','3','6','7','8')              
+	  	AND A.sysBill = '0'   
+	  	<if test="materialName != null and materialName !=''">   
+	 		AND G.id =#{materialName}
+	 	</if>     
+	 	<if test="costOrgUnitNos != null and costOrgUnitNos !=''">       
+	 		AND B.costOrgUnitNo in (${costOrgUnitNos})
+	 	</if>
+	 	<if test="materialClassIds != null and materialClassIds !=''">    
+	 		AND D.id in (${materialClassIds})
+	 	</if> 
+	  	<if test='status != null and status =="N"'>          
+			AND A.status='E'                    
+		</if>	
+		<if test="standardId != null and standardId !=0 "> 
+	  		AND D.standardId = #{standardId}           
+	  	</if>     
+	 	AND D.standardId = F.id And F.standardType='1'
+	 	AND D.id  = E.classId 
+	 	AND E.itemId = G.id   
+	 	AND G.id = B.itemId  
+		group by B.costOrgUnitNo,B.useOrgUnitNo,G.itemno,G.itemname,G.spec,B.Unit,A.bizdate,A.BizType,A.WRNO,B.Price,S.vendorName 
+		Order BY B.costOrgUnitNo,B.useOrgUnitNo,G.itemno  
+    </select> 
+    
+    <select id="scmcostreport.selectCostCenterInventory" resultType="ScmCountingTaskSum" parameterType="Map">
+		SELECT A.finorgUnitNo,A.taskNo,A.costCenter,D.whName,sum(B.amt) as amt,sum(B.taxAmt) as taxAmt FROM 
+			(SELECT taskId,finorgUnitNo,taskNo,orgUnitNo,costCenter from ScmInvCountingTask 
+			where finOrgUnitNo=#{finOrgUnitNo} and costCenter=0 and status='O'
+					<if test="beginDate != null and beginDate !='' ">
+						AND bizDate &gt;= #{beginDate}
+					</if>
+					<if test="endDate != null and endDate !='' ">
+			     		AND bizDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+			     	</if>
+			ORDER BY orgUnitNo,bizDate Desc,createDate Desc) A,ScmInvCountingTableEntry B,ScmInvCountingTable C,ScmInvWareHouse D,
+				ScmMaterial E,ScmMaterialGroup F,ScmMaterialGroupDetail G,ScmMaterialGroupStandard H
+			Where A.taskId=C.taskId And B.tableId=C.tableId And C.wareHouseId=D.id And B.itemId=E.id 
+					AND G.itemId=E.id AND G.classId=F.id And H.Id=F.standardId And H.standardType='1'
+			<if test="materialClassName != null and materialClassName !='' "> 
+				AND F.id in (${materialClassName})
+			</if>
+			GROUP BY A.finorgUnitNo,A.taskNo,A.costCenter,D.whName
+			UNION
+			SELECT A.finorgUnitNo,A.taskNo,A.costCenter,C.useOrgUnitNo,sum(B.amt) as amt,sum(B.taxAmt) as taxAmt FROM 
+			(SELECT T1.taskId,T1.finorgUnitNo,T1.taskNo,T2.orgUnitNo,T1.costCenter from ScmInvCountingTask T1,scminvcountingcostcenter T2
+			where T1.finOrgUnitNo=#{finOrgUnitNo} and T1.costCenter=1 and T1.status='O' And T1.taskId=T2.taskId
+					<if test="beginDate != null and beginDate !='' ">
+						AND T1.bizDate &gt;= #{beginDate}
+					</if>
+					<if test="endDate != null and endDate !='' ">
+			     		AND T1.bizDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+			     	</if>
+			ORDER BY T2.orgUnitNo,T1.bizDate Desc,T1.createDate Desc) A,ScmInvCountingCostCenterEntry B,ScmInvCountingCostCenter C,
+			ScmMaterial E,ScmMaterialGroup F,ScmMaterialGroupDetail G,ScmMaterialGroupStandard H
+			Where A.taskId=C.taskId And B.tableId=C.tableId And B.itemId=E.id And C.orgUnitNo=A.orgUnitNo
+			AND G.itemId=E.id AND G.classId=F.id And H.Id=F.standardId And H.standardType='1'
+			<if test="materialClassName != null and materialClassName !='' "> 
+				AND F.id in (${materialClassName})
+			</if>
+			GROUP BY A.finorgUnitNo,A.taskNo,A.costCenter,C.useOrgUnitNo
+	</select>
+	
+	<select id="scmcostreport.selectDeptConsume" resultType="ScmDeptConsume" parameterType="Map">
+		select CASE WHEN #{queryType}='1' THEN SUM(T.startAmt) ELSE SUM(T.startTaxAmt) END as startAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.purinAmt) ELSE SUM(T.purinTaxAmt) END as purinAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.reqAmt) ELSE SUM(T.reqTaxAmt) END as reqAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.cstinAmt) ELSE SUM(T.cstinTaxAmt) END as cstinAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.cstoutAmt) ELSE SUM(T.cstoutTaxAmt) END as cstoutAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.endAmt) ELSE SUM(T.endTaxAmt) END as endAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.startAmt)+SUM(T.purinAmt)+SUM(T.cstinAmt)+SUM(T.reqAmt)-SUM(T.cstoutAmt)-SUM(T.endAmt) ELSE 
+		SUM(T.startTaxAmt)+SUM(T.purinTaxAmt)+SUM(T.cstinTaxAmt)+SUM(T.reqTaxAmt)-SUM(T.cstoutTaxAmt)-SUM(T.endTaxAmt) END as consumeAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.startAmt)+SUM(T.purinAmt)+SUM(T.cstinAmt)+SUM(T.reqAmt)-SUM(T.cstoutAmt)-SUM(T.endAmt)-SUM(T.purinAmt) ELSE 
+		SUM(T.startTaxAmt)+SUM(T.purinTaxAmt)+SUM(T.cstinTaxAmt)+SUM(T.reqTaxAmt)-SUM(T.cstoutTaxAmt)-SUM(T.endTaxAmt)-SUM(T.purinTaxAmt) END as accountAmt,
+		T.classCode,T.className,T.orgUnitNo,T.costOrgUnitNo
+		from (select scminvbal.startAmt as startAmt,scminvbal.startTaxAmt as startTaxAmt,
+		0 as purinAmt,0 as purinTaxAmt,0 as reqAmt,0 as reqTaxAmt,
+		0 as cstinAmt,0 as cstinTaxAmt,0 as cstoutAmt,0 as cstoutTaxAmt,
+		scminvbal.endAmt as endAmt,scminvbal.endTaxAmt as endTaxAmt,
+		scmmaterialClass.classCode as classCode,scmmaterialClass.className as className,scminvbal.orgUnitNo as orgUnitNo,scminvbal.costOrgUnitNo as costOrgUnitNo
+		from scminvbal,scmmaterialgroupdetail,scmmaterialgroup,
+		(select scmmaterialgroup.longNo,scmmaterialgroup.classCode,scmmaterialgroup.className
+				FROM scmmaterialgroup
+				where scmmaterialgroup.id in (${materialClassIds})) as scmmaterialClass
+			where YEAR(#{accountDate})=scminvbal.accountYear
+			and MONTH(#{accountDate})=scminvbal.accountPeriod
+			and scminvbal.wareHouseId=0
+			<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+				and scminvbal.costOrgUnitNo in (${costOrgUnitNos})
+			</if>
+			and scminvbal.itemId = scmmaterialgroupdetail.itemId
+			and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+			and instr(scmmaterialgroup.longNo,scmmaterialClass.longNo)=1
+			
+		UNION ALL
+		
+		select 0 as startAmt,0 as startTaxAmt,
+		CASE WHEN a1.bizType in ('1','3') THEN a2.amt ELSE -a2.amt END as purinAmt,
+		CASE WHEN a1.bizType in ('1','3') THEN a2.taxAmt ELSE -a2.taxAmt END as purinTaxAmt,0 as reqAmt,0 as reqTaxAmt,
+		0 as cstinAmt,0 as cstinTaxAmt,0 as cstoutAmt,0 as cstoutTaxAmt,
+		0 as endAmt,0 as endTaxAmt,
+		a5.classCode,a5.className,a2.useOrgUnitNo as orgUnitNo,a2.costOrgUnitNo as costOrgUnitNo 
+		from scminvpurinwarehsbill a1,scminvpurinwarehsbillentry a2,scmmaterialgroupdetail a3,scmmaterialgroup a4,
+		(select scmmaterialgroup.longNo,scmmaterialgroup.classCode,scmmaterialgroup.className
+				FROM scmmaterialgroup
+				where scmmaterialgroup.id in (${materialClassIds})) as a5
+			where a1.wrId = a2.wrId
+			and a2.itemId = a3.itemId
+			and a3.classId = a4.id
+			and YEAR(#{accountDate})=YEAR(a1.bizDate)
+			and MONTH(#{accountDate})=MONTH(a1.bizDate)
+			<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+				and a2.costOrgUnitNo in (${costOrgUnitNos})
+			</if>
+			and a1.status='E'
+			and a2.wareHouseId=0
+			and IFNULL(a2.useOrgUnitNo,'')!=''
+			and a1.bizType in ('1','3','6','8')
+			and instr(a4.longNo,a5.longNo)=1
+			
+		UNION ALL
+		
+		select 0 as startAmt,0 as startTaxAmt,
+		0 as purinAmt,0 as purinTaxAmt,
+		CASE WHEN a1.bizType='1' THEN a2.amt ELSE -a2.amt END as reqAmt,
+		CASE WHEN a1.bizType='1' THEN a2.taxAmt ELSE -a2.taxAmt END as reqTaxAmt,
+		0 as cstinAmt,0 as cstinTaxAmt,0 as cstoutAmt,0 as cstoutTaxAmt,
+		0 as endAmt,0 as endTaxAmt,
+		a5.classCode,a5.className,a1.useOrgUnitNo as orgUnitNo,a1.costOrgUnitNo as costOrgUnitNo 
+		from scminvmaterialreqbill a1,scminvmaterialreqbillentry a2,scmmaterialgroupdetail a3,scmmaterialgroup a4,
+		(select scmmaterialgroup.longNo,scmmaterialgroup.classCode,scmmaterialgroup.className
+				FROM scmmaterialgroup
+				where scmmaterialgroup.id in (${materialClassIds})) as a5
+			where a1.otId = a2.otId
+			and a2.itemId = a3.itemId
+			and a3.classId = a4.id
+			and YEAR(#{accountDate})=YEAR(a1.bizDate)
+			and MONTH(#{accountDate})=MONTH(a1.bizDate)
+			<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+				and a1.costOrgUnitNo in (${costOrgUnitNos})
+			</if>
+			and a1.status='E'
+			and IFNULL(a1.useOrgUnitNo,'')!=''
+			and instr(a4.longNo,a5.longNo)=1
+		UNION ALL
+		
+		select 0 as startAmt,0 as startTaxAmt,
+		0 as purinAmt,0 as purinTaxAmt,
+		0 as reqAmt,
+		0 as reqTaxAmt,
+		0 as cstinAmt,0 as cstinTaxAmt,a2.amt as cstoutAmt,a2.taxAmt as cstoutTaxAmt,
+		0 as endAmt,0 as endTaxAmt,
+		a5.classCode,a5.className,a1.outOrgUnitNo as orgUnitNo,a1.outCstOrgUnitNo as costOrgUnitNo 
+		from scminvmovebill a1,scminvmovebillentry a2,scmmaterialgroupdetail a3,scmmaterialgroup a4,
+		(select scmmaterialgroup.longNo,scmmaterialgroup.classCode,scmmaterialgroup.className
+				FROM scmmaterialgroup
+				where scmmaterialgroup.id in (${materialClassIds})) as a5
+			where a1.wtId = a2.wtId
+			and a2.itemId = a3.itemId
+			and a3.classId = a4.id
+			and YEAR(#{accountDate})=YEAR(a1.bizDate)
+			and MONTH(#{accountDate})=MONTH(a1.bizDate)
+			<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+				and a1.outCstOrgUnitNo in (${costOrgUnitNos})
+			</if>
+			and a1.status='E'
+			and IFNULL(a1.outOrgUnitNo,'')!=''
+			and instr(a4.longNo,a5.longNo)=1
+			
+		UNION ALL
+		
+		select 0 as startAmt,0 as startTaxAmt,
+		0 as purinAmt,0 as purinTaxAmt,
+		0 as reqAmt,
+		0 as reqTaxAmt,
+		a2.amt as cstinAmt,a2.taxAmt as cstinTaxAmt,0 as cstoutAmt,0 as cstoutTaxAmt,
+		0 as endAmt,0 as endTaxAmt,
+		a5.classCode,a5.className,a1.inOrgUnitNo as orgUnitNo,a1.inCstOrgUnitNo as costOrgUnitNo 
+		from scminvmovebill a1,scminvmovebillentry a2,scmmaterialgroupdetail a3,scmmaterialgroup a4,
+		(select scmmaterialgroup.longNo,scmmaterialgroup.classCode,scmmaterialgroup.className
+				FROM scmmaterialgroup
+				where scmmaterialgroup.id in (${materialClassIds})) as a5
+			where a1.wtId = a2.wtId
+			and a2.itemId = a3.itemId
+			and a3.classId = a4.id
+			and YEAR(#{accountDate})=YEAR(a1.bizDate)
+			and MONTH(#{accountDate})=MONTH(a1.bizDate)
+			<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+				and a1.inCstOrgUnitNo in (${costOrgUnitNos})
+			</if>
+			and a1.status='E'
+			and IFNULL(a1.inOrgUnitNo,'')!=''
+			and instr(a4.longNo,a5.longNo)=1) T
+			group by T.costOrgUnitNo,T.classCode
+			order by T.costOrgUnitNo,T.classCode asc
+	</select>
+	
+	<select id="scmcostreport.selectDeptSummaryConsume" resultType="ScmDeptConsume" parameterType="Map">
+		select CASE WHEN #{queryType}='1' THEN SUM(T.startAmt) ELSE SUM(T.startTaxAmt) END as startAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.purinAmt) ELSE SUM(T.purinTaxAmt) END as purinAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.reqAmt) ELSE SUM(T.reqTaxAmt) END as reqAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.cstinAmt) ELSE SUM(T.cstinTaxAmt) END as cstinAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.cstoutAmt) ELSE SUM(T.cstoutTaxAmt) END as cstoutAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.endAmt) ELSE SUM(T.endTaxAmt) END as endAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.startAmt)+SUM(T.purinAmt)+SUM(T.cstinAmt)+SUM(T.reqAmt)-SUM(T.cstoutAmt)-SUM(T.endAmt) ELSE 
+		SUM(T.startTaxAmt)+SUM(T.purinTaxAmt)+SUM(T.cstinTaxAmt)+SUM(T.reqTaxAmt)-SUM(T.cstoutTaxAmt)-SUM(T.endTaxAmt) END as consumeAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.startAmt)+SUM(T.purinAmt)+SUM(T.cstinAmt)+SUM(T.reqAmt)-SUM(T.cstoutAmt)-SUM(T.endAmt)-SUM(T.purinAmt) ELSE 
+		SUM(T.startTaxAmt)+SUM(T.purinTaxAmt)+SUM(T.cstinTaxAmt)+SUM(T.reqTaxAmt)-SUM(T.cstoutTaxAmt)-SUM(T.endTaxAmt)-SUM(T.purinTaxAmt) END as accountAmt,
+		T.classCode,T.className,T.orgUnitNo,T.costOrgUnitNo,T.costuseTypeName as costuseTypeName
+		from (select scminvbal.startAmt as startAmt,scminvbal.startTaxAmt as startTaxAmt,
+		0 as purinAmt,0 as purinTaxAmt,0 as reqAmt,0 as reqTaxAmt,
+		0 as cstinAmt,0 as cstinTaxAmt,0 as cstoutAmt,0 as cstoutTaxAmt,
+		scminvbal.endAmt as endAmt,scminvbal.endTaxAmt as endTaxAmt,costUseSet.scmCostUseTypeName as costuseTypeName,
+		scmmaterialgroup.classCode as classCode,scmmaterialgroup.className as className,scminvbal.orgUnitNo as orgUnitNo,scminvbal.costOrgUnitNo as costOrgUnitNo
+		from scminvbal left join (select scminvbal.costOrgUnitNo,scminvbal.id as balId,ScmCostUseType.name as scmCostUseTypeName
+		from scminvbal,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+		where ScmCostUseSet.costOrgUnitNo= scminvbal.costOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+		and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+		and ScmCostUseType.flag=1
+		and scminvbal.itemId = scmmaterialgroupdetail.itemId
+		and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+		and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+		and ScmMaterialGroupStandard.standardType='1') costUseSet on scminvbal.id=costUseSet.balId and scminvbal.costOrgUnitNo=costUseSet.costOrgUnitNo
+		,scmmaterialgroupdetail,scmmaterialgroup,ScmMaterialGroupStandard
+			where YEAR(#{accountDate})=scminvbal.accountYear
+			and MONTH(#{accountDate})=scminvbal.accountPeriod
+			and scminvbal.wareHouseId=0
+			<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+				and scminvbal.costOrgUnitNo in (${costOrgUnitNos})
+			</if>
+			and scminvbal.itemId = scmmaterialgroupdetail.itemId
+			and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+			and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1'
+			<if test="materialClassIds != null and materialClassIds !='' ">
+				and scmmaterialgroup.id in (${materialClassIds})
+			</if>
+			
+		UNION ALL
+		
+		select 0 as startAmt,0 as startTaxAmt,
+		CASE WHEN a1.bizType in ('1','3') THEN a2.amt ELSE -a2.amt END as purinAmt,
+		CASE WHEN a1.bizType in ('1','3') THEN a2.taxAmt ELSE -a2.taxAmt END as purinTaxAmt,0 as reqAmt,0 as reqTaxAmt,
+		0 as cstinAmt,0 as cstinTaxAmt,0 as cstoutAmt,0 as cstoutTaxAmt,
+		0 as endAmt,0 as endTaxAmt,costUseSet.scmCostUseTypeName as costuseTypeName,
+		a4.classCode,a4.className,a2.useOrgUnitNo as orgUnitNo,a2.costOrgUnitNo as costOrgUnitNo 
+		from scminvpurinwarehsbill a1,scminvpurinwarehsbillentry a2 left join (select scminvpurinwarehsbillentry.id as entryId,scminvpurinwarehsbillentry.costOrgUnitNo,ScmCostUseType.name as scmCostUseTypeName
+		from scminvpurinwarehsbillentry,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+		where ScmCostUseSet.costOrgUnitNo= scminvpurinwarehsbillentry.costOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+		and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+		and ScmCostUseType.flag=1
+		and scminvpurinwarehsbillentry.itemId = scmmaterialgroupdetail.itemId
+		and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+		and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+		and ScmMaterialGroupStandard.standardType='1') costUseSet on a2.costOrgUnitNo=costUseSet.costOrgUnitNo and a2.id=costUseSet.entryId
+		,scmmaterialgroupdetail a3,scmmaterialgroup a4,ScmMaterialGroupStandard
+			where a1.wrId = a2.wrId
+			and a2.itemId = a3.itemId
+			and a3.classId = a4.id
+			and a3.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1'
+			and YEAR(#{accountDate})=YEAR(a1.bizDate)
+			and MONTH(#{accountDate})=MONTH(a1.bizDate)
+			<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+				and a2.costOrgUnitNo in (${costOrgUnitNos})
+			</if>
+			and a1.status='E'
+			and a2.wareHouseId=0
+			and IFNULL(a2.useOrgUnitNo,'')!=''
+			and a1.bizType in ('1','3','6','8')
+			<if test="materialClassIds != null and materialClassIds !='' ">
+				and a4.id in (${materialClassIds})
+			</if>
+			
+		UNION ALL
+		
+		select 0 as startAmt,0 as startTaxAmt,
+		0 as purinAmt,0 as purinTaxAmt,
+		CASE WHEN a1.bizType='1' THEN a2.amt ELSE -a2.amt END as reqAmt,
+		CASE WHEN a1.bizType='1' THEN a2.taxAmt ELSE -a2.taxAmt END as reqTaxAmt,
+		0 as cstinAmt,0 as cstinTaxAmt,0 as cstoutAmt,0 as cstoutTaxAmt,
+		0 as endAmt,0 as endTaxAmt,costUseSet.scmCostUseTypeName as costuseTypeName,
+		a4.classCode,a4.className,a1.useOrgUnitNo as orgUnitNo,a1.costOrgUnitNo as costOrgUnitNo 
+		from scminvmaterialreqbill a1 left join (select scminvmaterialreqbill.otId as billId,scminvmaterialreqbill.costOrgUnitNo,ScmCostUseType.name as scmCostUseTypeName
+		from scminvmaterialreqbill,scminvmaterialreqbillentry,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+		where ScmCostUseSet.costOrgUnitNo= scminvmaterialreqbill.costOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+		and scminvmaterialreqbill.otId = scminvmaterialreqbillentry.otId
+		and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+		and ScmCostUseType.flag=1
+		and scminvmaterialreqbillentry.itemId = scmmaterialgroupdetail.itemId
+		and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+		and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+		and ScmMaterialGroupStandard.standardType='1') costUseSet on a1.costOrgUnitNo=costUseSet.costOrgUnitNo and a1.otId=costUseSet.billId
+		,scminvmaterialreqbillentry a2,scmmaterialgroupdetail a3,scmmaterialgroup a4,ScmMaterialGroupStandard
+			where a1.otId = a2.otId
+			and a2.itemId = a3.itemId
+			and a3.classId = a4.id
+			and a3.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1'
+			and YEAR(#{accountDate})=YEAR(a1.bizDate)
+			and MONTH(#{accountDate})=MONTH(a1.bizDate)
+			<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+				and a1.costOrgUnitNo in (${costOrgUnitNos})
+			</if>
+			and a1.status='E'
+			and IFNULL(a1.useOrgUnitNo,'')!=''
+			<if test="materialClassIds != null and materialClassIds !='' ">
+				and a4.id in (${materialClassIds})
+			</if>
+		UNION ALL
+		
+		select 0 as startAmt,0 as startTaxAmt,
+		0 as purinAmt,0 as purinTaxAmt,
+		0 as reqAmt,
+		0 as reqTaxAmt,
+		0 as cstinAmt,0 as cstinTaxAmt,a2.amt as cstoutAmt,a2.taxAmt as cstoutTaxAmt,
+		0 as endAmt,0 as endTaxAmt,costUseSet.scmCostUseTypeName as costuseTypeName,
+		a4.classCode,a4.className,a1.outOrgUnitNo as orgUnitNo,a1.outCstOrgUnitNo as costOrgUnitNo 
+		from scminvmovebill a1 left join (select scminvmovebill.wtId as billId,scminvmovebill.outCstOrgUnitNo,ScmCostUseType.name as scmCostUseTypeName
+		from scminvmovebill,scminvmovebillentry,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+		where ScmCostUseSet.costOrgUnitNo= scminvmovebill.outCstOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+		and scminvmovebill.wtId = scminvmovebillentry.wtId
+		and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+		and ScmCostUseType.flag=1
+		and scminvmovebillentry.itemId = scmmaterialgroupdetail.itemId
+		and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+		and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+		and ScmMaterialGroupStandard.standardType='1') costUseSet on a1.outCstOrgUnitNo=costUseSet.outCstOrgUnitNo and a1.wtId=costUseSet.billId
+		,scminvmovebillentry a2,scmmaterialgroupdetail a3,scmmaterialgroup a4,ScmMaterialGroupStandard
+			where a1.wtId = a2.wtId
+			and a2.itemId = a3.itemId
+			and a3.classId = a4.id
+			and a3.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1'
+			and YEAR(#{accountDate})=YEAR(a1.bizDate)
+			and MONTH(#{accountDate})=MONTH(a1.bizDate)
+			<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+				and a1.outCstOrgUnitNo in (${costOrgUnitNos})
+			</if>
+			and a1.status='E'
+			and IFNULL(a1.outOrgUnitNo,'')!=''
+			<if test="materialClassIds != null and materialClassIds !='' ">
+				and a4.id in (${materialClassIds})
+			</if>
+			
+		UNION ALL
+		
+		select 0 as startAmt,0 as startTaxAmt,
+		0 as purinAmt,0 as purinTaxAmt,
+		0 as reqAmt,
+		0 as reqTaxAmt,
+		a2.amt as cstinAmt,a2.taxAmt as cstinTaxAmt,0 as cstoutAmt,0 as cstoutTaxAmt,
+		0 as endAmt,0 as endTaxAmt,costUseSet.scmCostUseTypeName as costuseTypeName,
+		a4.classCode,a4.className,a1.inOrgUnitNo as orgUnitNo,a1.inCstOrgUnitNo as costOrgUnitNo 
+		from scminvmovebill a1 left join (select scminvmovebill.wtId as billId,scminvmovebill.inCstOrgUnitNo,ScmCostUseType.name as scmCostUseTypeName
+		from scminvmovebill,scminvmovebillentry,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+		where ScmCostUseSet.costOrgUnitNo= scminvmovebill.inCstOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+		and scminvmovebill.wtId = scminvmovebillentry.wtId
+		and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+		and ScmCostUseType.flag=1
+		and scminvmovebillentry.itemId = scmmaterialgroupdetail.itemId
+		and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+		and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+		and ScmMaterialGroupStandard.standardType='1') costUseSet on a1.inCstOrgUnitNo=costUseSet.inCstOrgUnitNo and a1.wtId=costUseSet.billId,
+		scminvmovebillentry a2,scmmaterialgroupdetail a3,scmmaterialgroup a4,ScmMaterialGroupStandard
+			where a1.wtId = a2.wtId
+			and a2.itemId = a3.itemId
+			and a3.classId = a4.id
+			and a3.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1'
+			and YEAR(#{accountDate})=YEAR(a1.bizDate)
+			and MONTH(#{accountDate})=MONTH(a1.bizDate)
+			<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+				and a1.inCstOrgUnitNo in (${costOrgUnitNos})
+			</if>
+			and a1.status='E'
+			and IFNULL(a1.inOrgUnitNo,'')!=''
+			<if test="materialClassIds != null and materialClassIds !='' ">
+				and a4.id in (${materialClassIds})
+			</if>) T
+			group by T.costOrgUnitNo,T.classCode
+			order by T.costOrgUnitNo,T.classCode asc
+	</select>
+	
+	
+	<select id="scmcostreport.selectDeptSummaryConsumes" resultType="ScmDeptConsume" parameterType="Map">
+		select CASE WHEN #{queryType}='1' THEN SUM(T.startAmt) ELSE SUM(T.startTaxAmt) END as startAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.purinAmt) ELSE SUM(T.purinTaxAmt) END as purinAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.reqAmt) ELSE SUM(T.reqTaxAmt) END as reqAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.cstinAmt) ELSE SUM(T.cstinTaxAmt) END as cstinAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.cstoutAmt) ELSE SUM(T.cstoutTaxAmt) END as cstoutAmt,
+		CASE WHEN #{queryType}='1' THEN SUM(T.endAmt) ELSE SUM(T.endTaxAmt) END as endAmt,
+		T.classCode,T.className,T.orgUnitNo,T.costOrgUnitNo,T.costuseTypeName as costuseTypeName
+		from (select scminvbal.startAmt as startAmt,scminvbal.startTaxAmt as startTaxAmt,
+		0 as purinAmt,0 as purinTaxAmt,0 as reqAmt,0 as reqTaxAmt,
+		0 as cstinAmt,0 as cstinTaxAmt,0 as cstoutAmt,0 as cstoutTaxAmt,
+		scminvbal.endAmt as endAmt,scminvbal.endTaxAmt as endTaxAmt,costUseSet.scmCostUseTypeName as costuseTypeName,
+		scmmaterialgroup.classCode as classCode,scmmaterialgroup.className as className,scminvbal.orgUnitNo as orgUnitNo,scminvbal.costOrgUnitNo as costOrgUnitNo
+		from scminvbal left join 
+			(select scminvbal.costOrgUnitNo,scminvbal.id as balId,ScmCostUseType.name as scmCostUseTypeName
+			from scminvbal,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+			where ScmCostUseSet.costOrgUnitNo= scminvbal.costOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+			and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+			and ScmCostUseType.flag=1
+			and scminvbal.itemId = scmmaterialgroupdetail.itemId
+			and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+			and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1'
+			group by scminvbal.id,scminvbal.costOrgUnitNo) costUseSet on scminvbal.id=costUseSet.balId and scminvbal.costOrgUnitNo=costUseSet.costOrgUnitNo
+		,scmmaterialgroupdetail,scmmaterialgroup,ScmMaterialGroupStandard
+		where YEAR(#{accountDate})=scminvbal.accountYear
+		and MONTH(#{accountDate})=scminvbal.accountPeriod
+		and scminvbal.wareHouseId=0
+		<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+			and scminvbal.costOrgUnitNo in (${costOrgUnitNos})
+		</if>
+		and scminvbal.itemId = scmmaterialgroupdetail.itemId
+		and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+		and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+		and ScmMaterialGroupStandard.standardType='1'
+		<if test="materialClassIds != null and materialClassIds !='' ">
+			and scmmaterialgroup.id in (${materialClassIds})
+		</if>
+		UNION ALL
+		select 0 as startAmt,0 as startTaxAmt,
+		CASE WHEN a1.bizType in ('1','3') THEN a2.amt ELSE -a2.amt END as purinAmt,
+		CASE WHEN a1.bizType in ('1','3') THEN a2.taxAmt ELSE -a2.taxAmt END as purinTaxAmt,0 as reqAmt,0 as reqTaxAmt,
+		0 as cstinAmt,0 as cstinTaxAmt,0 as cstoutAmt,0 as cstoutTaxAmt,
+		0 as endAmt,0 as endTaxAmt,
+		CASE WHEN costUseSet.scmCostUseTypeName is NULL THEN costUseSet2.scmCostUseTypeName ELSE costUseSet.scmCostUseTypeName END as costuseTypeName,
+		a4.classCode,a4.className,a2.useOrgUnitNo as orgUnitNo,a2.costOrgUnitNo as costOrgUnitNo 
+		from scminvpurinwarehsbill a1,scminvpurinwarehsbillentry a2 
+		left join 
+			(select scminvpurinwarehsbillentry.id as entryId,scminvpurinwarehsbillentry.costOrgUnitNo,ScmCostUseType.name as scmCostUseTypeName
+			from scminvpurinwarehsbillentry,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+			where ScmCostUseSet.costOrgUnitNo= scminvpurinwarehsbillentry.costOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+			and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+			and ScmCostUseType.flag=1
+			AND scmcostusetype.id = scminvpurinwarehsbillentry.costUseTypeId
+			and scminvpurinwarehsbillentry.itemId = scmmaterialgroupdetail.itemId
+			and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+			and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1') costUseSet on a2.costOrgUnitNo=costUseSet.costOrgUnitNo and a2.id=costUseSet.entryId
+		left join 
+			(select scminvpurinwarehsbillentry.costOrgUnitNo,scminvpurinwarehsbillentry.id as entryId,ScmCostUseType.name as scmCostUseTypeName
+			from scminvpurinwarehsbillentry,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+			where ScmCostUseSet.costOrgUnitNo= scminvpurinwarehsbillentry.costOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+			and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+			and ScmCostUseType.flag=1
+			and scminvpurinwarehsbillentry.itemId = scmmaterialgroupdetail.itemId
+			and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+			and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1'
+			GROUP BY scminvpurinwarehsbillentry.id,scminvpurinwarehsbillentry.costOrgUnitNo) costUseSet2 
+			on a2.id=costUseSet2.entryid and a2.costOrgUnitNo=costUseSet2.costOrgUnitNo and costUseSet.scmCostUseTypeName is null
+		,scmmaterialgroupdetail a3,scmmaterialgroup a4,ScmMaterialGroupStandard
+		where a1.wrId = a2.wrId
+		and a2.itemId = a3.itemId
+		and a3.classId = a4.id
+		and a3.standardId = ScmMaterialGroupStandard.id
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(#{accountDate})=YEAR(a1.bizDate)
+		and MONTH(#{accountDate})=MONTH(a1.bizDate)
+		<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+			and a2.costOrgUnitNo in (${costOrgUnitNos})
+		</if>
+		and a1.status='E'
+		and a2.wareHouseId=0
+		and IFNULL(a2.useOrgUnitNo,'')!=''
+		and a1.bizType in ('1','3','6','8')
+		<if test="materialClassIds != null and materialClassIds !='' ">
+			and a4.id in (${materialClassIds})
+		</if>
+		UNION ALL
+		select 0 as startAmt,0 as startTaxAmt,
+		0 as purinAmt,0 as purinTaxAmt,
+		CASE WHEN a1.bizType='1' THEN a2.amt ELSE -a2.amt END as reqAmt,
+		CASE WHEN a1.bizType='1' THEN a2.taxAmt ELSE -a2.taxAmt END as reqTaxAmt,
+		0 as cstinAmt,0 as cstinTaxAmt,0 as cstoutAmt,0 as cstoutTaxAmt,
+		0 as endAmt,0 as endTaxAmt,
+		CASE WHEN costUseSet.scmCostUseTypeName is NULL THEN costUseSet2.scmCostUseTypeName ELSE costUseSet.scmCostUseTypeName END as costuseTypeName,
+		a4.classCode,a4.className,a1.useOrgUnitNo as orgUnitNo,a1.costOrgUnitNo as costOrgUnitNo 
+		from scminvmaterialreqbill a1 
+		left join 
+			(select scminvmaterialreqbill.otId as billId,scminvmaterialreqbill.costOrgUnitNo,ScmCostUseType.name as scmCostUseTypeName
+			from scminvmaterialreqbill,scminvmaterialreqbillentry,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+			where ScmCostUseSet.costOrgUnitNo= scminvmaterialreqbill.costOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+			and scminvmaterialreqbill.otId = scminvmaterialreqbillentry.otId
+			and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+			and ScmCostUseType.flag=1
+			AND scmcostusetype.id = scminvmaterialreqbillentry.costUseTypeId
+			and scminvmaterialreqbillentry.itemId = scmmaterialgroupdetail.itemId
+			and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+			and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1') costUseSet on a1.costOrgUnitNo=costUseSet.costOrgUnitNo and a1.otId=costUseSet.billId
+		left join 
+			(select scminvmaterialreqbill.otId as billId,scminvmaterialreqbill.costOrgUnitNo,ScmCostUseType.name as scmCostUseTypeName
+			from scminvmaterialreqbill,scminvmaterialreqbillentry,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+			where ScmCostUseSet.costOrgUnitNo= scminvmaterialreqbill.costOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+			and scminvmaterialreqbill.otId = scminvmaterialreqbillentry.otId
+			and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+			and ScmCostUseType.flag=1
+			and scminvmaterialreqbillentry.itemId = scmmaterialgroupdetail.itemId
+			and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+			and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1'
+			GROUP BY scminvmaterialreqbill.otId,scminvmaterialreqbill.costOrgUnitNo) costUseSet2 on a1.costOrgUnitNo=costUseSet2.costOrgUnitNo and a1.otId=costUseSet2.billId and costUseSet.scmCostUseTypeName is null
+		,scminvmaterialreqbillentry a2,scmmaterialgroupdetail a3,scmmaterialgroup a4,ScmMaterialGroupStandard
+		where a1.otId = a2.otId
+		and a2.itemId = a3.itemId
+		and a3.classId = a4.id
+		and a3.standardId = ScmMaterialGroupStandard.id
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(#{accountDate})=YEAR(a1.bizDate)
+		and MONTH(#{accountDate})=MONTH(a1.bizDate)
+		<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+			and a1.costOrgUnitNo in (${costOrgUnitNos})
+		</if>
+		and a1.status='E'
+		and IFNULL(a1.useOrgUnitNo,'')!=''
+		<if test="materialClassIds != null and materialClassIds !='' ">
+			and a4.id in (${materialClassIds})
+		</if>
+		UNION ALL
+		select 0 as startAmt,0 as startTaxAmt,
+		0 as purinAmt,0 as purinTaxAmt,
+		0 as reqAmt,
+		0 as reqTaxAmt,
+		0 as cstinAmt,0 as cstinTaxAmt,a2.amt as cstoutAmt,a2.taxAmt as cstoutTaxAmt,
+		0 as endAmt,0 as endTaxAmt,
+		CASE WHEN costUseSet.scmCostUseTypeName is NULL THEN costUseSet2.scmCostUseTypeName ELSE costUseSet.scmCostUseTypeName END as costuseTypeName,
+		a4.classCode,a4.className,a1.outOrgUnitNo as orgUnitNo,a1.outCstOrgUnitNo as costOrgUnitNo 
+		from scminvmovebill a1 
+		left join 
+			(select scminvmovebill.wtId as billId,scminvmovebill.outCstOrgUnitNo,ScmCostUseType.name as scmCostUseTypeName
+			from scminvmovebill,scminvmovebillentry,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+			where ScmCostUseSet.costOrgUnitNo= scminvmovebill.outCstOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+			and scminvmovebill.wtId = scminvmovebillentry.wtId
+			and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+			and ScmCostUseType.flag=1
+			AND scmcostusetype.id = scminvmovebillentry.costUseTypeOutId
+			and scminvmovebillentry.itemId = scmmaterialgroupdetail.itemId
+			and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+			and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1') costUseSet on a1.outCstOrgUnitNo=costUseSet.outCstOrgUnitNo and a1.wtId=costUseSet.billId
+		left join 
+			(select scminvmovebill.wtId as billId,scminvmovebill.outCstOrgUnitNo,ScmCostUseType.name as scmCostUseTypeName
+			from scminvmovebill,scminvmovebillentry,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+			where ScmCostUseSet.costOrgUnitNo= scminvmovebill.outCstOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+			and scminvmovebill.wtId = scminvmovebillentry.wtId
+			and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+			and ScmCostUseType.flag=1
+			and scminvmovebillentry.itemId = scmmaterialgroupdetail.itemId
+			and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+			and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1'
+			group by scminvmovebill.wtId,scminvmovebill.outCstOrgUnitNo) costUseSet2 on a1.outCstOrgUnitNo=costUseSet2.outCstOrgUnitNo and a1.wtId=costUseSet2.billId and costUseSet.scmCostUseTypeName is null
+		,scminvmovebillentry a2,scmmaterialgroupdetail a3,scmmaterialgroup a4,ScmMaterialGroupStandard
+		where a1.wtId = a2.wtId
+		and a2.itemId = a3.itemId
+		and a3.classId = a4.id
+		and a3.standardId = ScmMaterialGroupStandard.id
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(#{accountDate})=YEAR(a1.bizDate)
+		and MONTH(#{accountDate})=MONTH(a1.bizDate)
+		<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+			and a1.outCstOrgUnitNo in (${costOrgUnitNos})
+		</if>
+		and a1.status='E'
+		and IFNULL(a1.outOrgUnitNo,'')!=''
+		<if test="materialClassIds != null and materialClassIds !='' ">
+			and a4.id in (${materialClassIds})
+		</if>
+		UNION ALL
+		select 0 as startAmt,0 as startTaxAmt,
+		0 as purinAmt,0 as purinTaxAmt,
+		0 as reqAmt,
+		0 as reqTaxAmt,
+		a2.amt as cstinAmt,a2.taxAmt as cstinTaxAmt,0 as cstoutAmt,0 as cstoutTaxAmt,
+		0 as endAmt,0 as endTaxAmt,
+		CASE WHEN costUseSet.scmCostUseTypeName is NULL THEN costUseSet2.scmCostUseTypeName ELSE costUseSet.scmCostUseTypeName END as costuseTypeName,
+		a4.classCode,a4.className,a1.inOrgUnitNo as orgUnitNo,a1.inCstOrgUnitNo as costOrgUnitNo 
+		from scminvmovebill a1 
+		left join 
+			(select scminvmovebill.wtId as billId,scminvmovebill.inCstOrgUnitNo,ScmCostUseType.name as scmCostUseTypeName
+			from scminvmovebill,scminvmovebillentry,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+			where ScmCostUseSet.costOrgUnitNo= scminvmovebill.inCstOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+			and scminvmovebill.wtId = scminvmovebillentry.wtId
+			and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+			and ScmCostUseType.flag=1
+			AND scmcostusetype.id = scminvmovebillentry.costUseTypeInId
+			and scminvmovebillentry.itemId = scmmaterialgroupdetail.itemId
+			and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+			and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1') costUseSet on a1.inCstOrgUnitNo=costUseSet.inCstOrgUnitNo and a1.wtId=costUseSet.billId
+		left join 
+			(select scminvmovebill.wtId as billId,scminvmovebill.inCstOrgUnitNo,ScmCostUseType.name as scmCostUseTypeName
+			from scminvmovebill,scminvmovebillentry,scmmaterialgroup,scmmaterialgroupdetail,ScmCostUseSet,ScmCostUseType,ScmMaterialGroupStandard
+			where ScmCostUseSet.costOrgUnitNo= scminvmovebill.inCstOrgUnitNo and ScmCostUseSet.classId=scmmaterialgroup.id
+			and scminvmovebill.wtId = scminvmovebillentry.wtId
+			and ScmCostUseSet.costUseTypeId=ScmCostUseType.id
+			and ScmCostUseType.flag=1
+			and scminvmovebillentry.itemId = scmmaterialgroupdetail.itemId
+			and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+			and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1'
+			group by scminvmovebill.wtId,scminvmovebill.inCstOrgUnitNo) costUseSet2 on a1.inCstOrgUnitNo=costUseSet2.inCstOrgUnitNo and a1.wtId=costUseSet2.billId and costUseSet.scmCostUseTypeName is null
+		,scminvmovebillentry a2,scmmaterialgroupdetail a3,scmmaterialgroup a4,ScmMaterialGroupStandard
+		where a1.wtId = a2.wtId
+		and a2.itemId = a3.itemId
+		and a3.classId = a4.id
+		and a3.standardId = ScmMaterialGroupStandard.id
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(#{accountDate})=YEAR(a1.bizDate)
+		and MONTH(#{accountDate})=MONTH(a1.bizDate)
+		<if test="costOrgUnitNos!=null and costOrgUnitNos!=''">
+			and a1.inCstOrgUnitNo in (${costOrgUnitNos})
+		</if>
+		and a1.status='E'
+		and IFNULL(a1.inOrgUnitNo,'')!=''
+		<if test="materialClassIds != null and materialClassIds !='' ">
+			and a4.id in (${materialClassIds})
+		</if>) T
+		group by T.costOrgUnitNo,T.classCode,T.costuseTypeName
+		order by T.costOrgUnitNo,T.classCode,T.costuseTypeName asc
+	</select>
+	
+	
+	
+	<select id="scmcostreport.selectImmediateCostSum" resultType="ScmCostRealtimeStockSum" parameterType="Map">
+		SELECT costOrgUnitNo,useOrgUnitNo,itemNo,itemName,spec,unit,pieUnit,classCode,className,sum(qty) as qty,sum(pieQty) as pieQty,sum(amt) as amt,sum(taxAmt) as taxAmt,sum(addInQty) as addInQty,sum(addInPieQty) as addInPieQty,sum(addInAmt) as addInAmt,sum(addInTaxAmt) as addInTaxAmt,
+		sum(outQty) as outQty,sum(outPieQty) as outPieQty,sum(outAmt) as outAmt,sum(outTaxAmt) as outTaxAmt,sum(qty)+sum(addInQty)-sum(outQty) as allStockQty,
+		sum(pieQty)+sum(addInPieQty)-sum(outPieQty) as allStockPieQty,sum(amt)+sum(addInAmt)-sum(outAmt) as allStockAmt,
+		sum(taxAmt)+sum(addInTaxAmt)-sum(outTaxAmt) as allStockTaxAmt FROM
+		(SELECT A.costOrgUnitNo,A.orgUnitNo as useOrgUnitNo,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,SUM(B.qty) as addInQty,SUM(B.pieQty) as addInPieQty,SUM(B.amt) as addInAmt,SUM(B.taxAmt) as addInTaxAmt,0 as outQty,0 as outPieQty,0 as outAmt,0 as outTaxAmt              
+  		FROM ScmCstInitBill A,ScmCstInitBillEntry B,ScmMaterialGroupStandard C,             
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z             
+			WHERE A.initId = B.initId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+  		AND x.id  = y.classId AND y.itemId = z.id  And A.status not in ('E','N')
+		AND IFNULL(A.orgUnitNo,'')!=''
+			<if test="costOrgUnitNo != null and costOrgUnitNo !=''">
+  			And A.costOrgUnitNo in (${costOrgUnitNo}) 
+  		</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialIds != null and materialIds !='' ">
+				And Z.id in (${materialIds})
+			</if> 
+		GROUP BY A.costOrgUnitNo,A.orgUnitNo,z.itemNo,B.unit,B.pieUnit,x.classCode
+		UNION ALL
+		SELECT B.costOrgUnitNo,B.useOrgUnitNo,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,
+			SUM(CASE WHEN A.bizType IN ('1','2','3') THEN B.Qty ELSE - B.qty END) as addInQty,
+			SUM(CASE WHEN A.bizType IN ('1','2','3') THEN B.pieQty ELSE -B.pieQty END) as addInPieQty,
+  		SUM(CASE WHEN A.bizType IN ('1','2','3') THEN B.amt ELSE -B.amt END) as addInAmt,
+  		SUM(CASE WHEN A.bizType IN ('1','2','3') THEN B.taxAmt ELSE -B.taxAmt END) as addInTaxAmt,0 as outQty,0 as outPieQty,0 as outAmt,0 as outTaxAmt
+		FROM ScmInvPurInwarehsBill A,ScmInvPurInwarehsBillEntry B,ScmMaterialGroupStandard C,              
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z               
+  		WHERE A.WRID = B.WRID And sysBill='0' And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+  		AND x.id  = y.classId	AND y.itemId = z.id And A.status not in ('E','N')
+		AND B.wareHouseId=0 and IFNULL(B.useOrgUnitNo,'')!=''
+  		<if test="costOrgUnitNo != null and costOrgUnitNo !=''">
+  			And B.costOrgUnitNo in (${costOrgUnitNo}) 
+  		</if> 
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialIds != null and materialIds !='' ">
+				And Z.id in (${materialIds})
+			</if> 
+			GROUP BY B.costOrgUnitNo,B.useOrgUnitNo,z.itemNo,B.unit,B.pieUnit,x.classCode    
+		UNION ALL              
+  		SELECT A.inCstOrgUnitNo as costOrgUnitNo,A.inOrgUnitNo as useOrgUnitNo,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,SUM(B.qty) as addInQty,SUM(B.pieQty) as addInPieQty,SUM(B.amt) as addInAmt,SUM(B.taxAmt) as addInTaxAmt,0 as outQty,0 as outPieQty,0 as outAmt,0 as outTaxAmt              
+  		FROM ScmInvMoveBill A,ScmInvMoveBillEntry B,ScmMaterialGroupStandard C,             
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z             
+			WHERE A.wtId = B.wtId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+  		AND x.id  = y.classId AND y.itemId = z.id  And A.status not in ('E','N')
+		AND IFNULL(A.inOrgUnitNo,'')!=''
+			<if test="costOrgUnitNo != null and costOrgUnitNo !=''">
+  			And A.inCstOrgUnitNo in (${costOrgUnitNo}) 
+  		</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialIds != null and materialIds !='' ">
+				And Z.id in (${materialIds})
+			</if> 
+		GROUP BY A.inCstOrgUnitNo,A.inOrgUnitNo,z.itemNo,B.unit,B.pieUnit,x.classCode   
+  	UNION ALL                              
+  	SELECT A.costOrgUnitNo,A.useOrgUnitNo,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,SUM(CASE WHEN A.bizType = '1' THEN B.qty ELSE -B.qty END) as addInQty,SUM(CASE WHEN A.bizType = '1' THEN B.pieQty ELSE -B.pieQty END) as addInPieQty,SUM(CASE WHEN A.bizType = '1' THEN B.amt ELSE -B.amt END) as addInAmt,SUM(CASE WHEN A.bizType = '1' THEN B.taxAmt ELSE -B.taxAmt END) as addInTaxAmt,0 as outQty,0 as outPieQty,0 as outAmt,0 as outTaxAmt
+	FROM ScmInvMaterialReqBill A,ScmInvMaterialReqBillEntry B,ScmMaterialGroupStandard C,
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z         
+  		WHERE A.otId = B.otId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+  		AND x.id  = y.classId AND y.itemid = z.id And A.status not in ('E','N')
+		AND IFNULL(A.useOrgUnitNo,'')!=''
+  		<if test="costOrgUnitNo != null and costOrgUnitNo !=''">
+  			And A.costOrgUnitNo in (${costOrgUnitNo}) 
+  		</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialIds != null and materialIds !='' ">
+				And Z.id in (${materialIds})
+			</if> 
+			GROUP BY A.costOrgUnitNo,A.useOrgUnitNo,z.itemNo,B.unit,B.pieUnit,x.classCode  
+		UNION ALL               
+  	SELECT A.outCstOrgUnitNo as costOrgUnitNo,A.outOrgUnitNo as useOrgUnitNo,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,0 as addInQty,0 as addInPieQty,0 as addInAmt,0 as addInTaxAmt,
+			SUM(B.qty) as outQty,SUM(B.pieQty) as outPieQty,SUM(B.amt) as outAmt,SUM(B.TaxAmt) as outTaxAmt           
+  		FROM ScmInvMoveBill A,ScmInvMoveBillEntry B,ScmMaterialGroupStandard C,
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z               
+  		WHERE A.wtId = B.wtId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+	  	And x.id  = y.classId And y.itemId = z.id And A.status not in ('E','N')
+		And IFNULL(A.outOrgUnitNo,'')!=''
+			<if test="costOrgUnitNo != null and costOrgUnitNo !=''">
+  			And A.outCstOrgUnitNo in (${costOrgUnitNo}) 
+  		</if> 
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialIds != null and materialIds !='' ">
+				And Z.id in (${materialIds})
+			</if> 
+	  	GROUP BY A.outCstOrgUnitNo,A.outOrgUnitNo,z.itemNo,B.unit,B.pieUnit,x.classCode    
+  	UNION ALL              
+		SELECT A.orgUnitNo as costOrgUnitNo,A.useOrgUnitNo,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,0 as addInQty,0 as addInPieQty,0 as addInAmt,0 as addInTaxAmt,
+			SUM(B.qty) as outQty,SUM(pieQty) as outPieQty,SUM(B.amt) as outAmt,SUM(B.TaxAmt) as outTaxAmt
+			FROM ScmInvCostConsume A,ScmInvCostConsumeEntry B,ScmMaterialGroupStandard C,
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z               
+  		WHERE A.dcId = B.dcId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+			AND x.id  = y.classId AND y.itemid = z.id And A.status not in ('E','N')
+			And IFNULL(A.useOrgUnitNo,'')!=''			
+			<if test="costOrgUnitNo != null and costOrgUnitNo !=''">
+  			And A.orgUnitNo in (${costOrgUnitNo}) 
+  		</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialIds != null and materialIds !='' ">
+				And Z.id in (${materialIds})
+			</if> 
+			GROUP BY A.orgUnitNo,A.useOrgUnitNo,z.itemNo,B.unit,B.pieUnit,x.classCode
+	UNION ALL              
+		SELECT A.costOrgUnitNo,A.orgUnitNo as useOrgUnitNo,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,0 as addInQty,0 as addInPieQty,0 as addInAmt,0 as addInTaxAmt,
+			SUM(B.qty) as outQty,SUM(pieQty) as outPieQty,SUM(B.amt) as outAmt,SUM(B.TaxAmt) as outTaxAmt
+			FROM ScmCstFrmLoss A,ScmCstFrmLossEntry B,ScmMaterialGroupStandard C,
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z               
+  		WHERE A.id = B.billId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+			AND x.id  = y.classId AND y.itemid = z.id And A.status not in ('E','N')
+			And IFNULL(A.orgUnitNo,'')!=''			
+			<if test="costOrgUnitNo != null and costOrgUnitNo !=''">
+  			And A.costOrgUnitNo in (${costOrgUnitNo}) 
+  		</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialIds != null and materialIds !='' ">
+				And Z.id in (${materialIds})
+			</if> 
+			GROUP BY A.costOrgUnitNo,A.orgUnitNo,z.itemNo,B.unit,B.pieUnit,x.classCode
+	UNION ALL              
+		SELECT B.outCostOrgUnitNo AS costOrgUnitNo,B.outOrgUnitNo as useOrgUnitNo,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,
+			SUM(CASE WHEN A.bizType IN ('1','2','3') THEN - B.Qty ELSE B.qty END) as addInQty,
+ 			SUM(CASE WHEN A.bizType IN ('1','2','3') THEN -B.pieQty ELSE B.pieQty END) as addInPieQty,
+  		SUM(CASE WHEN A.bizType IN ('1','2','3') THEN -B.amt ELSE B.amt END) as addInAmt,
+  		SUM(CASE WHEN A.bizType IN ('1','2','3') THEN -B.taxAmt ELSE B.taxAmt END) as addInTaxAmt,
+			0 as outQty,0 as outPieQty,0 as outAmt,0 as outTaxAmt
+		FROM scminvsaleissuebill A,scminvsaleissuebillentry B,ScmMaterialGroupStandard C,              
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z               
+  		WHERE A.otId = B.otId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+  		AND x.id  = y.classId	AND y.itemId = z.id And A.status not in ('E','N')
+		AND B.wareHouseId=0 and IFNULL(B.outOrgUnitNo,'')!=''
+  		<if test="costOrgUnitNo != null and costOrgUnitNo !=''">
+  			And B.outCostOrgUnitNo in (${costOrgUnitNo}) 
+  		</if> 
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialIds != null and materialIds !='' ">
+				And Z.id in (${materialIds})
+			</if> 
+			GROUP BY B.outCostOrgUnitNo,B.outOrgUnitNo,z.itemNo,B.unit,B.pieUnit,x.classCode
+		UNION ALL
+		SELECT A.costOrgUnitNo,A.orgUnitNo as useOrgUnitNo,z.itemNo,z.itemName,z.spec,A.unit,A.pieUnit,x.classCode,x.className,sum(A.qty) as qty,sum(A.pieQty) as pieQty,sum(A.amt)as amt,sum(A.taxAmt) as taxAmt,0 as addInQty,0 as addInPieQty,0 as addInAmt,0 as addInTaxAmt,0 as outQty,0 as outPieQty,0 as outAmt,0 as outTaxAmt
+		FROM scminvstock A,ScmMaterialGroupStandard C, ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z      
+			Where A.costCenter=1 And A.itemId =z.id And C.standardType='1' And C.id= x.standardId
+			AND x.id  = y.classId And y.itemId=z.id
+			And IFNULL(A.orgUnitNo,'')!=''
+			<if test="costOrgUnitNo != null and costOrgUnitNo !=''">
+  			And A.costOrgUnitNo in (${costOrgUnitNo}) 
+  		</if> 
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialIds != null and materialIds !='' ">
+				And Z.id in (${materialIds})
+			</if> 
+			GROUP BY A.costOrgUnitNo,A.orgUnitNo,z.itemNo,A.unit,A.pieUnit,x.classCode) AS T
+		GROUP BY costOrgUnitNo,useOrgUnitNo,itemNo,unit,pieUnit,classCode,className
+	</select>
+	    <!-- 成本转移明细表-->
+    <select id="scmcostreport.scmmovebillDetails" resultType="Map" parameterType="Map">
+		SELECT scminvmovebill.wtNo, CONCAT('#$orgBaseUnitBiz#$',scminvmovebill.createOrgUnitNo) as createOrgUnitNo, 
+			CONCAT('#$orgBaseUnitBiz#$',scminvmovebill.outCstOrgUnitNo) as outCstOrgUnitNo, CONCAT('#$orgBaseUnitBiz#$',scminvmovebill.inCstOrgUnitNo) as inCstOrgUnitNo,      
+			date_format(scminvmovebill.bizDate,'%Y-%m-%d') as bizDate,scmmaterialgroup.className,scmmaterial.itemno,scmmaterial.Itemname,
+			scmmaterial.spec,scmmeasureunit.unitname,scminvmovebillEntry.qty,scminvmovebillEntry.price ,  scminvmovebillEntry.amt,scminvmovebill.createDate, 
+			CONCAT('#$codeBiz#$','cstStatus',';',scminvmovebill.status) as status,CONCAT('#$usrBiz#$',scminvmovebill.creator) AS creator,
+			scminvmovebill.remarks     
+		FROM scminvmovebill  ,scminvmovebillEntry ,scmmaterial,scmmeasureunit,scmmaterialgroupdetail,scmmaterialgroup,ScmMaterialGroupStandard
+		WHERE scminvmovebill.WTID=scminvmovebillEntry.WTID and   scminvmovebillEntry.itemId= scmmaterial.id  
+			and scminvmovebillEntry.unit=scmmeasureunit.id and scminvmovebillEntry.itemid=scmmaterialgroupdetail.itemid 
+			and scmmaterialgroupdetail.classId=scmmaterialgroup.id
+			and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1'
+			<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+                and scminvmovebill.CreateOrgUnitNo in (${costOrgUnitNo})
+            </if>  
+            <if test="beginDate != null and beginDate !='' ">
+            	and scminvmovebill.bizDate &gt;= #{beginDate}
+         	</if>
+	    	<if test="endDate != null and endDate !='' ">
+            	and scminvmovebill.bizDate &lt;= #{endDate}
+         	</if>  
+            <if test="outCstOrgUnitNo != null and outCstOrgUnitNo !='' ">
+                and scminvmovebill.outCstOrgUnitNo in (${outCstOrgUnitNo})
+            </if> 
+            <if test="inCstOrgUnitNo != null and inCstOrgUnitNo !='' ">
+                and scminvmovebill.inCstOrgUnitNo in (${inCstOrgUnitNo})
+            </if> 
+            <if test="materialName != null and materialName !='' ">
+                and scminvmovebillEntry.itemId in (${materialName})
+            </if> 
+            <if test="status != null and status !='' ">
+                and scminvmovebill.status in (${status})
+            </if> 
+		ORDER BY scminvmovebill.bizDate asc,scminvmovebill.wtNo,scmmaterial.ItemNo ASC  
+
+    </select>  
+	
+</mapper>

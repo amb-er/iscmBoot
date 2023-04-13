@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmmaterialpurchase">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmmaterialpurchase.findAll" resultType="ScmMaterialPurchase2" >
+	    SELECT * FROM ScmMaterialPurchase WHERE  1=1  
+	</select>
+ 
+	<select id="scmmaterialpurchase.findAllPage" resultType="ScmMaterialPurchase2" parameterType="Map"> 
+		SELECT * FROM ScmMaterialPurchase WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmmaterialpurchase.selectById" resultType="ScmMaterialPurchase2" parameterType="Long">
+		SELECT * FROM ScmMaterialPurchase WHERE id = #{value}
+	</select>
+	<select id="scmmaterialpurchase.selectByItemIdAndOrgUnitNo" resultType="ScmMaterialPurchase2" parameterType="Map">
+		SELECT * FROM ScmMaterialPurchase 
+		WHERE 1=1 and itemId = #{itemId}
+			and orgUnitNo = #{orgUnitNo}
+	</select> 
+	<select id="scmmaterialpurchase.selectByItemStatusPage" resultType="ScmMaterialPurchase2" parameterType="Map">
+		SELECT * FROM ScmMaterialPurchase WHERE itemId = #{itemId}	and status = #{status}
+	</select> 
+	<insert id="scmmaterialpurchase.addOrUpdateMaterialPurchase" parameterType="ScmMaterialPurchase">
+		insert into ScmMaterialPurchase (guid, itemId, orgUnitNo, purUnit,purGroupId,buyerId,receiveTopRatio,receiveBottomRatio,needInquire,defaultRate,seekMode,
+		creator,createDate,editor,editDate,freezeOrgUnit,freezeTime,status,controlUnitNo)
+      	values (
+      	#{guId},
+        #{itemId},
+        #{orgUnitNo},
+        #{purUnit},
+        #{purGroupId},
+        #{buyerId},
+        #{receiveTopRatio},
+        #{receiveBottomRatio},
+        #{needInquire},
+        #{defaultRate},
+        #{seekMode},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{freezeOrgUnit},
+        #{freezeTime},
+        #{status},
+        #{controlUnitNo})
+		ON DUPLICATE KEY UPDATE receiveTopRatio=#{receiveTopRatio},editor=#{editor},editDate=#{editDate},receiveBottomRatio=#{receiveBottomRatio}; 
+	</insert>
+	<insert id="scmmaterialpurchase.add" parameterType="ScmMaterialPurchase"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmMaterialPurchase (
+        guId,
+        itemId,
+        orgUnitNo,
+        purUnit,
+        purGroupId,
+        buyerId,
+        receiveTopRatio,
+        receiveBottomRatio,
+        needInquire,
+        defaultRate,
+        seekMode,
+        supplyCycle,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        freezeOrgUnit,
+        freezeTime,
+        status,
+        controlUnitNo        )
+		VALUES (
+        #{guId},
+        #{itemId},
+        #{orgUnitNo},
+        #{purUnit},
+        #{purGroupId},
+        #{buyerId},
+        #{receiveTopRatio},
+        #{receiveBottomRatio},
+        #{needInquire},
+        #{defaultRate},
+        #{seekMode},
+        #{supplyCycle},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{freezeOrgUnit},
+        #{freezeTime},
+        #{status},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmmaterialpurchase.update" parameterType="ScmMaterialPurchase">
+		UPDATE ScmMaterialPurchase set
+        guId=#{guId},
+        itemId=#{itemId},
+        orgUnitNo=#{orgUnitNo},
+        purUnit=#{purUnit},
+        purGroupId=#{purGroupId},
+        buyerId=#{buyerId},
+        receiveTopRatio=#{receiveTopRatio},
+        receiveBottomRatio=#{receiveBottomRatio},
+        needInquire=#{needInquire},
+        defaultRate=#{defaultRate},
+        seekMode=#{seekMode},
+        supplyCycle=#{supplyCycle},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        freezeOrgUnit=#{freezeOrgUnit},
+        freezeTime=#{freezeTime},
+        status=#{status},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmmaterialpurchase.delete" parameterType="String">
+		DELETE FROM ScmMaterialPurchase WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

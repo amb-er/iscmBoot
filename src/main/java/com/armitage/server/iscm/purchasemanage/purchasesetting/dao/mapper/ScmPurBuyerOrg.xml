@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurbuyerorg">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurbuyerorg.findAll" resultType="ScmPurBuyerOrg" >
+	    SELECT * FROM ScmPurBuyerOrg WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurbuyerorg.findAllPage" resultType="ScmPurBuyerOrg" parameterType="Map"> 
+		SELECT * FROM ScmPurBuyerOrg WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpurbuyerorg.selectById" resultType="ScmPurBuyerOrg" parameterType="Long">
+		SELECT * FROM ScmPurBuyerOrg WHERE id = #{value}
+	</select> 
+	<select id="scmpurbuyerorg.selectByBuyerId" resultType="ScmPurBuyerOrg2" parameterType="Map">
+		SELECT * FROM ScmPurBuyerOrg WHERE buyerId = #{buyerId}
+	</select> 
+	<insert id="scmpurbuyerorg.add" parameterType="ScmPurBuyerOrg"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurBuyerOrg (
+        orgUnitNo,
+        buyerId        )
+		VALUES (
+        #{orgUnitNo},
+        #{buyerId}        )
+	</insert>
+ 
+	<update id="scmpurbuyerorg.update" parameterType="ScmPurBuyerOrg">
+		UPDATE ScmPurBuyerOrg set
+        orgUnitNo=#{orgUnitNo},
+        buyerId=#{buyerId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurbuyerorg.delete" parameterType="String">
+		DELETE FROM ScmPurBuyerOrg WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,45 @@
+<%@ CodeTemplate Language="C#" TargetLanguage="XML" Description="Generates a db<->class mapping file for use with NHibnate." %>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" Category="Context" Description="Table that the mapping file is based on" %>
+ 
+  
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Text.RegularExpressions" %> 
+<!-- #include file="common.inc" -->
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import jidefx.scene.control.field.*?>
+<GridPane id="FormGridPane" alignment="TOP_LEFT" hgap="12.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="499.0" prefWidth="848.0" vgap="12.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2">
+ 
+  <children>
+     <%
+        int colIndex = 0;
+        int rowIndex = 0;
+        foreach(ColumnSchema prop in SourceTable.NonPrimaryKeyColumns){%>
+        <Label id="<%=prop.Name%>Label" alignment="CENTER_RIGHT" prefWidth="116.0" text="%field.<%=SourceTable.Name%>.<%=prop.Name%>" textAlignment="LEFT" underline="false" GridPane.columnIndex="<%=colIndex++%>" GridPane.rowIndex="<%=rowIndex%>" />
+        <<%=FieldType(prop)%> id="<%=prop.Name%>" prefWidth="138.0" GridPane.columnIndex="<%=colIndex++%>" GridPane.rowIndex="<%=rowIndex%>" />
+<%
+        //colIndex = colIndex+1;
+        if(colIndex%6 == 0){
+           colIndex = 0; 
+           rowIndex++;
+        }
+        
+      }
+    %>
+  </children>
+  
+  <padding>
+    <Insets bottom="12.0" left="12.0" right="12.0" top="12.0" />
+  </padding>
+  
+</GridPane>

@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmqualifieinfo">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmqualifieinfo.findAll" resultType="ScmQualifieInfo2" >
+	    SELECT * FROM ScmQualifieInfo WHERE  1=1  
+	</select>
+ 
+	<select id="scmqualifieinfo.findAllPage" resultType="ScmQualifieInfo2" parameterType="Map"> 
+		SELECT * FROM ScmQualifieInfo WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmqualifieinfo.selectById" resultType="ScmQualifieInfo2" parameterType="Long">
+		SELECT * FROM ScmQualifieInfo WHERE id = #{value}
+	</select> 
+	<select id="scmqualifieinfo.selectForPushPage" resultType="ScmQualifieInfo2" parameterType="Map">
+		SELECT * FROM ScmQualifieInfo WHERE controlUnitNo=#{controlUnitNo} ORDER BY updateTimeStamp ASC
+	</select>
+	<insert id="scmqualifieinfo.add" parameterType="ScmQualifieInfo"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmQualifieInfo (
+        vendorId,
+        typeId,
+        source,
+        qualifyAudit,
+        required,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        checker,
+        checkDate,
+        qualificationStatus,
+        controlUnitNo        )
+		VALUES (
+        #{vendorId},
+        #{typeId},
+        #{source},
+        #{qualifyAudit},
+        #{required},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{checker},
+        #{checkDate},
+        #{qualificationStatus},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmqualifieinfo.update" parameterType="ScmQualifieInfo">
+		UPDATE ScmQualifieInfo set
+        vendorId=#{vendorId},
+        typeId=#{typeId},
+        source=#{source},
+        qualifyAudit=#{qualifyAudit},
+        required=#{required},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        qualificationStatus=#{qualificationStatus},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmqualifieinfo.delete" parameterType="String">
+		DELETE FROM ScmQualifieInfo WHERE id IN (${value})
+	</delete> 
+	
+	<select id="scmqualifieinfo.selectByVendorId" resultType="ScmQualifieInfo2" parameterType="Map">
+		SELECT ScmQualifieInfo.*,ScmSupplier.status as vendorStatus,ScmSupplierQualifyType.name as typeName,
+		ScmSupplierQualifyType.code as qualifieTypeCode,ScmSupplier.qualificationStatus as vendorQualificationStatus
+		 FROM ScmQualifieInfo,ScmSupplier,ScmSupplierQualifyType
+		 WHERE ScmQualifieInfo.VendorId = #{vendorId}
+		 and ScmQualifieInfo.VendorId=ScmSupplier.id
+		 and ScmQualifieInfo.typeId=ScmSupplierQualifyType.id
+		 group by ScmQualifieInfo.id
+		 ORDER BY ScmQualifieInfo.id ASC
+	</select>
+	
+	<select id="scmqualifieinfo.selectAttachByVendorId" resultType="ScmQualifieInfo2" parameterType="Map">
+		SELECT ScmQualifieInfo.*,scmsupplier.status as vendorStatus,scmsupplier.qualificationStatus as vendorQualificationStatus,scmsupplierqualifytype.name as typeName,
+		scmsupplierqualifytype.code as qualifieTypeCode,scmbaseattachment.id as attachMentId,scmbaseattachment.docType as attachMentDocType
+		 FROM ScmQualifieInfo left join scmbaseattachment on scmbaseattachment.billType='ScmQualifieInfo' 
+		 and scmbaseattachment.billId=scmqualifieinfo.id, scmsupplier,scmsupplierqualifytype
+		 WHERE scmqualifieinfo.VendorId = #{vendorId}
+		 and scmqualifieinfo.VendorId=scmsupplier.id
+		 and scmqualifieinfo.typeId=scmsupplierqualifytype.id
+		 ORDER BY scmqualifieinfo.id ASC
+	</select> 
+	<delete id="scmqualifieinfo.deleteQualifyByVendorId" parameterType="Map">
+		DELETE FROM ScmQualifieInfo WHERE VendorId = #{vendorId} and id not in (SELECT distinct billId FROM scmbaseattachment where billType='ScmQualifieInfo' group by billId)
+	</delete>
+	<update id="scmqualifieinfo.doUnAuditQualifieInfo" parameterType="Map">
+		update ScmQualifieInfo set qualificationStatus = #{status} where VendorId = #{vendorId} and controlUnitNo=#{controlUnitNo}
+	</update>
+</mapper>
+ 

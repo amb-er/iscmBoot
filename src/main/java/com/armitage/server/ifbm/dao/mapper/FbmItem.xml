@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fbmitem">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="fbmitem.findAll" resultType="FbmItem" >
+	    SELECT * FROM FbmItem WHERE  1=1  
+	</select>
+ 
+	<select id="fbmitem.findAllPage" resultType="FbmItem" parameterType="Map"> 
+		SELECT * FROM FbmItem WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="fbmitem.selectById" resultType="FbmItem" parameterType="Long">
+		SELECT * FROM FbmItem WHERE id = #{value}
+	</select> 
+	<select id="fbmitem.selectByOrgUnitPage" resultType="FbmItem" parameterType="Map">
+		SELECT FbmItem.id,FbmItem.pId, FbmItem.code, FbmItem.name,  Case when D.permit is null then FbmItem.permit else D.permit end as permit, FbmItem.controlUnitNo,
+		#{orgUnitNo} as orgUnitNo, case when D.sort is null then FbmItem.sort else D.sort end as sort FROM
+		(Select A.id, A.pId,A.code, A.name, case when B.permit is null then A.permit else B.permit end as permit, A.controlUnitNo,B.orgUnitNo,  B.sort
+		From (SELECT FbmItem.* FROM FbmItem WHERE (controlUnitNo=#{controlUnitNo}
+			or exists (Select 1 from FbmItemAssign where toCtrUnitNo=#{controlUnitNo} and itemId=FbmItem.id))) A LEFT JOIN  
+		FbmItemSaleInfo B On A.id = b.itemId And B.orgUnitNo=#{controlUnitNo}) FbmItem
+		Left Join FbmItemSaleInfo D on FbmItem.id = D.itemId and D.orgUnitNo=#{orgUnitNo}
+		WHERE Case when D.permit is null then FbmItem.permit else D.permit end = 1 
+		ORDER BY case when D.sort is null then FbmItem.sort else D.sort end,FbmItem.id ASC	
+	</select> 
+	<insert id="fbmitem.add" parameterType="FbmItem"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  FbmItem (
+        orgUnitNo,
+        pid,
+        code,
+        name,
+        mnemonic,
+        backColor,
+        textColor,
+        serveOrder,
+        sort,
+        permit,
+        remarks,
+        iSyncModFlag,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{pid},
+        #{code},
+        #{name},
+        #{mnemonic},
+        #{backColor},
+        #{textColor},
+        #{serveOrder},
+        #{sort},
+        #{permit},
+        #{remarks},
+        #{iSyncModFlag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="fbmitem.update" parameterType="FbmItem">
+		UPDATE FbmItem set
+        orgUnitNo=#{orgUnitNo},
+        pid=#{pid},
+        code=#{code},
+        name=#{name},
+        mnemonic=#{mnemonic},
+        backColor=#{backColor},
+        textColor=#{textColor},
+        serveOrder=#{serveOrder},
+        sort=#{sort},
+        permit=#{permit},
+        remarks=#{remarks},
+        iSyncModFlag=#{iSyncModFlag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="fbmitem.delete" parameterType="String">
+		DELETE FROM FbmItem WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

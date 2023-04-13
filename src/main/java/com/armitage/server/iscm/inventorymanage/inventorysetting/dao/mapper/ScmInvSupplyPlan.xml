@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvsupplyplan">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvsupplyplan.findAll" resultType="Scminvsupplyplan2" >
+	    SELECT * FROM scminvsupplyplan WHERE  1=1  
+	</select>
+ 
+	<select id="scminvsupplyplan.findAllPage" resultType="Scminvsupplyplan2" parameterType="Map"> 
+		SELECT scminvsupplyplan.*,scminvsupplyrule.ruleName FROM scminvsupplyplan 
+		left join scminvsupplyrule on  scminvsupplyplan.ruleid = scminvsupplyrule.id
+		WHERE  1=1 ORDER BY id DESC
+	</select> 
+	<select id="scminvsupplyplan.selectById" resultType="Scminvsupplyplan2" parameterType="Long">
+		SELECT * FROM scminvsupplyplan WHERE id = #{value}
+	</select> 
+	<select id="scminvsupplyplan.selectByRuleId" resultType="scminvsupplyplan2" parameterType="Long">
+		SELECT * FROM scminvsupplyplan WHERE scminvsupplyplan.ruleid = #{id}
+	</select>
+	<insert id="scminvsupplyplan.add" parameterType="Scminvsupplyplan2"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvsupplyplan (
+        ruleId,
+        orgUnitNo,
+        wareHouseId,
+        reqOrgUnitNo,
+        bizType,
+        purOrgUnitNo,
+        executor,
+        execTime,
+        controlUnitNo        )
+		VALUES (
+        #{ruleId},
+        #{orgUnitNo},
+        #{wareHouseId},
+        #{reqOrgUnitNo},
+        #{bizType},
+        #{purOrgUnitNo},
+        #{executor},
+        #{execTime},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvsupplyplan.update" parameterType="Scminvsupplyplan2">
+		UPDATE scminvsupplyplan set
+        ruleId=#{ruleId},
+        orgUnitNo=#{orgUnitNo},
+        wareHouseId=#{wareHouseId},
+        reqOrgUnitNo=#{reqOrgUnitNo},
+        bizType=#{bizType},
+        purOrgUnitNo=#{purOrgUnitNo},
+        executor=#{executor},
+        execTime=#{execTime},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvsupplyplan.delete" parameterType="String">
+		DELETE FROM scminvsupplyplan WHERE id IN (${value})
+	</delete> 
+	<select id="scminvsupplyplan.selectScmMaterialByItemIds" resultType="ScmMaterial2" parameterType="Map">
+	SELECT
+		ScmMaterial.id,ScmMaterial.itemName,ScmMaterial.baseUnitId,ScmMaterial.status,C.className,ScmMaterial.itemNo,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		C.groupId,
+		Case WHEN ScmMaterialInventory.maxQty is null then ScmMaterial.maxQty ELSE ScmMaterialInventory.maxQty END AS maxQty,
+		IFNULL(ScmMaterialPurchase.supplyCycle,ScmMaterial.supplyCycle) as purSupplyCycle,
+		IFNULL(ScmMaterialPurchase.buyerId,ScmMaterial.buyerId) as buyerId, 
+		Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit Else ScmMaterialPurchase.purUnit end as purUnitId,		
+		Case WHEN ScmMaterialPurchase.defaultRate is null Then ScmMaterial.defaultRate Else ScmMaterialPurchase.defaultRate end as purTaxRate,
+		Case WHEN ScmMaterialInventory.unitId is null Then ScmMaterial.unitId Else ScmMaterialInventory.unitId end as unitId,		
+		Case WHEN ScmMaterialPurchase.receiveTopRatio is null Then ScmMaterial.receiveTopRatio else ScmMaterialPurchase.receiveTopRatio end as receiveTopRatio
+        FROM 
+			(Select
+				ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialPurchase.purUnit,
+				ScmMaterialPurchase.defaultRate,
+				ScmMaterialInventory.unitId,ScmMaterialInventory.maxQty,
+				ScmMaterial.status,ScmMaterial.pieUnitId,	
+				ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,
+				Case WHEN ScmMaterialPurchase.status is null Then 'I' Else ScmMaterialPurchase.status End as purStatus,
+				ScmMaterialPurchase.supplyCycle,ScmMaterialPurchase.buyerId,
+				Case WHEN ScmMaterialInventory.status is null Then 'I' Else ScmMaterialInventory.status End as invStatus,
+				IFNULL(ScmMaterialPurchase.receiveTopRatio,0) as receiveTopRatio
+				from ScmMaterial
+				LEFT JOIN ScmMaterialPurchase On ScmMaterial.id=ScmMaterialPurchase.itemId and ScmMaterialPurchase.orgUnitNo=#{controlUnitNo} And ScmMaterial.status='A'
+				LEFT JOIN ScmMaterialInventory On ScmMaterial.id=ScmMaterialInventory.itemId and ScmMaterialInventory.orgUnitNo=#{controlUnitNo} And ScmMaterial.status='A') 
+			ScmMaterial
+			LEFT JOIN ScmMaterialPurchase ON ScmMaterial.id=ScmMaterialPurchase.itemId and ScmMaterialPurchase.orgUnitNo in (#{purOrgUnitNo}) and ScmMaterialPurchase.status='A'
+			LEFT JOIN ScmMaterialInventory ON ScmMaterial.id=ScmMaterialInventory.itemId and ScmMaterialInventory.orgUnitNo in (#{invOrgUnitNo}) and ScmMaterialInventory.status='A'
+			LEFT JOIN (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId,ScmMaterialGroup.className
+						FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup 
+						WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+							AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+							AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId ) 
+						C On C.id=ScmMaterial.id
+			LEFT JOIN (SELECT scminvstock.invDate,SUM(scminvstock.qty) qty,scminvstock.itemId from scminvstock 
+						where scminvstock.orgUnitNo = '${invOrgUnitNo}' and scminvstock.wareHouseId > 0 GROUP BY scminvstock.itemId)
+						F ON scmmaterial.id = F.itemId  			
+		WHERE Case WHEN	ScmMaterialPurchase.status is null Then ScmMaterial.purStatus Else ScmMaterialPurchase.status end='A'
+			And Case WHEN ScmMaterialInventory.status is null Then scmMaterial.invStatus Else ScmMaterialInventory.status end='A'
+			AND case WHEN ScmMaterialInventory.maxQty is null then ScmMaterial.maxQty ELSE ScmMaterialInventory.maxQty end > 0
+			AND ScmMaterial.id in (${itemId})	
+	</select>
+</mapper>
+ 

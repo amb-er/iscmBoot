@@ -1,0 +1,26 @@
+
+F
+java:S2093¬"*Change this "try" to a try-with-resources.(¡»¢üùÿÿÿÿ
+j
+java:S2095’"NUse try-with-resources or close this "FileOutputStream" in a "finally" clause.(Ş›”Êùÿÿÿÿ
+Q
+java:S1141ÿ"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ
+a
+java:S2259ğ"EA "NullPointerException" could be thrown; "img1Md5" is nullable here.(ôÅüâıÿÿÿÿ
+V	java:S899Ä";Do something with the "boolean" value returned by "delete".(²Œ­ûÿÿÿÿ
+V	java:S899Ê";Do something with the "boolean" value returned by "delete".(²Œ­ûÿÿÿÿ
+O	java:S106€"9Replace this use of System.out or System.err by a logger.(ÌÑş£
+F
+java:S1066®"/Merge this if statement with the enclosing one.(ÄŒÇ³
+O	java:S106¯"9Replace this use of System.out or System.err by a logger.(ìƒ˜í
+-
+java:S2176"Rename this class.(äÖ›‰ûÿÿÿÿ
+j
+java:S4042Ê"NUse "java.nio.file.Files#delete" here for better messages on error conditions.(²Œ­ûÿÿÿÿ
+d
+java:S2095ş"MUse try-with-resources or close this "FileInputStream" in a "finally" clause.(§ğ›à
+a	java:S112"FDefine and throw a dedicated exception instead of using a generic one.(™æÌ¿ûÿÿÿÿ
+=
+java:S1168†"&Return an empty array instead of null.(¥¹ï
+j
+java:S4042Ä"NUse "java.nio.file.Files#delete" here for better messages on error conditions.(²Œ­ûÿÿÿÿ

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmmeasureunit">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmmeasureunit.findAll" resultType="ScmMeasureUnit" >
+	    SELECT * FROM ScmMeasureUnit WHERE  1=1  
+	</select>
+ 
+	<select id="scmmeasureunit.findAllPage" resultType="ScmMeasureUnit" parameterType="Map"> 
+		SELECT ScmMeasureUnit.* FROM ScmMeasureUnit,ScmMeasureUnitGroup WHERE  1=1 
+		AND ScmMeasureUnit.groupId=ScmMeasureUnitGroup.id
+		ORDER BY ScmMeasureUnit.id ASC 
+	</select> 
+	<select id="scmmeasureunit.selectById" resultType="ScmMeasureUnit" parameterType="Long">
+		SELECT * FROM ScmMeasureUnit WHERE id = #{value}
+	</select> 
+	<insert id="scmmeasureunit.add" parameterType="ScmMeasureUnit"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmMeasureUnit (
+        guId,
+        unitNo,
+        unitName,
+        description,
+        groupId,
+        flag,
+        disabledDate,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        controlUnitNo        )
+		VALUES (
+        #{guId},
+        #{unitNo},
+        #{unitName},
+        #{description},
+        #{groupId},
+        #{flag},
+        #{disabledDate},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmmeasureunit.update" parameterType="ScmMeasureUnit">
+		UPDATE ScmMeasureUnit set
+        guId=#{guId},
+        unitNo=#{unitNo},
+        unitName=#{unitName},
+        description=#{description},
+        groupId=#{groupId},
+        flag=#{flag},
+        disabledDate=#{disabledDate},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmmeasureunit.delete" parameterType="String">
+		DELETE FROM ScmMeasureUnit WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

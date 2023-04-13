@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvcostconsumeentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvcostconsumeentry.findAll" resultType="ScmInvCostConsumeEntry2" >
+	    SELECT * FROM scminvcostconsumeentry WHERE  1=1  
+	</select>
+	<select id="scminvcostconsumeentry.findAllPage" resultType="ScmInvCostConsumeEntry2" parameterType="Map"> 
+		SELECT scminvcostconsumeentry.*,scmmaterial.itemNo as itemNo,scminvcostconsume.dcNo,scminvcostconsume.status,
+		scminvcostconsume.bizDate,scminvcostconsume.postDate,scminvcostconsume.creator,scmmaterial.itemName as itemName,D.unitName as pieUnitName,
+		scmmaterial.spec as spec,scminvcostconsume.useOrgUnitNo,scminvcostconsume.orgUnitNo as costOrgUnitNo,A.unitName as unitName,scminvcostconsume.periodId,
+		ScmMaterialGroup.className as groupName,ScmMaterialGroup.classCode as groupCode,ScmMaterialGroup.longNo as longNo,ScmMaterialGroup.id as groupId
+		FROM scminvcostconsume,scminvcostconsumeEntry
+		left join scmmeasureunit D on scminvcostconsumeentry.pieUnit=D.id
+		left join ScmMeasureUnit A on scminvcostconsumeEntry.unit=A.id,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE  scminvcostconsume.dcId=scminvcostconsumeEntry.dcId And scminvcostconsumeEntry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		ORDER BY scminvcostconsumeEntry.id ASC
+	</select> 
+	<select id="scminvcostconsumeentry.selectById" resultType="ScmInvCostConsumeEntry2" parameterType="Long">
+		select scminvcostconsumeentry.* , 
+            scmmaterial.itemNo as itemNo, scmmaterial.itemName as itemName,scmmaterial.spec as spec, 
+            A.unitName as unitName, B.unitName as baseUnitName,D.unitName as pieUnitName,
+            scmmaterialunitrelation.convrate as convrate
+            from scminvcostconsumeentry
+            left join scmmaterial on scminvcostconsumeentry.itemId=scmmaterial.id
+            left join scmmeasureunit A on scminvcostconsumeentry.unit=A.id
+            left join scmmeasureunit B on scminvcostconsumeentry.baseUnit=B.id
+            left join scmmeasureunit D on scminvcostconsumeentry.pieUnit=D.id
+            left join scmmaterialunitrelation on scminvcostconsumeentry.itemId=scmmaterialunitrelation.itemId
+            and scminvcostconsumeentry.unit=scmmaterialunitrelation.targetUnitId
+            left join (
+                select ScmMaterial.id,ScmMaterialGroup.className as className 
+                    from ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+                    where ScmMaterial.id=ScmMaterialGroupDetail.itemId
+                    and ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+                    and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+                    and ScmMaterialGroupStandard.standardType='1'
+            ) C on scminvcostconsumeentry.itemId=C.id
+            where scminvcostconsumeentry.id=#{value}
+	</select>
+	
+	<select id="scminvcostconsumeentry.selectFinConsume" resultType="ScmInvCostConsumeEntry2" parameterType="Map">
+		SELECT scminvcostconsumeentry.id,scminvcostconsume.useOrgUnitNo,ScmMaterialGroup.longNo,
+		scminvcostconsumeentry.amt,scminvcostconsumeentry.taxAmt
+		FROM scminvcostconsume,scminvcostconsumeentry,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE  scminvcostconsume.dcId=scminvcostconsumeentry.dcId And scminvcostconsumeentry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		And scminvcostconsume.finOrgUnitNo=#{finOrgUnitNo}
+		And LENGTH(ScmMaterialGroup.longNo) - LENGTH(REPLACE(ScmMaterialGroup.longNo,',','')) >= ${summaryLevel}
+		And scminvcostconsume.bizDate between #{begDate} and #{endDate}
+		And scminvcostconsume.status='E'
+		ORDER BY scminvcostconsumeentry.id ASC
+	</select> 
+	
+	<select id="scminvcostconsumeentry.selectByDcId" resultType="ScmInvCostConsumeEntry2" parameterType="Map"> 
+            select scminvcostconsumeentry.* , 
+            scmmaterial.itemNo as itemNo, scmmaterial.itemName as itemName,scmmaterial.spec as spec, 
+            A.unitName as unitName, B.unitName as baseUnitName,
+            scmmaterialunitrelation.convrate as convrate,D.unitName as pieUnitName
+            from scminvcostconsumeentry
+            left join scmmaterial on scminvcostconsumeentry.itemId=scmmaterial.id
+            left join scmmeasureunit A on scminvcostconsumeentry.unit=A.id
+            left join scmmeasureunit B on scminvcostconsumeentry.baseUnit=B.id
+			left join scmmeasureunit D on scminvcostconsumeentry.pieUnit=D.id
+            left join scmmaterialunitrelation on scminvcostconsumeentry.itemId=scmmaterialunitrelation.itemId
+            and scminvcostconsumeentry.unit=scmmaterialunitrelation.targetUnitId
+            left join (
+                select ScmMaterial.id,ScmMaterialGroup.className as className 
+                    from ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+                    where ScmMaterial.id=ScmMaterialGroupDetail.itemId
+                    and ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+                    and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+                    and ScmMaterialGroupStandard.standardType='1'
+            ) C on scminvcostconsumeentry.itemId=C.id
+            where scminvcostconsumeentry.dcId=#{dcId}
+            order by scminvcostconsumeentry.lineId ASC
+    </select>
+    
+    <select id="scminvcostconsumeentry.checkStockByReturnWareHouse" resultType="ScmInvCostConsumeEntry2" parameterType="Map"> 
+		SELECT T1.ItemNo,T1.ItemName,T1.Lot,T1.Qty,IFNULL(Sum(T2.Qty), 0) AS InvQty
+		FROM (SELECT B.OrgUnitNo,B.UseOrgUnitNo,A.itemId,C.ItemNo,C.ItemName,A.Lot,A.Unit,sum(A.Qty) as qty,B.BizDate
+				FROM scminvcostconsumeentry A left join scmmaterial C on A.itemId=C.id,
+					scminvcostconsume B
+				WHERE A.DCID = B.DCID
+				AND A.DCID = #{dcId}
+			Group By B.OrgUnitNo,B.UseOrgUnitNo,A.itemId,C.ItemNo,C.ItemName,A.Lot,A.Unit,B.BizDate) T1
+		LEFT JOIN scminvstock T2 ON T1.UseOrgUnitNo = T2.OrgUnitNo
+		AND T1.OrgUnitNo = T2.CostOrgUnitNo
+		AND T2.costcenter = 1
+		AND T1.ItemId = T2.ItemId
+		AND T1.Unit = T2.Unit
+		AND T2.InvDate &lt;= T1.BizDate
+		AND T2.Qty &gt; 0
+		AND (T1.Lot = T2.Lot OR IFNULL(T1.Lot, '') = '')
+		GROUP BY T1.ItemNo,T1.ItemName,T1.Lot,T1.Qty
+		HAVING T1.Qty &gt; IFNULL(Sum(T2.Qty), 0)  
+	</select>
+	<select id="scminvcostconsumeentry.selectOutEffectRow" resultType="ScmInvPurInWarehsBillEntry2" parameterType="Map"> 
+		select C.orgUnitNo, C.useOrgunitNo, B.itemId, B.lot, B.unit,
+				sum(B.qty) as qty, sum(B.pieQty)as pieQty, sum(amt) as amt, sum(baseQty) as baseQty,
+				sum(taxAmt) as taxAmt,B.stockId  
+			from ScmInvCostConsumeEntry as B, ScmInvCostConsume C  
+			where C.dcId = B.dcId and C.dcId = #{dcId}
+			group by C.orgUnitNo, C.useOrgunitNo, B.itemId, B.lot, B.unit,B.stockId
+	</select>
+	<insert id="scminvcostconsumeentry.add" parameterType="ScmInvCostConsumeEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvcostconsumeentry (
+        dcId,
+        lineId,
+        itemId,
+        unit,
+        pieUnit,
+        lot,
+        qty,
+        pieQty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        baseUnit,
+        baseQty,
+        expDate,
+        offset,
+        sourceBillDtlId,
+        stockId,
+        invDate,
+        orgSourceId,
+        orgSourceVendorId,
+        remarks        )
+		VALUES (
+        #{dcId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{lot},
+        #{qty},
+        #{pieQty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{baseUnit},
+        #{baseQty},
+        #{expDate},
+        #{offset},
+        #{sourceBillDtlId},
+        #{stockId},
+        #{invDate},
+        #{orgSourceId},
+        #{orgSourceVendorId},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scminvcostconsumeentry.update" parameterType="ScmInvCostConsumeEntry">
+		UPDATE scminvcostconsumeentry set
+        dcId=#{dcId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        lot=#{lot},
+        qty=#{qty},
+        pieQty=#{pieQty},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        baseUnit=#{baseUnit},
+        baseQty=#{baseQty},
+        expDate=#{expDate},
+        offset=#{offset},
+        sourceBillDtlId=#{sourceBillDtlId},
+        stockId=#{stockId},
+        invDate=#{invDate},
+        orgSourceId=#{orgSourceId},
+        orgSourceVendorId=#{orgSourceVendorId},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvcostconsumeentry.delete" parameterType="String">
+		DELETE FROM scminvcostconsumeentry WHERE id IN (${value})
+	</delete> 
+
+    <delete id="scminvcostconsumeentry.deleteByDcId" parameterType="Map">
+        DELETE FROM scminvcostconsumeentry WHERE dcId=#{dcId}
+    </delete>
+    <select id="scminvcostconsumeentry.selectCostConsumePage" resultType="ScmInvCostConsumeEntry2" parameterType="Map"> 
+		SELECT ScmInvCostConsume.finOrgUnitNo,ScmInvCostConsume.orgUnitNo as costOrgUnitNo,ScmMaterialGroup.className as groupName,ScmMaterialGroup.classCode as groupCode,ScmMaterialGroup.longNo as longNo,
+		ScmMaterialGroup.id as groupId,sum(ScmInvCostConsumeEntry.amt) as amt,sum(ScmInvCostConsumeEntry.taxAmt) as taxAmt
+		FROM ScmInvCostConsume,ScmInvCostConsumeEntry,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmInvCostConsume.dcId=ScmInvCostConsumeEntry.dcId And ScmInvCostConsumeEntry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id and ScmInvCostConsume.controlUnitNo=#{controlUnitNo}
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		GROUP BY ScmInvCostConsume.finOrgUnitNo,ScmInvCostConsume.orgUnitNo,ScmMaterialGroup.classCode
+		ORDER BY ScmInvCostConsume.finOrgUnitNo,ScmInvCostConsume.orgUnitNo,ScmMaterialGroup.classCode ASC
+	</select> 
+</mapper>
+ 

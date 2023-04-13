@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmidleitems">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmidleitems.findAll" resultType="Scmidleitems" >
+	    SELECT * FROM ScmIdleItems WHERE  1=1  
+	</select>
+ 
+	<select id="scmidleitems.findAllPage" resultType="Scmidleitems2" parameterType="Map"> 
+		SELECT ScmIdleItems.itemId,ScmIdleItems.bizDate,ScmIdleItems.lot,ScmIdleItems.finOrgUnitNo,ScmIdleItems.orgUnitNo,ScmIdleItems.useOrgUnitNo,
+		ScmIdleItems.idleStatus,ScmIdleItems.idleBillType,ScmIdleItems.newIdle,ScmIdleItems.creator,ScmIdleItems.createDate,
+		ScmIdleItems.editor,ScmIdleItems.editDate,ScmIdleItems.remarks,scmmaterial.itemNo,scmmaterial.itemName,
+		ScmMaterialGroup.className,A.unitName,scmmaterial.spec,Scmidlecause.name as idleCausename,IFNULL(sum(ScmInvStock.qty),0) as stocQty,IFNULL(sum(taxAmt),0) as amt,
+		Case When IFNULL(sum(ScmInvStock.qty),0)=0 Then 0 Else IFNULL(sum(taxAmt),0)/IFNULL(sum(ScmInvStock.qty),0) end as price,'' as attachPic,
+		Case When (SELECT count(1) FROM scmbaseattachment where billtype='ScmMaterial' and billId=ScmIdleItems.itemId) &gt; 0 Then 1 else 0 end as existsAttach
+		FROM ScmIdleItems
+		LEFT JOIN ScmInvStock on ScmInvStock.costOrgUnitNo =ScmIdleItems.orgUnitNo and ScmInvStock.orgUnitNo=ScmIdleItems.useOrgUnitNo
+		And ScmInvStock.itemId=ScmIdleItems.itemId And ScmInvStock.costCenter=1 and ScmInvStock.lot=ScmIdleItems.lot
+		LEFT JOIN scmidlecause on scmidlecause.id =scmidleitems.idleCauseId
+		left join ScmMeasureUnit A on scmidleitems.unit=A.id, 
+		Scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE scmidleitems.itemId=scmmaterial.id and ScmMaterialGroupDetail.itemId=scmidleitems.itemId
+		 And ScmMaterialGroup.id=ScmMaterialGroupDetail.classId and ScmMaterialGroupStandard.Id = ScmMaterialGroup.standardId
+		And ScmMaterialGroupStandard.standardNo='BaseStandard'
+		GROUP BY ScmIdleItems.bizDate,ScmIdleItems.lot,ScmIdleItems.finOrgUnitNo,ScmIdleItems.orgUnitNo,ScmIdleItems.useOrgUnitNo,
+		ScmIdleItems.idleStatus,ScmIdleItems.idleBillType,ScmIdleItems.newIdle,ScmIdleItems.creator,ScmIdleItems.createDate,
+		ScmIdleItems.editor,ScmIdleItems.editDate,ScmIdleItems.remarks,scmmaterial.itemNo,scmmaterial.itemName,
+		ScmMaterialGroup.className,A.unitName,scmmaterial.spec,Scmidlecause.name ORDER BY scmmaterial.itemNo ASC
+	</select> 
+	<select id="scmidleitems.selectById" resultType="Scmidleitems" parameterType="Long">
+		SELECT * FROM ScmIdleItems WHERE id = #{value}
+	</select> 
+	<insert id="scmidleitems.add" parameterType="ScmIdleItems"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmIdleItems (
+        tableId,
+        bizDate,
+        finOrgUnitNo,
+        orgUnitNo,
+        useOrgUnitNo,
+        itemId,
+        lot,
+        unit,
+        idleCauseId,
+        idleStatus,
+        idleBillType,
+        idleBillId,
+        newIdle,
+        remarks,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        controlUnitNo        )
+		VALUES (
+        #{tableId},
+        #{bizDate},
+        #{finOrgUnitNo},
+        #{orgUnitNo},
+        #{useOrgUnitNo},
+        #{itemId},
+        #{lot},
+        #{unit},
+        #{idleCauseId},
+        #{idleStatus},
+        #{idleBillType},
+        #{idleBillId},
+        #{newIdle},
+        #{remarks},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmidleitems.update" parameterType="ScmIdleItems">
+		UPDATE ScmIdleItems set
+        tableId=#{tableId},
+        bizDate=#{bizDate},
+        finOrgUnitNo=#{finOrgUnitNo},
+        orgUnitNo=#{orgUnitNo},
+        useOrgUnitNo=#{useOrgUnitNo},
+        itemId=#{itemId},
+        lot=#{lot},
+        unit=#{unit},
+        idleCauseId=#{idleCauseId},
+        idleStatus=#{idleStatus},
+        idleBillType=#{idleBillType},
+        idleBillId=#{idleBillId},
+        newIdle=#{newIdle},
+        remarks=#{remarks},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmidleitems.delete" parameterType="String">
+		DELETE FROM ScmIdleItems WHERE id IN (${value})
+	</delete> 
+
+	<select id="scmidleitems.selectByCostCenterOrg" resultType="Scmidleitems" parameterType="Map"> 
+	    SELECT * FROM ScmIdleItems where controlUnitNo=#{controlUnitNo} and orgUnitNo=#{orgUnitNo} and useOrgUnitNo=#{useOrgUnitNo}
+	</select>
+
+	<select id="scmidleitems.selectIdleItemsByItems" resultType="Scmidleitems2" parameterType="Map">
+		SELECT ScmIdleItems.itemId,scmmaterial.itemNo,scmmaterial.itemName,ScmMaterialGroup.className,A.unitName,scmmaterial.spec,ScmIdleItems.finOrgUnitNo,
+		scmidlecause.name as idleCausename,ScmIdleItems.remarks,IFNULL(sum(ScmInvStock.qty),0) as stocQty,IFNULL(sum(taxAmt),0) as amt,ScmIdleItems.useOrgUnitNo,
+		Case When IFNULL(sum(ScmInvStock.qty),0)=0 Then 0 Else IFNULL(sum(taxAmt),0)/IFNULL(sum(ScmInvStock.qty),0) end as price,'' as attachPic,
+		Case When (SELECT count(1) FROM scmbaseattachment where billtype='ScmMaterial' and billId=ScmIdleItems.itemId) &gt; 0 Then 1 else 0 end as existsAttach
+		FROM ScmIdleItems
+		LEFT JOIN ScmInvStock on ScmInvStock.costOrgUnitNo =ScmIdleItems.orgUnitNo and ScmInvStock.orgUnitNo=ScmIdleItems.useOrgUnitNo
+		And ScmInvStock.itemId=ScmIdleItems.itemId And ScmInvStock.costCenter=1
+		LEFT JOIN scmidlecause on scmidlecause.id =scmidleitems.idleCauseId
+		left join ScmMeasureUnit A on scmidleitems.unit=A.id, 
+			Scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		where scmidleitems.itemId in(${itemId}) and scmidleitems.idleStatus='1' 
+		 And scmidleitems.itemId=scmmaterial.id and ScmMaterialGroupDetail.itemId=scmidleitems.itemId
+		 And ScmMaterialGroup.id=ScmMaterialGroupDetail.classId and ScmMaterialGroupStandard.Id = ScmMaterialGroup.standardId
+		And ScmMaterialGroupStandard.standardNo='BaseStandard'
+		<choose>
+			<when test='idleItemsQueryScope != null and idleItemsQueryScope=="V"'>
+				and scmidleitems.orgUnitNo in(${orgUnitNo})
+			</when>
+			<otherwise>
+				and scmidleitems.controlUnitNo=#{controlUnitNo}
+			</otherwise>
+		</choose>
+		GROUP BY scmmaterial.itemNo,scmmaterial.itemName,ScmMaterialGroup.className,A.unitName,scmmaterial.spec,
+			ScmIdleItems.finOrgUnitNo,ScmIdleItems.useOrgUnitNo,scmidlecause.name,ScmIdleItems.remarks
+	</select>
+	<select id="scmidleitems.selectIdleDrillData" resultType="Scmidleitems2" parameterType="Map">
+		SELECT ScmIdleItems.itemId,scmmaterial.itemNo,scmmaterial.itemName,ScmMaterialGroup.className,A.unitName,scmmaterial.spec,ScmIdleItems.lot,
+		ScmIdleItems.finOrgUnitNo,ScmIdleItems.orgUnitNo,ScmIdleItems.useOrgUnitNo,
+		scmidlecause.name as idleCausename,ScmIdleItems.remarks,IFNULL(sum(ScmInvStock.qty),0) as stocQty,IFNULL(sum(taxAmt),0) as amt,
+		Case When IFNULL(sum(ScmInvStock.qty),0)=0 Then 0 Else IFNULL(sum(taxAmt),0)/IFNULL(sum(ScmInvStock.qty),0) end as price,'' as attachPic,
+		Case When (SELECT count(1) FROM scmbaseattachment where billtype='ScmMaterial' and billId=ScmIdleItems.itemId) &gt; 0 Then 1 else 0 end as existsAttach
+		FROM ScmIdleItems
+		LEFT JOIN ScmInvStock on ScmInvStock.costOrgUnitNo =ScmIdleItems.orgUnitNo and ScmInvStock.orgUnitNo=ScmIdleItems.useOrgUnitNo
+		And ScmInvStock.itemId=ScmIdleItems.itemId And ScmInvStock.lot=ScmIdleItems.lot And ScmInvStock.costCenter=1
+		LEFT JOIN scmidlecause on scmidlecause.id =scmidleitems.idleCauseId
+		left join ScmMeasureUnit A on scmidleitems.unit=A.id,scmPurRequireEntry, 
+			Scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		where scmPurRequireEntry.prid=#{prId} and scmidleitems.itemId =scmPurRequireEntry.itemId and scmidleitems.idleStatus='1' 
+		 And scmidleitems.itemId=scmmaterial.id and ScmMaterialGroupDetail.itemId=scmidleitems.itemId
+		 And ScmMaterialGroup.id=ScmMaterialGroupDetail.classId and ScmMaterialGroupStandard.Id = ScmMaterialGroup.standardId
+		And ScmMaterialGroupStandard.standardNo='BaseStandard'
+		GROUP BY scmmaterial.itemNo,scmmaterial.itemName,ScmMaterialGroup.className,A.unitName,scmmaterial.spec,ScmIdleItems.lot,
+		ScmIdleItems.finOrgUnitNo,ScmIdleItems.orgUnitNo,ScmIdleItems.useOrgUnitNo,scmidlecause.name,ScmIdleItems.remarks
+	</select>
+	
+	<select id="scmidleitems.selectByIdleCauseId" resultType="Scmidleitems2" parameterType="Map">
+		select * from ScmIdleItems where controlUnitNo=#{controlUnitNo} and idleCauseId=${idleCauseId} LIMIT 1
+	</select>
+	<select id="scmidleitems.deleteZeroQty" parameterType="String">
+		DELETE T1 From ScmIdleItems T1,
+		(Select costOrgUnitNo,orgUnitNo,itemId,lot,sum(qty) as qty From Scminvstock
+		WHERE finOrgUnitNo=#{orgUnitNo} and costCenter=1 and costOrgUnitNo in (${costOrgUnitNos})
+		GROUP BY costOrgUnitNo,orgUnitNo,itemId,lot HAVING sum(qty)=0) T2
+		WHERE T1.orgUnitNo=T2.costOrgUnitNo and T1.useOrgUnitNo=T2.orgUnitNo
+		and T1.itemId=T2.itemId and T1.lot=T2.lot and T1.orgUnitNo in (${costOrgUnitNos}) 
+	</select>
+</mapper>
+ 

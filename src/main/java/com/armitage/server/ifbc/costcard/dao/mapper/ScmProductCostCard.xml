@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmproductcostcard">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmproductcostcard.findAll" resultType="ScmProductCostCard2" >
+	    SELECT * FROM scmproductcostcard WHERE  1=1  
+	</select>
+ 
+	<select id="scmproductcostcard.findAllPage" resultType="ScmProductCostCard2" parameterType="Map"> 
+		SELECT scmproductcostcard.*,scmmaterial.itemNo,scmmaterial.itemName 
+		FROM scmproductcostcard LEFT JOIN scmmaterial ON scmproductcostcard.productId = scmmaterial.id
+		WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmproductcostcard.selectById" resultType="ScmProductCostCard2" parameterType="Long">
+		SELECT * FROM scmproductcostcard WHERE id = #{value}
+	</select> 
+	<insert id="scmproductcostcard.add" parameterType="ScmProductCostCard"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmproductcostcard (
+        orgUnitNo,
+        productId,
+        productUnit,
+        productQty,
+        costPrice,
+        effectiveDate,
+        flag,
+        approvaled,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{productId},
+        #{productUnit},
+        #{productQty},
+        #{costPrice},
+        #{effectiveDate},
+        #{flag},
+        #{approvaled},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmproductcostcard.update" parameterType="ScmProductCostCard">
+		UPDATE scmproductcostcard set
+        orgUnitNo=#{orgUnitNo},
+        productId=#{productId},
+        productUnit=#{productUnit},
+        productQty=#{productQty},
+        costPrice=#{costPrice},
+        effectiveDate=#{effectiveDate},
+        flag=#{flag},
+        approvaled=#{approvaled},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmproductcostcard.delete" parameterType="String">
+		DELETE FROM scmproductcostcard WHERE id IN (${value})
+	</delete> 
+	
+	<select id="scmproductcostcard.selectUnique" resultType="ScmProductCostCard2" parameterType="map">
+		SELECT * FROM scmproductcostcard WHERE productId = #{productId} and orgUnitNo = #{orgUnitNo}
+	</select> 
+
+</mapper>
+ 

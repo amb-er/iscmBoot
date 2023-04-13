@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmproductiondept">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmproductiondept.findAll" resultType="ScmProductionDept" >
+	    SELECT * FROM ScmProductionDept WHERE 1=1  
+	</select>
+ 
+	<select id="scmproductiondept.findAllPage" resultType="ScmProductionDept" parameterType="Map"> 
+		SELECT * FROM ScmProductionDept WHERE 1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmproductiondept.selectById" resultType="ScmProductionDept" parameterType="Long">
+		SELECT * FROM ScmProductionDept WHERE id = #{value}
+	</select> 
+	<select id="scmproductiondept.findRepeat" resultType="ScmProductionDept" parameterType="Map">
+		SELECT * FROM ScmProductionDept WHERE orgUnitNo = #{orgUnitNo} and code=#{code}
+	</select> 
+	<select id="scmproductiondept.findByResOrgPage" resultType="ScmProductionDept" parameterType="Map"> 
+		SELECT * FROM ScmProductionDept WHERE 1=1
+		 <if test="orgUnitNo != controlUnitNo and orgUnitNo != '' and orgUnitNo != null">
+		and  orgunitno=#{orgUnitNo} 
+		</if>
+		and controlunitno=#{controlUnitNo} ORDER BY id ASC 
+	</select>
+	<insert id="scmproductiondept.add" parameterType="ScmProductionDept"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmProductionDept (
+        orgUnitNo,
+        code,
+        name,
+        resOrgUnitNo,
+        fbmDeptNo,
+        outletId,
+        flag,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{code},
+        #{name},
+        #{resOrgUnitNo},
+        #{fbmDeptNo},
+        #{outletId},
+        #{flag},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmproductiondept.update" parameterType="ScmProductionDept">
+		UPDATE ScmProductionDept set
+        orgUnitNo=#{orgUnitNo},
+        code=#{code},
+        name=#{name},
+        resOrgUnitNo=#{resOrgUnitNo},
+        fbmDeptNo=#{fbmDeptNo},
+        outletId=#{outletId},
+        flag=#{flag},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmproductiondept.delete" parameterType="String">
+		DELETE FROM ScmProductionDept WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmauditdetailhistory">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmauditdetailhistory.findAll" resultType="ScmAuditDetailHistory" >
+	    SELECT * FROM scmauditdetailhistory WHERE  1=1  
+	</select>
+ 
+	<select id="scmauditdetailhistory.findAllPage" resultType="ScmAuditDetailHistory" parameterType="Map"> 
+		SELECT * FROM scmauditdetailhistory WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmauditdetailhistory.selectById" resultType="ScmAuditDetailHistory" parameterType="Long">
+		SELECT * FROM scmauditdetailhistory WHERE id = #{value}
+	</select> 
+	<insert id="scmauditdetailhistory.add" parameterType="ScmAuditDetailHistory"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmauditdetailhistory (
+        billId,
+        billType,
+        lineId,
+        opinion,
+        remarks,
+        oper,
+        operDate,
+        flag        )
+		VALUES (
+        #{billId},
+        #{billType},
+        #{lineId},
+        #{opinion},
+        #{remarks},
+        #{oper},
+        #{operDate},
+        #{flag}        )
+	</insert>
+ 
+	<update id="scmauditdetailhistory.update" parameterType="ScmAuditDetailHistory">
+		UPDATE scmauditdetailhistory set
+        billId=#{billId},
+        billType=#{billType},
+        lineId=#{lineId},
+        opinion=#{opinion},
+        remarks=#{remarks},
+        oper=#{oper},
+        operDate=#{operDate},
+        flag=#{flag}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmauditdetailhistory.delete" parameterType="String">
+		DELETE FROM scmauditdetailhistory WHERE id IN (${value})
+	</delete> 
+
+</mapper>

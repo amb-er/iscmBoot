@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurdelivery">
+ 
+	<select id="scmpurdelivery.findAllPage" resultType="ScmPurDelivery" parameterType="Map"> 
+		SELECT ScmPurOrder.vendorId,ScmSupplier.vendorName,ScmPurOrderEntry.reqFinOrgUnitNo,ScmPurOrderEntry.reqOrgUnitNo,ScmPurOrderEntry.itemId,ScmMaterial.itemName,ScmPurOrderEntry.purUnit,
+		SUM(ScmPurOrderEntry.qty) as qty,GROUP_CONCAT(ScmPurOrderEntry.remarks) as remarks,ScmPurOrderEntry.reqDate,ScmPurOrderEntry.reqStorageOrgUnitNo,ScmMaterial.spec
+		FROM ScmPurOrder,ScmPurOrderEntry,ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard,
+			ScmSupplier,ScmSupplierGroupDetail,ScmSupplierGroup,ScmSupplierGroupStandard
+		WHERE ScmPurOrder.id=ScmPurOrderEntry.poId And ScmPurOrderEntry.itemId=ScmMaterial.id  And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+			And ScmMaterialGroupStandard.standardType='1' And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id And ScmMaterialGroup.standardId=ScmMaterialGroupStandard.id 
+			And ScmPurOrder.vendorId=ScmSupplier.id And ScmSupplier.id=ScmSupplierGroupDetail.vendorId And ScmSupplierGroupStandard.standardType='1' 
+			And ScmSupplierGroupDetail.classId=ScmSupplierGroup.id And ScmSupplierGroup.standardId=ScmSupplierGroupStandard.id 
+            AND ScmPurOrder.sended=0
+			And ScmPurOrder.orgUnitNo=#{orgUnitNo}
+		GROUP BY ScmPurOrder.vendorId,ScmSupplier.vendorName,ScmPurOrderEntry.reqFinOrgUnitNo,ScmPurOrderEntry.reqOrgUnitNo,
+		ScmPurOrderEntry.itemId,ScmMaterial.itemName,ScmPurOrderEntry.purUnit,ScmPurOrderEntry.reqDate
+		<choose>
+			<when test='sortType == "V"'>
+				ORDER BY ScmSupplier.vendorNo,ScmPurOrderEntry.reqOrgUnitNo,ScmMaterial.itemNo,ScmPurOrder.reqDate
+			</when>
+			<otherwise>
+				ORDER BY ScmPurOrderEntry.reqFinOrgUnitNo,ScmSupplier.vendorNo,ScmMaterial.itemNo,ScmPurOrder.reqDate
+			</otherwise>
+		</choose>
+		
+	</select>  
+	
+</mapper>
+ 

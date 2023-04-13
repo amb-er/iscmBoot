@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmaccountingcycletype">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmaccountingcycletype.findAll" resultType="ScmAccountingCycleType2" >
+	    SELECT * FROM ScmAccountingCycleType WHERE  1=1  
+	</select>
+ 
+	<select id="scmaccountingcycletype.findAllPage" resultType="ScmAccountingCycleType2" parameterType="Map"> 
+		SELECT * FROM ScmAccountingCycleType WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmaccountingcycletype.selectById" resultType="ScmAccountingCycleType2" parameterType="Long">
+		SELECT * FROM ScmAccountingCycleType WHERE id = #{value}
+	</select> 
+	<select id="scmaccountingcycletype.selectByCtrlUnit" resultType="ScmAccountingCycleType2" parameterType="Long">
+		SELECT ScmAccountingCycleType.*,ScmAccountingCycleTypeToOrg.orgUnitNo
+		FROM ScmAccountingCycleType,ScmAccountingCycleTypeToOrg 
+		WHERE ScmAccountingCycleType.id = ScmAccountingCycleTypeToOrg.typeId And ScmAccountingCycleType.controlUnitNo = #{controlUnitNo}
+	</select> 
+	<insert id="scmaccountingcycletype.add" parameterType="ScmAccountingCycleType"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmAccountingCycleType (
+        periodType,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{periodType},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmaccountingcycletype.update" parameterType="ScmAccountingCycleType">
+		UPDATE ScmAccountingCycleType set
+        periodType=#{periodType},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmaccountingcycletype.delete" parameterType="String">
+		DELETE FROM ScmAccountingCycleType WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

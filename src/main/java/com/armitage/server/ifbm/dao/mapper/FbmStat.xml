@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fbmstat">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="fbmstat.findAll" resultType="FbmStat" >
+	    SELECT * FROM FbmStat WHERE  1=1  
+	</select>
+ 
+	<select id="fbmstat.findAllPage" resultType="FbmStat" parameterType="Map"> 
+		SELECT FbmStat.id,FbmStat.pId, FbmStat.code, FbmStat.name,  Case when D.permit is null then FbmStat.permit else D.permit end as permit,
+			FbmStat.controlUnitNo,#{orgUnitNo} as orgUnitNo FROM
+		(Select A.id, A.pId,A.code, A.name, case when B.permit is null then A.permit else B.permit end as permit, A.controlUnitNo
+		From (SELECT FbmStat.* FROM FbmStat WHERE (controlUnitNo=#{controlUnitNo}
+			or exists (Select 1 from FbmStatAssign where toCtrUnitNo=#{controlUnitNo} and statId=FbmStat.id))) A
+		Left join FbmStatSaleInfo B On A.id = b.statId And B.orgUnitNo=#{controlUnitNo}) FbmStat
+		Left Join FbmStatSaleInfo D on FbmStat.id = D.statId and D.orgUnitNo=#{orgUnitNo}
+		WHERE 1 = 1 
+		ORDER BY FbmStat.code ASC	
+	</select> 
+	<select id="fbmstat.selectById" resultType="FbmStat" parameterType="Long">
+		SELECT * FROM FbmStat WHERE id = #{value}
+	</select> 
+	<select id="fbmstat.selectByOrgUnitPage" resultType="FbmStat" parameterType="Map">
+		SELECT FbmStat.id,FbmStat.pId, FbmStat.code, FbmStat.name,  Case when D.permit is null then FbmStat.permit else D.permit end as permit,
+			FbmStat.controlUnitNo,#{orgUnitNo} as orgUnitNo FROM
+		(Select A.id, A.pId,A.code, A.name, case when B.permit is null then A.permit else B.permit end as permit, A.controlUnitNo
+		From (SELECT FbmStat.* FROM FbmStat WHERE (controlUnitNo=#{controlUnitNo}
+			or exists (Select 1 from FbmStatAssign where toCtrUnitNo=#{controlUnitNo} and statId=FbmStat.id))) A
+		Left join FbmStatSaleInfo B On A.id = b.statId And B.orgUnitNo=#{controlUnitNo}) FbmStat
+		Left Join FbmStatSaleInfo D on FbmStat.id = D.statId and D.orgUnitNo=#{orgUnitNo}
+		WHERE 1 = 1 
+		ORDER BY FbmStat.code ASC	
+	</select> 
+	<insert id="fbmstat.add" parameterType="FbmStat"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  FbmStat (
+        pid,
+        code,
+        name,
+        mnemonic,
+        accNo,
+        income,
+        permit,
+        remarks,
+        iSyncModFlag,
+        controlUnitNo        )
+		VALUES (
+        #{pid},
+        #{code},
+        #{name},
+        #{mnemonic},
+        #{accNo},
+        #{income},
+        #{permit},
+        #{remarks},
+        #{iSyncModFlag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="fbmstat.update" parameterType="FbmStat">
+		UPDATE FbmStat set
+        pid=#{pid},
+        code=#{code},
+        name=#{name},
+        mnemonic=#{mnemonic},
+        accNo=#{accNo},
+        income=#{income},
+        permit=#{permit},
+        remarks=#{remarks},
+        iSyncModFlag=#{iSyncModFlag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="fbmstat.delete" parameterType="String">
+		DELETE FROM FbmStat WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

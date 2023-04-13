@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcstinitbillentry">
+ 
+    <!-- default parameterType="HashMap" -->
+    <select id="scmcstinitbillentry.findAll" resultType="ScmCstInitBillEntry2" >
+        SELECT * FROM scmcstinitbillentry WHERE  1=1  
+    </select>
+ 
+    <select id="scmcstinitbillentry.findAllPage" resultType="ScmCstInitBillEntry2" parameterType="Map"> 
+        SELECT * FROM scmcstinitbillentry WHERE  1=1 ORDER BY id ASC 
+    </select> 
+    <select id="scmcstinitbillentry.selectById" resultType="ScmCstInitBillEntry2" parameterType="Long">
+            select scmcstinitbillentry.* , 
+            scmmaterial.itemNo as itemNo, scmmaterial.itemName as itemName,scmmaterial.spec as spec, 
+            A.unitName as unitName, B.unitName as baseUnitName,
+            scmmaterialunitrelation.convrate as convrate,D.unitName as pieUnitName
+            from scmcstinitbillentry
+            left join scmmaterial on scmcstinitbillentry.itemId=scmmaterial.id
+            left join scmmeasureunit A on scmcstinitbillentry.unit=A.id
+            left join scmmeasureunit B on scmcstinitbillentry.baseUnit=B.id
+			left join scmmeasureunit D on scmcstinitbillentry.pieUnit=D.id
+            left join scmmaterialunitrelation on scmcstinitbillentry.itemId=scmmaterialunitrelation.itemId
+            and scmcstinitbillentry.unit=scmmaterialunitrelation.targetUnitId
+            left join (
+                select ScmMaterial.id,ScmMaterialGroup.className as className 
+                    from ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+                    where ScmMaterial.id=ScmMaterialGroupDetail.itemId
+                    and ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+                    and ScmMaterialGroupStandard.standardType='1'
+                    and ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+            ) C on scmcstinitbillentry.itemId=C.id
+            where scmcstinitbillentry.id=#{value}
+    </select> 
+    
+    <select id="scmcstinitbillentry.selectByInitId" resultType="ScmCstInitBillEntry2" parameterType="Map"> 
+            select scmcstinitbillentry.* , 
+			scmmaterial.itemNo as itemNo, scmmaterial.itemName as itemName,scmmaterial.spec as spec, 
+			A.unitName as unitName, B.unitName as baseUnitName,
+			scmmaterialunitrelation.convrate as convrate,D.unitName as pieUnitName
+			from scmcstinitbillentry
+			left join scmmaterial on scmcstinitbillentry.itemId=scmmaterial.id
+			left join scmmeasureunit A on scmcstinitbillentry.unit=A.id
+			left join scmmeasureunit B on scmcstinitbillentry.baseUnit=B.id
+			left join scmmeasureunit D on scmcstinitbillentry.pieUnit=D.id
+			left join scmmaterialunitrelation on scmcstinitbillentry.itemId=scmmaterialunitrelation.itemId
+			and scmcstinitbillentry.unit=scmmaterialunitrelation.targetUnitId
+			left join (
+			    select ScmMaterial.id,ScmMaterialGroup.className as className 
+			        from ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+			        where ScmMaterial.id=ScmMaterialGroupDetail.itemId
+			        and ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+			        and ScmMaterialGroupStandard.standardType='1'
+			        and ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+			) C on scmcstinitbillentry.itemId=C.id
+			where scmcstinitbillentry.initId=#{initId}
+			order by scmcstinitbillentry.lineId ASC
+    </select>
+    <select id="scmcstinitbillentry.selectInvQty" resultType="ScmCstInitBillEntry2" parameterType="Map">
+        select T1.itemId, T1.itemNo, T1.itemName, T1.lot, T1.qty, IFNULL(SUM(T2.qty),0) as invQty from 
+            (select B.costOrgUnitNo,B.orgUnitNo, A.itemId, A.lot, A.unit, A.qty, B.bizDate, C.itemNo, C.itemName from 
+                scmcstinitbillentry A, scmcstinitbill B, scmmaterial C
+            where A.initId = B.initId 
+                and A.initId = #{initId}
+                and A.itemId = C.id) T1
+        left join scminvstock T2 on T1.orgUnitNo = T2.orgUnitNo
+            and T1.costOrgUnitNo = T2.costOrgUnitNo
+            and T2.costCenter = 1
+            and T1.itemId = T2.itemId
+            and T1.unit = T2.unit
+            and T2.invDate &lt;= T1.bizDate
+            and (T1.lot = T2.lot or IFNULL(T1.lot,'') = '')
+        group by T1.itemId, T1.lot, T1.qty
+        having T1.qty &gt; IFNULL((SUM(T2.qty)),0)
+    </select> 
+    <select id="scmcstinitbillentry.selectCancelPostEffectRow" resultType="ScmCstInitBillEntry2" parameterType="Map">
+        select T1.initId, T1.invDate, T1.finOrgUnitNo, T1.orgUnitNo, T1.wareHouseID,
+			T1.costOrgUnitNo, '1' as costCentor, T1.itemId, T1.itemName, T1.spec,
+			T1.unit, T1.pieUnit, T1.lot, sum(T1.qty) as qty, sum(T1.pieQty) as pieQty,
+			sum(T1.amt) as amt, T1.baseUnitId, sum(T1.baseQty) as baseQty, T1.price, T1.expDate,
+			T1.taxRate, T1.taxPrice, sum(T1.taxAmt) as taxAmt
+		from
+			(select M.initId, d.lineId, M.bizdate as invDate, M.finOrgUnitNo, M.orgUnitNo,
+	  			0 as wareHouseID, M.costOrgUnitNo as costOrgUnitNo, '1' as costCentor, D.itemId, A.itemName,
+	  			A.spec, D.unit, D.pieUnit, D.lot, D.qty,
+	  			ifnull(D.pieQty,0) as pieQty, D.price, D.amt, D.taxRate, D.taxPrice,
+				D.taxAmt, 0 as allocatedQty, D.expDate, M.accountYear,
+	  			M.accountPeriod, A.baseUnitId, E.convrate * D.qty as baseQty
+			from ScmCstInitBill as M, ScmCstInitBillEntry as D
+			left join ScmMaterial as A on D.itemId = A.id
+			left join ScmMaterialUnitRelation E on D.itemId =  E.itemId and D.unit = E.targetUnitId
+			where M.initId = #{initId}
+	  			and M.status = 'E'
+	  			and M.initId = D.InitID
+			order by D.lineId) T1
+		Group BY T1.initId, T1.invDate, T1.finOrgUnitNo, T1.orgUnitNo, T1.wareHouseID,
+			T1.costOrgUnitNo, T1.itemId, T1.itemName, T1.spec, T1.unit,
+			T1.pieUnit, T1.lot, T1.baseUnitId, T1.price, T1.expDate
+    </select>  
+    <insert id="scmcstinitbillentry.add" parameterType="ScmCstInitBillEntry"  keyProperty="id" useGeneratedKeys="true"> 
+        INSERT INTO  scmcstinitbillentry (
+        initId,
+        lineId,
+        itemId,
+        unit,
+        pieUnit,
+        lot,
+        qty,
+        pieQty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        baseUnit,
+        baseQty,
+        expDate,
+        remarks        )
+        VALUES (
+        #{initId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{lot},
+        #{qty},
+        #{pieQty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{baseUnit},
+        #{baseQty},
+        #{expDate},
+        #{remarks}        )
+    </insert>
+ 
+    <update id="scmcstinitbillentry.update" parameterType="ScmCstInitBillEntry">
+        UPDATE scmcstinitbillentry set
+        initId=#{initId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        lot=#{lot},
+        qty=#{qty},
+        pieQty=#{pieQty},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        baseUnit=#{baseUnit},
+        baseQty=#{baseQty},
+        expDate=#{expDate},
+        remarks=#{remarks}       WHERE id = #{id}
+    </update>
+ 
+    <delete id="scmcstinitbillentry.delete" parameterType="String">
+        DELETE FROM scmcstinitbillentry WHERE id IN (${value})
+    </delete> 
+
+    <delete id="scmcstinitbillentry.deleteByInitId" parameterType="Map">
+        DELETE FROM scmcstinitbillentry WHERE initId=#{initId}
+    </delete>
+</mapper>
+ 

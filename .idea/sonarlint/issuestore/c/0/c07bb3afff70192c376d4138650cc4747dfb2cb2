@@ -1,0 +1,136 @@
+
+–
+java:S3252 "zUse static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvMoveBill" for "FN_CONTROLUNITNO".(¸—–²ùÿÿÿÿ
+¢
+java:S3252w"†Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialRequestBill" for "FN_REQNO".(ï’şúÿÿÿÿ
+ª
+java:S3252x"Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialRequestBill" for "FN_CONTROLUNITNO".(ÒìÚƒøÿÿÿÿ
+Š
+java:S3252c"tUse static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurReceive" for "FN_PVNO".(Ò·Ø
+“
+java:S3252d"}Use static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurReceive" for "FN_CONTROLUNITNO".(Õ‰ä®
+H
+java:S1199"-Extract this nested code block into a method.(åŞÿ¨ıÿÿÿÿ
+Œ
+java:S3252F"vUse static access with "com.armitage.server.iscm.purchasemanage.pricemanage.model.ScmPurPrice" for "FN_CONTROLUNITNO".(§Æı
+I
+java:S1199"-Extract this nested code block into a method.(¶„´±ÿÿÿÿÿ
+m
+java:S37765"RRefactor this method to reduce its Cognitive Complexity from 40 to the 15 allowed.(‚¼ß®úÿÿÿÿ
+
+java:S3252•"tUse static access with "com.armitage.server.iscm.inventorymanage.internaltrans.model.ScmInvSaleOrder" for "FN_OTNO".(ÿ¾ÏÉüÿÿÿÿ
+¢
+java:S3252w"†Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialRequestBill" for "FN_REQNO".(ï’şúÿÿÿÿ
+<	java:S1318""Add a default case to this switch.(ªÈü³ıÿÿÿÿ
+Š
+java:S3252c"tUse static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurReceive" for "FN_PVNO".(Ò·Ø
+¦
+java:S3252ª"‰Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvOtherIssueBill" for "FN_CONTROLUNITNO".(©úİìûÿÿÿÿ
+H
+java:S1199a"-Extract this nested code block into a method.(êŞÑûÿÿÿÿ
+
+java:S3252‹"Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialReqBill" for "FN_OTNO".(ŞøÄâüÿÿÿÿ
+˜
+java:S3252n"}Use static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurReturns" for "FN_CONTROLUNITNO".(©˜Ÿ‘ùÿÿÿÿ
+
+java:S3252"€Use static access with "com.armitage.server.iscm.inventorymanage.warehouseinbusiness.model.ScmInvPurInWarehsBill" for "FN_WRNO".(Õ–£îıÿÿÿÿ
+
+java:S3252"€Use static access with "com.armitage.server.iscm.inventorymanage.warehouseinbusiness.model.ScmInvPurInWarehsBill" for "FN_WRNO".(Õ–£îıÿÿÿÿ
+
+java:S3252©"€Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvOtherIssueBill" for "FN_OTNO".(­şåõùÿÿÿÿ
+‡
+java:S3252;"qUse static access with "com.armitage.server.iscm.purchasemanage.pricemanage.model.ScmPurQuotation" for "FN_PQNO".(©’ğ³
+s
+java:S3252²"\Use static access with "com.armitage.server.iaps.daily.model.ApPaymentBill" for "FN_BILLNO".(£Úëÿ
+C
+java:S1199W"-Extract this nested code block into a method.(İï¯–
+Œ
+java:S3252F"vUse static access with "com.armitage.server.iscm.purchasemanage.pricemanage.model.ScmPurPrice" for "FN_CONTROLUNITNO".(§Æı
+
+java:S3252©"€Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvOtherIssueBill" for "FN_OTNO".(­şåõùÿÿÿÿ
+
+java:S3252•"tUse static access with "com.armitage.server.iscm.inventorymanage.internaltrans.model.ScmInvSaleOrder" for "FN_OTNO".(ÿ¾ÏÉüÿÿÿÿ
+”
+java:S3252–"}Use static access with "com.armitage.server.iscm.inventorymanage.internaltrans.model.ScmInvSaleOrder" for "FN_CONTROLUNITNO".(›–¾Ü
+
+java:S3252<"zUse static access with "com.armitage.server.iscm.purchasemanage.pricemanage.model.ScmPurQuotation" for "FN_CONTROLUNITNO".(üäßó
+D
+java:S1199‰"-Extract this nested code block into a method.(®Ó›¡
+ˆ
+java:S3252E"mUse static access with "com.armitage.server.iscm.purchasemanage.pricemanage.model.ScmPurPrice" for "FN_PMNO".(Ñ÷Ôıÿÿÿÿ
+¦
+java:S3252ª"‰Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvOtherIssueBill" for "FN_CONTROLUNITNO".(©úİìûÿÿÿÿ
+
+java:S3252O"tUse static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurRequire" for "FN_PRNO".(ƒîü¦şÿÿÿÿ
+§
+java:S3252Œ"ŠUse static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialReqBill" for "FN_CONTROLUNITNO".(ˆÑÀşÿÿÿÿ
+”
+java:S3252–"}Use static access with "com.armitage.server.iscm.inventorymanage.internaltrans.model.ScmInvSaleOrder" for "FN_CONTROLUNITNO".(›–¾Ü
+–
+java:S3252 "zUse static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvMoveBill" for "FN_CONTROLUNITNO".(¸—–²ùÿÿÿÿ
+¡
+java:S3252‚"‰Use static access with "com.armitage.server.iscm.inventorymanage.warehouseinbusiness.model.ScmInvPurInWarehsBill" for "FN_CONTROLUNITNO".(»ÔÈ¿
+§
+java:S3252Œ"ŠUse static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialReqBill" for "FN_CONTROLUNITNO".(ˆÑÀşÿÿÿÿ
+D
+java:S1199±"-Extract this nested code block into a method.(•éÄš
+Š
+java:S3252m"tUse static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurReturns" for "FN_RTNO".(Ãø§£
+ˆ
+java:S3252Ÿ"qUse static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvMoveBill" for "FN_WTNO".(ç¾Ì
+ª
+java:S3252x"Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialRequestBill" for "FN_CONTROLUNITNO".(ÒìÚƒøÿÿÿÿ
+’
+java:S3252P"}Use static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurRequire" for "FN_CONTROLUNITNO".(ãê›
+H
+java:S1199k"-Extract this nested code block into a method.(òàã†üÿÿÿÿ
+
+java:S3252Z"{Use static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurOrder" for "FN_CONTROLUNITNO".(•Ãó]
+Š
+java:S3252m"tUse static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurReturns" for "FN_RTNO".(Ãø§£
+t
+java:S22937"YReplace the type specification in this constructor call with the diamond operator ("<>").(æëïÿÿÿÿÿ
+I
+java:S1199§"-Extract this nested code block into a method.(çİ¢üÿÿÿÿÿ
+
+java:S3252O"tUse static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurRequire" for "FN_PRNO".(ƒîü¦şÿÿÿÿ
+s
+java:S3252²"\Use static access with "com.armitage.server.iaps.daily.model.ApPaymentBill" for "FN_BILLNO".(£Úëÿ
+z
+java:S3252³"cUse static access with "com.armitage.server.iaps.daily.model.ApPaymentBill" for "FN_CONTROLUNITNO".(ÍË¶Ì
+H
+java:S11999"-Extract this nested code block into a method.(¯Ò°«øÿÿÿÿ
+H
+java:S1199u"-Extract this nested code block into a method.(ªàÏüÿÿÿÿ
+‡
+java:S3252;"qUse static access with "com.armitage.server.iscm.purchasemanage.pricemanage.model.ScmPurQuotation" for "FN_PQNO".(©’ğ³
+ˆ
+java:S3252E"mUse static access with "com.armitage.server.iscm.purchasemanage.pricemanage.model.ScmPurPrice" for "FN_PMNO".(Ñ÷Ôıÿÿÿÿ
+
+java:S3252Y"rUse static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurOrder" for "FN_PONO".(‹¦©Äùÿÿÿÿ
+’
+java:S3252P"}Use static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurRequire" for "FN_CONTROLUNITNO".(ãê›
+˜
+java:S3252n"}Use static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurReturns" for "FN_CONTROLUNITNO".(©˜Ÿ‘ùÿÿÿÿ
+¡
+java:S3252‚"‰Use static access with "com.armitage.server.iscm.inventorymanage.warehouseinbusiness.model.ScmInvPurInWarehsBill" for "FN_CONTROLUNITNO".(»ÔÈ¿
+z
+java:S3252³"cUse static access with "com.armitage.server.iaps.daily.model.ApPaymentBill" for "FN_CONTROLUNITNO".(ÍË¶Ì
+D
+java:S1199“"-Extract this nested code block into a method.(ÑÒ¢‹
+H
+java:S1199C"-Extract this nested code block into a method.(†¶Ãıÿÿÿÿ
+
+java:S3252<"zUse static access with "com.armitage.server.iscm.purchasemanage.pricemanage.model.ScmPurQuotation" for "FN_CONTROLUNITNO".(üäßó
+ˆ
+java:S3252Ÿ"qUse static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvMoveBill" for "FN_WTNO".(ç¾Ì
+
+java:S3252Z"{Use static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurOrder" for "FN_CONTROLUNITNO".(•Ãó]
+
+java:S3252‹"Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialReqBill" for "FN_OTNO".(ŞøÄâüÿÿÿÿ
+H
+java:S1199M"-Extract this nested code block into a method.(æˆµşÿÿÿÿ
+
+java:S3252Y"rUse static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurOrder" for "FN_PONO".(‹¦©Äùÿÿÿÿ
+“
+java:S3252d"}Use static access with "com.armitage.server.iscm.purchasemanage.purchasebusiness.model.ScmPurReceive" for "FN_CONTROLUNITNO".(Õ‰ä®

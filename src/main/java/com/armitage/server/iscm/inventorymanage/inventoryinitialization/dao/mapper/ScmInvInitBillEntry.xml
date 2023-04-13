@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvinitbillentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvinitbillentry.findAll" resultType="ScmInvInitBillEntry2" >
+	    SELECT * FROM scminvinitbillentry WHERE  1=1  
+	</select>
+ 
+	<select id="scminvinitbillentry.findAllPage" resultType="ScmInvInitBillEntry2" parameterType="Map"> 
+		SELECT * FROM scminvinitbillentry WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scminvinitbillentry.selectById" resultType="ScmInvInitBillEntry2" parameterType="Long">
+		SELECT scminvinitbillentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+ 		A.unitName as unitName,
+ 		ScmMaterialUnitRelation.convrate as convrate
+		FROM scminvinitbillentry
+		left join scmmaterial on scminvinitbillentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scminvinitbillentry.unit=A.id 
+		left join ScmMaterialUnitRelation on scminvinitbillentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scminvinitbillentry.unit=ScmMaterialUnitRelation.targetUnitId
+		left join (SELECT ScmMaterial.id,ScmMaterialGroup.className as className 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+        and ScmMaterialGroupStandard.standardType='1') C on scminvinitbillentry.itemId=C.id
+		WHERE scminvinitbillentry.id=#{value} 
+		ORDER BY scminvinitbillentry.lineId ASC
+	</select> 
+	<select id="scminvinitbillentry.selectCancelEffectRow" resultType="ScmInvInitBillEntry2" parameterType="Long">
+		select T1.InitID,T1.InvDate,T1.FinOrgUnitNo,T1.OrgUnitNo,  
+			T1.WareHouseID,T1.CostOrgUnitNo,(case when ifnull(T1.WareHouseID,'') = '' then '1' else '0' end) as CostCentor,  
+			T1.itemId,T1.Itemname,T1.Spec,T1.Unit,T1.PieUnit,T1.Lot,Sum(T1.Qty) as Qty,  
+			Sum(T1.PieQty) as PieQty,Sum(T1.Amt) as Amt,T1.BaseUnitId,Sum(T1.BaseQty) as BaseQty,T1.Price,T1.ExpDate,
+			T1.taxRate,T1.taxPrice,Sum(T1.taxAmt) as taxAmt 
+		From 
+			(select M.InitID,d.LineID,M.Bizdate as InvDate,M.FinOrgUnitNo,M.OrgUnitNo,                  
+	  			M.WareHouseID,'' as CostOrgUnitNo,'0' as CostCentor,D.itemId,A.Itemname,                  
+	  			A.Spec,D.Unit,D.PieUnit,D.Lot,D.Qty,                   
+	  			ifnull(D.PieQty,0) as pieQty,D.Price,D.Amt,D.taxRate,D.taxPrice,D.taxAmt,0 as AllocatedQty,D.ExpDate,
+				M.accountYear,M.accountPeriod,  
+	  			A.BaseUnitId,E.convrate * D.Qty as BaseQty         
+			from scminvinitbill as M,scminvinitbillentry as D
+			left join scmmaterial as A on D.itemId = A.id
+			left join ScmMaterialUnitRelation E on D.itemId =  E.itemId and D.unit = E.targetUnitId
+			where M.InitID = #{initId} and            
+	  			M.Status = 'E'  and                     
+	  			M.InitID = D.InitID  
+			order by D.lineid) T1
+		Group BY T1.InitID,T1.InvDate,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,
+			T1.CostOrgUnitNo,(case when ifnull(T1.WareHouseID,'') = '' then '1' else '0' end),  
+			T1.itemId,T1.Itemname,T1.Spec,T1.Unit,T1.PieUnit,
+			T1.Lot,T1.BaseUnitId,T1.Price,T1.ExpDate
+	</select> 
+	<insert id="scminvinitbillentry.add" parameterType="ScmInvInitBillEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvinitbillentry (
+        initId,
+        lineId,
+        itemId,
+        unit,
+        pieUnit,
+        lot,
+        qty,
+        pieQty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        expDate,
+        remarks        )
+		VALUES (
+        #{initId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{lot},
+        #{qty},
+        #{pieQty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{expDate},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scminvinitbillentry.update" parameterType="ScmInvInitBillEntry">
+		UPDATE scminvinitbillentry set
+        initId=#{initId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        lot=#{lot},
+        qty=#{qty},
+        pieQty=#{pieQty},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        expDate=#{expDate},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvinitbillentry.delete" parameterType="String">
+		DELETE FROM scminvinitbillentry WHERE id IN (${value})
+	</delete> 
+	
+	<select id="scminvinitbillentry.selectByInitId" resultType="ScmInvInitBillEntry2" parameterType="Map"> 
+		SELECT scminvinitbillentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+ 		A.unitName as unitName,
+ 		ScmMaterialUnitRelation.convrate as convrate
+		FROM scminvinitbillentry
+		left join scmmaterial on scminvinitbillentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scminvinitbillentry.unit=A.id 
+		left join ScmMaterialUnitRelation on scminvinitbillentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scminvinitbillentry.unit=ScmMaterialUnitRelation.targetUnitId
+		left join (SELECT ScmMaterial.id,ScmMaterialGroup.className as className 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+        and ScmMaterialGroupStandard.standardType='1') C on scminvinitbillentry.itemId=C.id
+		WHERE scminvinitbillentry.initId=#{initId} 
+		ORDER BY scminvinitbillentry.lineId ASC
+	</select>
+	
+	<delete id="scminvinitbillentry.deleteByInitId" parameterType="String">
+		DELETE FROM scminvinitbillentry WHERE initId = #{initId}
+	</delete> 
+	
+</mapper>
+ 

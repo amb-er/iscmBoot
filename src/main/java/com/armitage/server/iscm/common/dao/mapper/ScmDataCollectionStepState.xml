@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmdatacollectionstepstate">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmdatacollectionstepstate.findAll" resultType="ScmDataCollectionStepState2" >
+	    SELECT * FROM ScmDataCollectionStepState WHERE  1=1  
+	</select>
+ 
+	<select id="scmdatacollectionstepstate.findAllPage" resultType="ScmDataCollectionStepState2" parameterType="Map"> 
+		SELECT * FROM ScmDataCollectionStepState WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmdatacollectionstepstate.selectById" resultType="ScmDataCollectionStepState2" parameterType="Long">
+		SELECT * FROM ScmDataCollectionStepState WHERE id = #{value}
+	</select> 
+	<select id="scmdatacollectionstepstate.selectByStepIdAndOrgUnitNo" resultType="ScmDataCollectionStepState2" parameterType="Map">
+		SELECT * FROM ScmDataCollectionStepState WHERE stepId=#{stepId} and orgUnitNo=#{orgUnitNo} and reqNo=#{reqNo} limit 1
+	</select> 
+	<select id="scmdatacollectionstepstate.findAsynStep" resultType="ScmDataCollectionStepState2" parameterType="Map">
+		SELECT 0 as executed,A.name,A.invoke,A.sequenceId,A.id as stepID,#{reqNo} as reqNo,
+			#{orgUnitNo} as orgUnitNo,
+			CASE when B.state is null then 'W' else B.state end as state,
+			CASE when B.lastRunTime is null then '2020-01-01' else B.lastRunTime end as lastRunTime,
+			CASE when B.msgInfo is null then '' else B.msgInfo end as msgInfo
+			FROM ScmDataCollectionReg A
+		LEFT JOIN ScmDataCollectionStepState B on A.id=B.stepID and B.orgUnitno=#{orgUnitNo}
+		WHERE A.category=#{category}
+		GROUP BY A.category,A.code
+		ORDER BY sequenceId
+	</select> 
+		<insert id="scmdatacollectionstepstate.add" parameterType="ScmDataCollectionStepState"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmDataCollectionStepState (
+        orgUnitNo,
+        reqNo,
+        stepId,
+        state,
+        lastRunTime,
+        msgInfo        )
+		VALUES (
+        #{orgUnitNo},
+        #{reqNo},
+        #{stepId},
+        #{state},
+        #{lastRunTime},
+        #{msgInfo}        )
+	</insert>
+ 
+	<update id="scmdatacollectionstepstate.update" parameterType="ScmDataCollectionStepState">
+		UPDATE ScmDataCollectionStepState set
+        orgUnitNo=#{orgUnitNo},
+        reqNo=#{reqNo},
+        stepId=#{stepId},
+        state=#{state},
+        lastRunTime=#{lastRunTime},
+        msgInfo=#{msgInfo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmdatacollectionstepstate.delete" parameterType="String">
+		DELETE FROM ScmDataCollectionStepState WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

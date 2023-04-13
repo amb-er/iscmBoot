@@ -1,0 +1,183 @@
+
+r
+java:S1192{"WDefine a constant instead of duplicating this literal "webservice.params.null" 7 times.(«ıÀËøÿÿÿÿ
+e
+java:S1192š"ODefine a constant instead of duplicating this literal "controlUnitNo=" 7 times.(²×¥t
+x
+java:S1192‡"aDefine a constant instead of duplicating this literal "iscm.api.datePut.billNo.notExist" 7 times.(ÿŠ¼ä
+h
+java:S1192œ"LDefine a constant instead of duplicating this literal "findAllPage" 5 times.(È—·™ùÿÿÿÿ
+a	java:S112ı"FDefine and throw a dedicated exception instead of using a generic one.(Õ”ï´şÿÿÿÿ
+a	java:S112"FDefine and throw a dedicated exception instead of using a generic one.(´ÁÄşÿÿÿÿ
+a	java:S112 "FDefine and throw a dedicated exception instead of using a generic one.(Š­ï¬şÿÿÿÿ
+[	java:S112¼"FDefine and throw a dedicated exception instead of using a generic one.(ˆÃí,
+\	java:S112"FDefine and throw a dedicated exception instead of using a generic one.(º–ûÙ
+Q
+java:S1141"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ
+Q
+java:S1141å"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ
+Q
+java:S1141¬"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ
+Q
+java:S1141ó"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ
+Q
+java:S1141º"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ
+Q
+java:S1141"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ
+Q
+java:S1141È"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ
+l	java:S117ä"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(ÅÓÓ»ÿÿÿÿÿ
+g	java:S117å"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(ºø‹
+l	java:S117¸"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Ô™˜œşÿÿÿÿ
+?
+java:S1148¢"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148é"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148°"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148÷"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148¾"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148…"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148Ì"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148‰"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+u
+java:S1149~"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(¥˜ûÃ
+{
+java:S1149Å"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(ôàÃßıÿÿÿÿ
+u
+java:S1149Œ"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(¡ğäd
+v
+java:S1149Ó"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(”ÿÃÿ
+v
+java:S1149š"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(¿æöé
+u
+java:S1149á"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(‚˜ş
+{
+java:S1149¨"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(ïÂÑÿÿÿÿÿ
+J
+java:S3416Z"4Update this logger to use "DataPutController.class".(¶è•ì
+m
+java:S3776q"RRefactor this method to reduce its Cognitive Complexity from 21 to the 15 allowed.(Ùşªüÿÿÿÿ
+`
+java:S4488o"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(ñ‰§Ä
+F
+java:S1874p"0Remove this use of "position"; it is deprecated.(„×Íê
+t
+java:S2293s"YReplace the type specification in this constructor call with the diamond operator ("<>").(Êê¯úÿÿÿÿ
+‡
+java:S3252"qUse static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvMoveBill" for "FN_WTNO".(şÿ¼B
+‡
+java:S3252"qUse static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvMoveBill" for "FN_WTNO".(şÿ¼B
+‘
+java:S3252”"zUse static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvMoveBill" for "FN_CONTROLUNITNO".(¸Àèİ
+‘
+java:S3252—"zUse static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvMoveBill" for "FN_CONTROLUNITNO".(¸Àèİ
+n
+java:S3776¸"RRefactor this method to reduce its Cognitive Complexity from 19 to the 15 allowed.(ºáÈûÿÿÿÿ
+f
+java:S4488¶"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(’Ğ½ùÿÿÿÿ
+L
+java:S1874·"0Remove this use of "position"; it is deprecated.(½µİÆüÿÿÿÿ
+u
+java:S2293º"YReplace the type specification in this constructor call with the diamond operator ("<>").(Êê¯úÿÿÿÿ
+
+java:S3252Ô"tUse static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvCostConsume" for "FN_DCNO".(·Ñ˜‚ıÿÿÿÿ
+
+java:S3252×"tUse static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvCostConsume" for "FN_DCNO".(·Ñ˜‚ıÿÿÿÿ
+™
+java:S3252Û"}Use static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvCostConsume" for "FN_CONTROLUNITNO".(ş“çìüÿÿÿÿ
+™
+java:S3252Ş"}Use static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvCostConsume" for "FN_CONTROLUNITNO".(ş“çìüÿÿÿÿ
+i
+java:S3776ÿ"RRefactor this method to reduce its Cognitive Complexity from 21 to the 15 allowed.(æ»È½
+a
+java:S4488ı"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(«Å¹¸
+L
+java:S1874ş"0Remove this use of "position"; it is deprecated.(ô·¨éùÿÿÿÿ
+u
+java:S2293"YReplace the type specification in this constructor call with the diamond operator ("<>").(Êê¯úÿÿÿÿ
+Ÿ
+java:S3252›"‚Use static access with "com.armitage.server.iscm.inventorymanage.warehouseinbusiness.model.ScmInvOtherInWarehsBill" for "FN_WRNO".(¾´¤áüÿÿÿÿ
+Ÿ
+java:S3252"‚Use static access with "com.armitage.server.iscm.inventorymanage.warehouseinbusiness.model.ScmInvOtherInWarehsBill" for "FN_WRNO".(¾´¤áüÿÿÿÿ
+¨
+java:S3252¢"‹Use static access with "com.armitage.server.iscm.inventorymanage.warehouseinbusiness.model.ScmInvOtherInWarehsBill" for "FN_CONTROLUNITNO".(÷òùçıÿÿÿÿ
+¨
+java:S3252¥"‹Use static access with "com.armitage.server.iscm.inventorymanage.warehouseinbusiness.model.ScmInvOtherInWarehsBill" for "FN_CONTROLUNITNO".(÷òùçıÿÿÿÿ
+i
+java:S3776Æ"RRefactor this method to reduce its Cognitive Complexity from 21 to the 15 allowed.(Èü…¯
+f
+java:S4488Ä"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(øŸ™ÿÿÿÿÿ
+L
+java:S1874Å"0Remove this use of "position"; it is deprecated.(«ÉÒïıÿÿÿÿ
+u
+java:S2293È"YReplace the type specification in this constructor call with the diamond operator ("<>").(Êê¯úÿÿÿÿ
+˜
+java:S3252â"€Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvOtherIssueBill" for "FN_OTNO".(»ñõÊ
+˜
+java:S3252å"€Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvOtherIssueBill" for "FN_OTNO".(»ñõÊ
+¦
+java:S3252é"‰Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvOtherIssueBill" for "FN_CONTROLUNITNO".(Ğ¡Éáûÿÿÿÿ
+¦
+java:S3252ì"‰Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvOtherIssueBill" for "FN_CONTROLUNITNO".(Ğ¡Éáûÿÿÿÿ
+n
+java:S3776"RRefactor this method to reduce its Cognitive Complexity from 21 to the 15 allowed.(´õ°Ğüÿÿÿÿ
+f
+java:S4488‹"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(¸Â«Šúÿÿÿÿ
+L
+java:S1874Œ"0Remove this use of "position"; it is deprecated.(ñÅ««úÿÿÿÿ
+u
+java:S2293"YReplace the type specification in this constructor call with the diamond operator ("<>").(Êê¯úÿÿÿÿ
+
+java:S3252©"wUse static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvCountingTask" for "FN_TASKNO".(ì»¤
+
+java:S3252¬"wUse static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvCountingTask" for "FN_TASKNO".(ì»¤
+•
+java:S3252°"~Use static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvCountingTask" for "FN_CONTROLUNITNO".(Òì²ª
+•
+java:S3252³"~Use static access with "com.armitage.server.iscm.inventorymanage.cstbusiness.model.ScmInvCountingTask" for "FN_CONTROLUNITNO".(Òì²ª
+n
+java:S3776Ô"RRefactor this method to reduce its Cognitive Complexity from 21 to the 15 allowed.(®Óš£úÿÿÿÿ
+f
+java:S4488Ò"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(Êç¼ìÿÿÿÿÿ
+L
+java:S1874Ó"0Remove this use of "position"; it is deprecated.(ûĞ„öıÿÿÿÿ
+u
+java:S2293Ö"YReplace the type specification in this constructor call with the diamond operator ("<>").(Êê¯úÿÿÿÿ
+n
+java:S3776›"RRefactor this method to reduce its Cognitive Complexity from 21 to the 15 allowed.(ÀÒìøÿÿÿÿ
+f
+java:S4488™"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(­ü™•ùÿÿÿÿ
+F
+java:S1874š"0Remove this use of "position"; it is deprecated.(‰Ü™u
+u
+java:S2293"YReplace the type specification in this constructor call with the diamond operator ("<>").(Êê¯úÿÿÿÿ
+
+java:S3252·"Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialReqBill" for "FN_OTNO".(œÔòüÿÿÿÿ
+
+java:S3252º"Use static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialReqBill" for "FN_OTNO".(œÔòüÿÿÿÿ
+¢
+java:S3252¾"ŠUse static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialReqBill" for "FN_CONTROLUNITNO".(Á„“³
+¢
+java:S3252Á"ŠUse static access with "com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialReqBill" for "FN_CONTROLUNITNO".(Á„“³
+a
+java:S4488à"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(”ÅÒï
+G
+java:S1874á"0Remove this use of "position"; it is deprecated.(‹Íòü
+p
+java:S2293ó"YReplace the type specification in this constructor call with the diamond operator ("<>").(§èÔ®
+K
+java:S2200Ÿ"/Only the sign of the result should be examined.(ˆœÏ‘ÿÿÿÿÿ
+u
+java:S2293¶"YReplace the type specification in this constructor call with the diamond operator ("<>").(É×Öêùÿÿÿÿ
+P
+java:S1068]"5Remove this unused "scmMeasureUnitBiz" private field.(œÇ™øÿÿÿÿ
+M
+java:S1068i"2Remove this unused "scmsupplierBiz" private field.(·‡Û·úÿÿÿÿ
+U
+java:S1068k":Remove this unused "scmMaterialPurchaseBiz" private field.(š£Ôéùÿÿÿÿ

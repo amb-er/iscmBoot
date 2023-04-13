@@ -1,0 +1,2381 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurreport">
+
+    <!-- 供应商综合情况表-->
+ 	<select id="scmpurreport.selectSupplierConsolidation" resultType="ScmPurOrder2" parameterType="Map">
+ 		 SELECT ssp.vendorNo ,ssp.vendorName ,spo.finOrgUnitNo as code,spo.finOrgUnitNo ,
+ 		 SUM(spr.amt) oweAmt,SUM(spr.amt) orderAmt,SUM(sre.amt- srs.amt) receiveAmt,
+ 		 SUM(spr.amt) puroweAmt  
+		 FROM scmpurorder spo 
+		 INNER JOIN scmsupplier ssp ON ssp.id=spo.vendorId
+		 INNER JOIN scmpurorderentry spr ON spr.poId=spo.id
+		 INNER JOIN scmpurreceiveentry sre ON sre.poDtlId=spr.id
+		 INNER JOIN scmpurreturnsentry srs ON srs.sourceDtlId=sre.id
+		 INNER JOIN scmpurreturns srt ON srt.id=srs.rtid
+		 WHERE 1=1
+		 <if test="finOrgUnitNo !=null and finOrgUnitNo !=''">
+		 	AND spo.finOrgUnitNo=#{finOrgUnitNo}
+		 </if>	
+		  <if test="minOrderDate !=null and minOrderDate !='' and maxOrderDate !=null and maxOrderDate !=''">
+		 	AND spd.orderDate BETWEEN DATE(#{minOrderDate}) AND DATE(#{maxOrderDate})	
+		 </if>	
+		  <if test="vendorName !=null and vendorName !=''">
+		 	AND ssp.vendorName =#{vendorName}
+		 </if>	
+		 GROUP BY ssp.vendorno,spo.FinOrgUnitNo 
+ 	</select>
+    
+    <!-- 物资采购排行榜-->
+ 	<select id="scmpurreport.selectMaterialProcurement" resultType="ScmPurOrder2" parameterType="Map">
+		select 
+		case when temp6.orgUnitNo is NULL then temp5.purOrgUnitNo else temp6.orgUnitNo end as receiveOrgunitNo,
+		case when temp6.itemId is NULL then temp5.itemId else temp6.itemId end as itemId, 
+		case when temp6.itemNo is NULL then temp5.itemNo else temp6.itemNo end as itemNo, 
+		case when temp6.itemName is NULL then temp5.itemName else temp6.itemName end as itemName,
+		case when temp6.unit is NULL then temp5.unit else temp6.unit end unit,
+		case when temp6.unitName is NULL then temp5.unitName else temp6.unitName end unitName,
+		TRUNCATE((SUM(IFNULL(temp6.orderAmt,0)) - IFNULL(SUM(temp5.returnAmt),0))/
+		case when (IFNULL(SUM(IFNULL(temp6.orderQty,0))-SUM(IFNULL(temp5.returnQty,0)),1)) = 0 THEN 1
+		else IFNULL(SUM(IFNULL(temp6.orderQty,0))-SUM(IFNULL(temp5.returnQty,0)),1) end,2) as averagePrice,
+		TRUNCATE(SUM(IFNULL(temp6.orderQty,0)),2) as orderQty,
+		IFNULL(SUM(temp6.orderAmt),0) as orderAmt,
+		TRUNCATE(IFNULL(SUM(temp6.addInQty) - IFNULL(SUM(temp5.returnQty),0),0),2) AS storageQty,
+		SUM(IFNULL(temp6.addInAmt,0) - IFNULL(temp5.returnAmt,0)) AS storageAmt,
+		TRUNCATE(IFNULL(SUM(temp5.returnQty),0),2) as returnQty,
+		IFNULL(SUM(temp5.returnAmt),0) as returnAmt
+		from (
+		select temp2.orgUnitNo, temp2.itemId, temp2.itemNo, temp2.itemName, temp2.spec, 
+		temp2.invOrgUnitNo, temp2.finOrgUnitNo, temp2.unit, temp2.unitName,
+		SUM(temp2.orderQty) as orderQty, 0 as price, SUM(temp2.amt) as orderAmt,
+		IFNULL(SUM(temp4.addInQty),0) as addInQty,
+		IFNULL(SUM(temp4.taxAmt),0) as addInAmt 
+		from 
+		(select spoe.id, spoe.prDtlId, spo.orgUnitNo,
+		spoe.itemId, smt.itemNo, smt.itemName, smt.spec, spoe.receiveOrgUnitNo as invOrgUnitNo,
+		(case spo.centeralBalance when 1 then spo.finOrgUnitNo else spoe.receiveFinOrgUnitNo end) as finOrgUnitNo,
+		spoe.purUnit as unit, smu.unitName as unitName, IFNULL(spoe.qty,0) as orderQty, spoe.taxPrice, IFNULL(spoe.taxAmt,0) as amt, smur.convrate
+		from scmpurorder spo, scmpurorderentry spoe,
+		scmmaterial smt,scmmaterialgroupdetail smgd, scmmaterialgroup smg,scmmaterialgroupstandard smd, scmmaterialunitrelation smur, scmmeasureunit smu
+		where spo.id = spoe.poId and smgd.itemId = smt.id
+		    and smg.id = smgd.classId and smgd.standardId = smd.id and smd.standardType='1'
+		and spoe.itemId = smt.id
+		and spoe.itemId = smur.itemId
+		and spoe.purUnit = smur.targetUnitId
+		and spoe.purUnit = smu.id
+		and spoe.rowStatus in ('A', 'E', 'C')
+        <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+            and spo.orgUnitNo in ${purOrgUnitNo}
+        </if>
+        <if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+            and spoe.receiveOrgUnitNo in ${invOrgUnitNo}
+        </if>
+        <if test="materialClassName !=null and materialClassName !=''">
+	        and smg.id in ${materialClassName}
+	    </if>
+        <if test="materialId !=null and materialId !=0">
+            and spoe.itemId = #{materialId}
+        </if>
+        <if test="startDate !=null and startDate !=''">
+            and spo.orderDate &gt;= #{startDate}
+        </if>
+        <if test="endDate !=null and endDate !=''">
+            and spo.orderDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+        </if>
+        <if test="status !=null and status !=''">
+            and spoe.rowStatus = #{status}
+        </if> 
+		) temp2
+		LEFT JOIN (
+		select temp2.id, 
+		IFNULL(siwe.baseQty,0)/(case IFNULL(temp2.convrate,0) when 0 then 1 else temp2.convrate end) as addInQty,
+		siwe.taxAmt as taxAmt 
+		from
+		(select spoe.id, spoe.prDtlId, spo.orgUnitNo, 
+		spoe.itemId, smt.itemNo, smt.itemName, smt.spec, spoe.receiveOrgUnitNo,
+		(case spo.centeralBalance when 1 then spo.finOrgUnitNo else spoe.receiveFinOrgUnitNo end) as finOrgUnitNo,
+		spoe.purUnit, IFNULL(spoe.qty,0) as orderQty, spoe.taxPrice, IFNULL(spoe.taxAmt,0), smur.convrate
+		from scmpurorder spo, scmpurorderentry spoe,
+		scmmaterial smt,scmmaterialgroupdetail smgd, scmmaterialgroup smg,scmmaterialgroupstandard smd, scmmaterialunitrelation smur
+		where spo.id = spoe.poId and smgd.itemId = smt.id
+		    and smg.id = smgd.classId and smgd.standardId = smd.id and smd.standardType='1'
+		and spoe.itemId = smt.id
+		and spoe.itemId = smur.itemId
+		and spoe.purUnit = smur.targetUnitId
+		and spoe.rowStatus in ('A', 'E', 'C')
+        <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+            and spo.orgUnitNo in ${purOrgUnitNo}
+        </if>
+        <if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+            and spoe.receiveOrgUnitNo in ${invOrgUnitNo}
+        </if>
+        <if test="materialClassName !=null and materialClassName !=''">
+	        and smg.id in ${materialClassName}
+	    </if>
+        <if test="materialId !=null and materialId !=0">
+            and spoe.itemId = #{materialId}
+        </if>
+        <if test="startDate !=null and startDate !=''">
+            and spo.orderDate &gt;= #{startDate}
+        </if>
+        <if test="endDate !=null and endDate !=''">
+            and spo.orderDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+        </if>
+        <if test="status !=null and status !=''">
+            and spoe.rowStatus = #{status}
+        </if> 
+		) as temp2, scmpurreceiveentry spre, scminvpurinwarehsbillentry siwe, scminvpurinwarehsbill siw
+		where 1 = 1
+		and spre.poDtlId = temp2.id 
+		and spre.id = siwe.sourceBillDtlId
+		and siwe.offset = '0'
+		and siwe.wrId = siw.wrId
+		and siw.bizType = '1'
+		and siw.sysBill = '0'
+		and siw.status = 'E'
+        <if test="materialId !=null and materialId !=0">
+            and temp2.itemId = #{materialId}
+        </if>	
+        ) temp4 on temp2.id = temp4.id
+		group by temp2.orgUnitNo, temp2.itemId, temp2.itemNo, temp2.itemName, temp2.spec,
+		temp2.invOrgUnitNo, temp2.finOrgUnitNo, temp2.unit, temp2.unitName ) temp6 
+		
+		LEFT JOIN 
+		
+		(select siw.orgUnitNo, temp2.itemId, temp2.itemNo, temp2.itemName, temp2.unit, temp2.unitName,
+		SUM(IFNULL(srte.baseQty,0)/(case IFNULL(temp2.convrate,0) when 0 then 1 else temp2.convrate end))as returnQty,
+		SUM(srte.taxAmt) as returnAmt, 
+		srte.purOrgUnitNo
+		from
+		(select spo.poNo, spoe.id, spoe.prDtlId, spo.orderDate, spo.orgUnitNo, 
+		spoe.itemId, smt.itemNo, smt.itemName, smt.spec, spoe.receiveOrgUnitNo as invOrgUnitNo,
+		(case spo.centeralBalance when 1 then spo.finOrgUnitNo else spoe.receiveFinOrgUnitNo end) as finOrgUnitNo,
+		spoe.purUnit as unit, smu.unitName, IFNULL(spoe.qty,0) as orderQty, spoe.taxPrice, IFNULL(spoe.taxAmt,0) as amt, smur.convrate
+		from scmpurorder spo, scmpurorderentry spoe,
+		scmmaterial smt,scmmaterialgroupdetail smgd, scmmaterialgroup smg,scmmaterialgroupstandard smd, scmmaterialunitrelation smur, scmmeasureunit smu
+		where spo.id = spoe.poId and smgd.itemId = smt.id
+		    and smg.id = smgd.classId and smgd.standardId = smd.id and smd.standardType='1'
+		and spoe.itemId = smt.id
+		and spoe.itemId = smur.itemId
+		and spoe.purUnit = smur.targetUnitId
+		and spoe.purUnit = smu.id
+		and spoe.rowStatus in ('A', 'E', 'C')
+        <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+            and spo.orgUnitNo in ${purOrgUnitNo}
+        </if>
+        <if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+            and spoe.receiveOrgUnitNo in ${invOrgUnitNo}
+        </if>
+        <if test="materialClassName !=null and materialClassName !=''">
+	        and smg.id in ${materialClassName}
+	    </if>
+        <if test="materialId !=null and materialId !=0">
+            and spoe.itemId = #{materialId}
+        </if>
+        <if test="startDate !=null and startDate !=''">
+            and spo.orderDate &gt;= #{startDate}
+        </if>
+        <if test="endDate !=null and endDate !=''">
+            and spo.orderDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+        </if>
+        <if test="status !=null and status !=''">
+            and spoe.rowStatus = #{status}
+        </if> 
+		) as temp2, scmpurreceiveentry spre, scminvpurinwarehsbillentry siwe, scminvpurinwarehsbill siw, scmpurreturnsentry srte
+		where 1 = 1
+		and spre.poDtlId = temp2.id 
+		and spre.id = siwe.sourceBillDtlId
+		and spre.id = srte.sourceDtlId
+		and siwe.offset = '0'
+		and siwe.wrId = siw.wrId
+		and siw.sysBill = '0'
+		and siw.status = 'E'
+        <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+            and siwe.purOrgUnitNo in ${purOrgUnitNo}
+        </if>
+        <if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+            and siw.orgUnitNo in ${invOrgUnitNo}
+        </if>
+        <if test="materialId !=null and materialId !=0">
+            and siwe.itemId = #{materialId}
+        </if>
+        <if test="startDate !=null and startDate !=''">
+            and siw.bizDate &gt;= #{startDate}
+        </if>
+        <if test="endDate !=null and endDate !=''">
+            and siw.bizDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+        </if>
+		group by siw.orgUnitNo, temp2.itemId, temp2.itemNo, temp2.itemName, temp2.unit, temp2.unitName,
+		srte.purOrgUnitNo) temp5 on temp6.orgUnitNo = temp5.purOrgUnitNo
+		and temp6.itemId = temp5.itemId
+		and temp6.unit = temp5.unit
+		and temp6.invOrgUnitNo = temp5.orgUnitNo
+        group by case when temp6.orgUnitNo is NULL then temp5.purOrgUnitNo else temp6.orgUnitNo end,
+				case when temp6.itemId is NULL then temp5.itemId else temp6.itemId end, 
+				case when temp6.itemNo is NULL then temp5.itemNo else temp6.itemNo end, 
+				case when temp6.itemName is NULL then temp5.itemName else temp6.itemName end,
+				case when temp6.unit is NULL then temp5.unit else temp6.unit end,
+				case when temp6.unitName is NULL then temp5.unitName else temp6.unitName end
+        order by case when temp6.orgUnitNo is NULL then temp5.purOrgUnitNo else temp6.orgUnitNo end,
+		<choose>
+            <when test='sortBy == "RQ"'>
+            	TRUNCATE(IFNULL(SUM(temp6.addInQty) - IFNULL(SUM(temp5.returnQty),0),0),2) DESC
+            </when>
+            <when test='sortBy == "RA"'>
+            	SUM(IFNULL(temp6.addInAmt,0) - IFNULL(temp5.returnAmt,0)) DESC
+            </when>
+            <when test='sortBy == "TQ"'>
+            	TRUNCATE(IFNULL(SUM(temp5.returnQty),0),2) DESC
+            </when>
+            <when test='sortBy == "TA"'>
+            	IFNULL(SUM(temp5.returnAmt),0) DESC
+            </when>
+            <otherwise>
+            	case when temp6.itemNo is NULL then temp5.itemNo else temp6.itemNo end
+            </otherwise>
+        </choose>		
+ 	</select>
+ 
+ 	<!-- 物资交易明细表（按供应商*库存组织）-->
+ 	<select id="scmpurreport.selectMaterialTransDetails" resultType="ScmPurOrder2" parameterType="Map">
+		select 
+		temp6.vendorId,scmsupplier.vendorName,
+		case when temp6.orgUnitNo is NULL then temp5.purOrgUnitNo else temp6.orgUnitNo end as receiveOrgunitNo,
+		case when temp6.itemId is NULL then temp5.itemId else temp6.itemId end as itemId, 
+		case when temp6.itemNo is NULL then temp5.itemNo else temp6.itemNo end as itemNo, 
+		case when temp6.itemName is NULL then temp5.itemName else temp6.itemName end as itemName,
+		case when temp6.invOrgUnitNo is NULL then temp5.orgUnitNo else temp6.invOrgUnitNo end storageOrgUnitNo,
+		case when temp6.unit is NULL then temp5.unit else temp6.unit end unit,
+		case when temp6.unitName is NULL then temp5.unitName else temp6.unitName end unitName,
+		TRUNCATE((SUM(IFNULL(temp6.orderAmt,0)) - IFNULL(SUM(temp5.returnAmt),0))/
+		case when (IFNULL(SUM(IFNULL(temp6.orderQty,0))-SUM(IFNULL(temp5.returnQty,0)),1)) = 0 THEN 1
+		else IFNULL(SUM(IFNULL(temp6.orderQty,0))-SUM(IFNULL(temp5.returnQty,0)),1) end,2) as averagePrice,
+		TRUNCATE(SUM(IFNULL(temp6.orderQty,0)),2) as orderQty,
+		IFNULL(SUM(temp6.orderAmt),0) as orderAmt,
+		TRUNCATE(IFNULL(SUM(temp6.addInQty),0),2) AS storageQty,
+		SUM(IFNULL(temp6.addInAmt,0)) AS storageAmt,
+		TRUNCATE(IFNULL(SUM(temp5.returnQty),0),2) as returnQty,
+		IFNULL(SUM(temp5.returnAmt),0) as returnAmt
+		from (
+		select temp2.orgUnitNo, temp2.itemId, temp2.itemNo, temp2.itemName, temp2.vendorId,
+		temp2.invOrgUnitNo, temp2.finOrgUnitNo, temp2.unit, temp2.unitName,
+		SUM(temp2.orderQty) as orderQty, 0 as price, SUM(temp2.amt) as orderAmt,
+		IFNULL(SUM(temp4.addInQty),0) as addInQty,
+		IFNULL(SUM(temp4.taxAmt),0) as addInAmt 
+		from 
+		(select spoe.id, spoe.prDtlId, spo.orgUnitNo,
+		spoe.itemId, smt.itemNo, smt.itemName, spo.vendorId, smt.spec, spoe.receiveOrgUnitNo as invOrgUnitNo,
+		(case spo.centeralBalance when 1 then spo.finOrgUnitNo else spoe.receiveFinOrgUnitNo end) as finOrgUnitNo,
+		spoe.purUnit as unit, smu.unitName as unitName, IFNULL(spoe.qty,0) as orderQty, spoe.taxPrice, IFNULL(spoe.taxAmt,0) as amt, smur.convrate
+		from scmpurorder spo, scmpurorderentry spoe,
+		scmmaterial smt, scmmaterialunitrelation smur, scmmeasureunit smu
+		where spo.id = spoe.poId 
+		and spoe.itemId = smt.id
+		and spoe.itemId = smur.itemId
+		and spoe.purUnit = smur.targetUnitId
+		and spoe.purUnit = smu.id
+		and spoe.rowStatus in ('A', 'E', 'C')
+        <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+            and spo.orgUnitNo in ${purOrgUnitNo}
+        </if>
+        <if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+            and spoe.receiveOrgUnitNo in ${invOrgUnitNo}
+        </if>
+        <if test="materialId !=null and materialId !=0">
+            and spoe.itemId = #{materialId}
+        </if>
+        <if test="startDate !=null and startDate !=''">
+            and spoe.reqDate &gt;= #{startDate}
+        </if>
+        <if test="endDate !=null and endDate !=''">
+            and spoe.reqDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+        </if>
+        <if test="status !=null and status !=''">
+            and spoe.rowStatus = #{status}
+        </if> 
+		) temp2
+		LEFT JOIN (
+		select temp2.id, 
+		IFNULL(siwe.baseQty,0)/(case IFNULL(temp2.convrate,0) when 0 then 1 else temp2.convrate end) as addInQty,
+		siwe.taxAmt as taxAmt 
+		from
+		(select spoe.id, spoe.prDtlId, spo.orgUnitNo, 
+		spoe.itemId, smt.itemNo, smt.itemName, spo.vendorId, smt.spec, spoe.receiveOrgUnitNo,
+		(case spo.centeralBalance when 1 then spo.finOrgUnitNo else spoe.receiveFinOrgUnitNo end) as finOrgUnitNo,
+		spoe.purUnit, IFNULL(spoe.qty,0) as orderQty, spoe.taxPrice, IFNULL(spoe.taxAmt,0), smur.convrate
+		from scmpurorder spo, scmpurorderentry spoe,
+		scmmaterial smt, scmmaterialunitrelation smur
+		where spo.id = spoe.poId 
+		and spoe.itemId = smt.id
+		and spoe.itemId = smur.itemId
+		and spoe.purUnit = smur.targetUnitId
+		and spoe.rowStatus in ('A', 'E', 'C')
+		<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+            and spo.orgUnitNo in ${purOrgUnitNo}
+		</if>
+		<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+            and spoe.receiveOrgUnitNo in ${invOrgUnitNo}
+		</if>
+		<if test="materialId !=null and materialId !=0">
+            and spoe.itemId = #{materialId}
+		</if>
+		<if test="startDate !=null and startDate !=''">
+            and spoe.reqDate &gt;= #{startDate}
+		</if>
+		<if test="endDate !=null and endDate !=''">
+            and spoe.reqDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+		</if>
+		<if test="status !=null and status !=''">
+            and spoe.rowStatus = #{status}
+		</if> 
+		) as temp2, scmpurreceiveentry spre, scminvpurinwarehsbillentry siwe, scminvpurinwarehsbill siw
+		where 1 = 1
+		and spre.poDtlId = temp2.id 
+		and spre.id = siwe.sourceBillDtlId
+		and siwe.offset = '0'
+		and siwe.wrId = siw.wrId
+		and siw.bizType = '1'
+		and siw.sysBill = '0'
+		and siw.status = 'E'
+		<if test="materialId !=null and materialId !=0">
+		    and temp2.itemId = #{materialId}
+		</if>   
+		) temp4 on temp2.id = temp4.id
+		group by temp2.orgUnitNo, temp2.itemId, temp2.itemNo, temp2.itemName, temp2.vendorId,
+		temp2.invOrgUnitNo, temp2.finOrgUnitNo, temp2.unit, temp2.unitName) temp6
+		LEFT JOIN scmsupplier on temp6.vendorId=scmsupplier.id
+		LEFT JOIN 
+		(
+		SELECT A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo,
+		IFNULL(sum(B.Qty),0) as returnQty,IFNULL(sum(B.taxAmt),0) as returnAmt,
+		smt.itemNo, smt.itemName,smu.unitName,B.unit 
+		FROM scmpurreturns A,scmpurreturnsentry B,scmmaterial smt, scmmaterialunitrelation smur, scmmeasureunit smu 
+		where A.id=B.rtId And A.status in ('E','C','F') AND A.vendorId > 0	
+		
+		<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND B.purOrgUnitNo in ${purOrgUnitNo}
+			</if>
+			<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+				AND A.orgUnitNo in ${invOrgUnitNo}
+			</if>
+			<if test="startDate !=null and startDate !=''">
+				AND A.bizDate &gt;= #{startDate}
+			</if>
+			<if test="endDate !=null and endDate !=''">
+				AND A.bizDate &lt;= #{endDate}
+			</if>
+			<if test="materialId !=null and materialId !=0">
+           		and B.itemId = #{materialId}
+			</if>
+			and B.itemId = smt.id
+			and B.itemId = smur.itemId
+			and B.unit = smur.targetUnitId
+			and B.unit = smu.id		
+		GROUP BY A.orgUnitNo,B.itemId,smt.itemNo,smt.itemName,B.unit,B.purOrgUnitNo,A.vendorId
+		) temp5 on temp6.orgUnitNo = temp5.purOrgUnitNo
+		and temp6.itemId = temp5.itemId
+		and temp6.unit = temp5.unit
+		and temp6.invOrgUnitNo = temp5.orgUnitNo
+		and temp6.vendorId = temp5.vendorId
+		group by temp6.invOrgUnitNo, temp5.orgUnitNo, temp6.orgUnitNo, temp5.purOrgUnitNo, temp6.itemId, temp5.itemId,
+		temp6.itemNo, temp5.itemNo, temp6.itemName, temp5.itemName, temp6.unit, temp5.unit, temp6.unitName, temp5.unitName, temp6.vendorId
+		order by temp6.invOrgUnitNo, temp6.vendorId, temp6.itemId    
+ 	</select>
+ 	
+ 	<!-- 供应商交易汇总表 -->
+ 	<select id="scmpurreport.selectSupTransSummary" resultType="ScmPurOrderTransTotal" parameterType="Map">
+	select vendorId,purOrgUnitNo,storageOrgUnitNo,
+	 	  sum(amt) as amt,sum(taxAmt) as taxAmt,
+	 	  sum(receiveAmt) as receiveAmt,sum(receiveTaxAmt) as receiveTaxAmt,
+	 	  sum(addInAmt) as addInAmt,sum(addInTaxAmt) as addInTaxAmt,
+	 	  sum(returnAmt) as returnAmt,sum(returnTaxAmt) as returnTaxAmt,
+	 	  sum(outAmt)as outAmt,sum(outTaxAmt) as outTaxAmt 
+ 		from (
+		SELECT A.vendorId,A.orgUnitNo as purOrgUnitNo,B.receiveOrgUnitNo as storageOrgUnitNo,
+		sum(B.qty) as qty,sum(B.amt) as amt,sum(B.taxAmt) as taxAmt,
+		0 as receiveAmt,0 as receiveTaxAmt,0 as addInAmt,0 as addInTaxAmt,0 as returnAmt,0 as returnTaxAmt,0 as outAmt,0 as outTaxAmt
+		FROM scmpurorder A,scmpurorderentry B 
+		where A.id=B.poId And A.status in ('A','E','C','F') AND A.vendorId &gt; 0
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND A.orgunitno in ${purOrgUnitNo}
+			</if>
+			<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+				AND B.receiveorgunitno in (${invOrgUnitNo})
+			</if>
+			<if test="vendorName !=null and vendorName !=''">
+				AND A.vendorId = #{vendorName}
+			</if>
+			<if test='unified !=null and unified =="1"'>
+				AND A.unified = 1
+			</if>
+			<if test='unified !=null and unified =="0"'>
+				AND A.unified = 0
+			</if>
+			<if test="minOrderDate !=null and minOrderDate !=''">
+				AND B.reqDate &gt;= #{minOrderDate}
+			</if>
+			<if test="maxOrderDate !=null and maxOrderDate !=''">
+				AND B.reqDate &lt;= #{maxOrderDate}
+			</if>
+		GROUP BY A.vendorId,A.orgUnitNo,B.receiveOrgUnitNo
+		UNION
+		SELECT A.vendorId,B.purOrgUnitNo,A.orgUnitNo as storageOrgUnitNo,0 as qty,0 as amt,0 as taxAmt,0 as receiveAmt,0 as receiveTaxAmt,
+		IFNULL(sum(B.amt),0) as addInAmt,IFNULL(sum(B.taxAmt),0) as addInTaxAmt,0 as returnAmt,0 as returnTaxAmt,0 as outAmt,0 as outTaxAmt
+		FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+		Where A.wrId=B.wrId And A.status = 'E'  AND A.vendorId &gt; 0
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND B.purOrgUnitNo in ${purOrgUnitNo}
+			</if>
+			<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+				AND A.orgUnitNo in (${invOrgUnitNo})
+			</if>
+			<if test="vendorName !=null and vendorName !=''">
+				AND A.vendorId = #{vendorName}
+			</if>
+			<if test='unified !=null and unified =="1"'>
+				AND A.unified = 1
+			</if>
+			<if test='unified !=null and unified =="0"'>
+				AND A.unified = 0
+			</if>
+			<if test='self !=null and self =="0"'>
+				And A.bizType in ('1')
+			</if>
+			<if test='self !=null and self =="1"'>
+				And A.bizType in ('1','3')
+			</if>
+			<if test="minOrderDate !=null and minOrderDate !=''">
+				AND A.bizDate &gt;= #{minOrderDate}
+			</if>
+			<if test="maxOrderDate !=null and maxOrderDate !=''">
+				AND A.bizDate &lt;= #{maxOrderDate}
+			</if>
+		GROUP BY A.vendorId,B.purOrgUnitNo,A.orgUnitNo
+		UNION
+		SELECT A.vendorId,B.purOrgUnitNo,A.orgUnitNo as storageOrgUnitNo,0 as qty,0 as amt,0 as taxAmt,0 as receiveAmt,0 as receiveTaxAmt,
+		0 as addInAmt,0 as addInTaxAmt,IFNULL(sum(B.amt),0) as returnAmt,IFNULL(sum(B.taxAmt),0) as returnTaxAmt,0 as outAmt,0 as outTaxAmt
+		FROM scmpurreturns A,scmpurreturnsentry B 
+		where A.id=B.rtId And A.status in ('E','C','F') AND A.vendorId &gt; 0
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND B.purOrgUnitNo in ${purOrgUnitNo}
+			</if>
+			<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+				AND A.orgUnitNo in (${invOrgUnitNo})
+			</if>
+			<if test="vendorName !=null and vendorName !=''">
+				AND A.vendorId = #{vendorName}
+			</if>
+			<if test='unified !=null and unified =="1"'>
+				AND A.unified = 1
+			</if>
+			<if test='unified !=null and unified =="0"'>
+				AND A.unified = 0
+			</if>
+			<if test="minOrderDate !=null and minOrderDate !=''">
+				AND A.bizDate &gt;= #{minOrderDate}
+			</if>
+			<if test="maxOrderDate !=null and maxOrderDate !=''">
+				AND A.bizDate &lt;= #{maxOrderDate}
+			</if>
+		GROUP BY A.vendorId,B.purOrgUnitNo,A.orgUnitNo
+		UNION
+		SELECT A.vendorId,A.purOrgUnitNo,A.orgUnitNo as storageOrgUnitNo,0 as qty,0 as amt,0 as taxAmt,
+		case when #{flag}='1' then IFNULL(sum(B.amt),0) else case when IFNULL(sum(B.amt),0)-sum(IFNULL(C.unConfirmAmt,0)) &lt; 0 then 0 
+		else IFNULL(sum(B.amt),0)-sum(IFNULL(C.unConfirmAmt,0)) end end as receiveAmt,
+		case when #{flag}='1' then IFNULL(sum(B.taxAmt),0) else case when IFNULL(sum(B.taxAmt),0)-sum(IFNULL(C.unConfirmTaxAmt,0)) &lt; 0 then 0 
+		else IFNULL(sum(B.taxAmt),0)-sum(IFNULL(C.unConfirmTaxAmt,0)) end end as receiveTaxAmt,
+		0 as addInAmt,0 as addInTaxAmt,0 as returnAmt,0 as returnTaxAmt,0 as outAmt,0 as outTaxAmt
+		FROM scmpurreceive A left join (SELECT ScmPurReceive.id as pvId,sum(case when scmpurcheck.flag=1 then scmpurreceiveentry.deliveryQty else 0 end) as confirmQty,
+		sum(case when scmpurcheck.flag=1 then scmpurreceiveentry.deliveryQty*scmpurreceiveentry.price else 0 end) as confirmAmt,
+		sum(case when scmpurcheck.flag=1 then scmpurreceiveentry.deliveryQty*scmpurreceiveentry.taxPrice else 0 end) as confirmTaxAmt,
+		sum(case when scmpurcheck.flag=0 then scmpurreceiveentry.deliveryQty else 0 end) as unConfirmQty,
+		sum(case when scmpurcheck.flag=0 then scmpurreceiveentry.deliveryQty*scmpurreceiveentry.price else 0 end) as unConfirmAmt,
+		sum(case when scmpurcheck.flag=0 then scmpurreceiveentry.deliveryQty*scmpurreceiveentry.taxPrice else 0 end) as unConfirmTaxAmt
+		FROM scmpurreceive,scmpurreceiveentry,scmpurcheck
+		WHERE scmpurreceive.id = scmpurreceiveentry.pvId And scmpurreceive.ckId=scmpurcheck.id
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND scmpurreceive.purOrgUnitNo in ${purOrgUnitNo}
+			</if>
+			<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+				AND scmpurreceive.orgUnitNo in (${invOrgUnitNo})
+			</if>
+			<if test="vendorName !=null and vendorName !=''">
+				AND scmpurreceive.vendorId = #{vendorName}
+			</if>
+			<if test='unified !=null and unified =="1"'>
+				AND scmpurreceive.unified = 1
+			</if>
+			<if test='unified !=null and unified =="0"'>
+				AND scmpurreceive.unified = 0
+			</if>
+			<if test="minOrderDate !=null and minOrderDate !=''">
+				AND scmpurreceive.receiveDate &gt;= #{minOrderDate}
+			</if>
+			<if test="maxOrderDate !=null and maxOrderDate !=''">
+				AND scmpurreceive.receiveDate &lt;= #{maxOrderDate}
+			</if>
+		group by scmpurreceive.id) C on A.id=C.pvId,scmpurreceiveentry B
+		Where A.id=B.pvId AND A.vendorId &gt; 0
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND A.purOrgUnitNo in ${purOrgUnitNo}
+			</if>
+			<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+				AND A.orgUnitNo in (${invOrgUnitNo})
+			</if>
+			<if test="vendorName !=null and vendorName !=''">
+				AND A.vendorId = #{vendorName}
+			</if>
+			<if test='unified !=null and unified =="1"'>
+				AND A.unified = 1
+			</if>
+			<if test='unified !=null and unified =="0"'>
+				AND A.unified = 0
+			</if>
+			<if test="minOrderDate !=null and minOrderDate !=''">
+				AND A.receiveDate &gt;= #{minOrderDate}
+			</if>
+			<if test="maxOrderDate !=null and maxOrderDate !=''">
+				AND A.receiveDate &lt;= #{maxOrderDate}
+			</if>
+		GROUP BY A.vendorId,A.purOrgUnitNo,A.orgUnitNo
+		UNION
+		SELECT  A.vendorId,B.purOrgUnitNo,A.orgUnitNo as storageOrgUnitNo,0 as qty,0 as amt,0 as taxAmt,0 as receiveamt,0 as receivetaxamt, 
+			 0 as addinamt,0 as addintaxamt,0 as returnamt,0 as returntaxamt,
+				IFNULL(sum(B.amt),0) as outAmt,IFNULL(sum(B.taxAmt),0) as outTaxAmt
+		FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+		Where A.wrId=B.wrId And A.status = 'E'  AND A.vendorId &gt; 0
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND B.purOrgUnitNo in ${purOrgUnitNo}
+			</if>
+			<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+				AND A.orgUnitNo in (${invOrgUnitNo})
+			</if>
+			<if test="vendorName !=null and vendorName !=''">
+				AND A.vendorId = #{vendorName}
+			</if>
+			<if test='unified !=null and unified =="1"'>
+				AND A.unified = 1
+			</if>
+			<if test='unified !=null and unified =="0"'>
+				AND A.unified = 0
+			</if>
+			<if test='self !=null and self =="0"'>
+				And A.bizType in ('6')
+			</if>
+			<if test='self !=null and self =="1"'>
+				And A.bizType in ('6','8')
+			</if>
+			<if test="minOrderDate !=null and minOrderDate !=''">
+				AND A.bizDate &gt;= #{minOrderDate}
+			</if>
+			<if test="maxOrderDate !=null and maxOrderDate !=''">
+				AND A.bizDate &lt;= #{maxOrderDate}
+			</if>
+		GROUP BY A.vendorId,B.purOrgUnitNo,A.orgUnitNo
+       ) a
+    GROUP BY vendorId,purOrgUnitNo,storageOrgUnitNo
+	ORDER BY purOrgUnitNo,vendorId,storageOrgUnitNo
+ 	
+ 	</select>
+ 	
+ 	<!-- 供应商交易物资汇总表-->
+ 	<select id="scmpurreport.selectSupTransItemSummary" resultType="ScmPurOrderTransInfo" parameterType="Map">
+        select a.vendorId,a.purOrgUnitNo,a.itemId,b.purUnit,a.storageOrgUnitNo,
+	 	sum(a.qty) as qty,case When sum(a.qty)=0 Then 0 Else sum(a.amt)/sum(a.qty) end as price,sum(a.amt) as amt,
+	 	case When sum(a.qty)=0 Then 0 Else sum(a.taxAmt)/sum(a.qty) end as taxPrice,sum(a.taxAmt) as taxAmt,
+	 	sum(a.receiveQty)as receiveQty,sum(a.receiveAmt) as receiveAmt,sum(a.receiveTaxAmt) as receiveTaxAmt,
+	 	sum(a.addInQty) as addInQty,sum(a.addInAmt) as addInAmt,sum(a.addInTaxAmt) as addInTaxAmt,
+	 	sum(a.returnQty) as returnQty,sum(a.returnAmt) as returnAmt,sum(a.returnTaxAmt) as returnTaxAmt,
+	 	sum(a.outQty) as outQty,sum(a.outAmt)as outAmt,sum(a.outTaxAmt) as outTaxAmt FROM
+			(SELECT A.vendorId,A.orgUnitNo as purOrgUnitNo,B.itemId,B.receiveOrgUnitNo as storageOrgUnitNo,
+			sum(B.qty) as qty,sum(B.amt) as amt,sum(B.taxAmt) as taxAmt,0 as receiveQty,0 as  receiveAmt,0 as  receiveTaxAmt,
+			0 as addInQty,0 as  addInAmt,0 as  addInTaxAmt,0 as returnQty,0 as  returnAmt,0 as  returnTaxAmt,0 as outQty,0 as  outAmt,0 as  outTaxAmt
+			FROM scmpurorder A,scmpurorderentry B 
+			where A.id=B.poId And A.status in ('A','E','C','F') And A.vendorId &gt; 0
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.orgunitno in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.receiveorgunitno in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND B.reqDate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND B.reqDate &lt;= #{maxOrderDate}
+				</if>
+			GROUP BY A.vendorId,A.orgUnitNo,B.itemId,B.purUnit,B.receiveOrgUnitNo
+			UNION
+			SELECT A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo as storageOrgUnitNo,0 as qty,0 as  amt,0 as  taxAmt,
+			0 as receiveQty,0 as  receiveAmt,0 as  receiveTaxAmt,IFNULL(sum(B.qty),0) as addInQty,IFNULL(sum(B.amt),0) as addInAmt,IFNULL(sum(B.taxAmt),0) as addInTaxAmt,
+			0 as returnQty,0 as  returnAmt,0 as  returnTaxAmt,0 as outQty,0 as  outAmt,0 as  outTaxAmt 
+	        FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+			Where A.wrId=B.wrId And A.status = 'E' AND A.vendorId &gt; 0
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND B.purOrgUnitNo in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test='self !=null and self =="0"'>
+					And A.bizType in ('1')
+				</if>
+				<if test='self !=null and self =="1"'>
+					And A.bizType in ('1','3')
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.bizDate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.bizDate &lt;= #{maxOrderDate}
+				</if>
+			GROUP BY A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo
+			UNION
+			SELECT A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo as storageOrgUnitNo,0 as qty,0 as  qmt,0 as  taxAmt,
+			0 as receiveQty,0 as  receiveAmt,0 as  receiveTaxAmt,0 as addInQty,0 as  addInAmt,0 as  addInTaxAmt,
+			IFNULL(sum(B.Qty),0) as returnQty,IFNULL(sum(B.amt),0) as returnAmt,IFNULL(sum(B.taxAmt),0) as returnTaxAmt,
+			0 as outQty,0 as  outAmt,0 as  outTaxAmt 
+			FROM scmpurreturns A,scmpurreturnsentry B 
+			where A.id=B.rtId And A.status in ('E','C','F') AND A.vendorId &gt; 0
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND B.purOrgUnitNo in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.bizDate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.bizDate &lt;= #{maxOrderDate}
+				</if>
+			GROUP BY A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo
+			UNION
+			SELECT A.vendorId,A.purOrgUnitNo,B.itemId,A.orgUnitNo as storageOrgUnitNo,0 as qty,0 as  amt,0 as  taxAmt,
+			IFNULL(CASE When A.unified=1 THEN sum(B.deliveryQty) Else sum(B.qty) End,0) as receiveQty,IFNULL(sum(B.amt),0) as receiveAmt,IFNULL(sum(B.taxAmt),0) as receiveTaxAmt,
+			0 as addInQty,0 as  addInAmt,0 as  addInTaxAmt,0 as returnQty,0 as  receiveAmt,0 as  receiveTaxAmt,0 as outQty,0 as  outAmt,0 as  outTaxAmt 
+			FROM scmpurreceive A,scmpurreceiveentry B
+			Where A.id=B.pvId AND A.vendorId &gt; 0
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.purOrgUnitNo in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.receiveDate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.receiveDate &lt;= #{maxOrderDate}
+				</if>
+			GROUP BY A.vendorId,A.purOrgUnitNo,B.itemId,A.orgUnitNo
+			UNION
+			SELECT A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo as storageOrgUnitNo,
+	    0 as qty,0 as amt,0 as taxAmt,0 as receiveqty,0 as receiveamt  ,0 as receivetaxamt,
+	    0 as addinqty,0 as addinamt,0 as addintaxamt,0 as returnqty,0 as retureamt,0 as  returntaxamt ,
+	    IFNULL(sum(b.Qty),0) as outQty,
+		  IFNULL(sum(b.Amt),0) as outAmt,IFNULL(sum(b.TaxAmt),0) as outTaxAmt 
+	     FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+			Where A.wrId=B.wrId And A.status = 'E' AND A.vendorId &gt; 0
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND B.purOrgUnitNo in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test='self !=null and self =="0"'>
+					And A.bizType in ('6')
+				</if>
+				<if test='self !=null and self =="1"'>
+					And A.bizType in ('6','8')
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.bizDate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.bizDate &lt;= #{maxOrderDate}
+				</if>
+			GROUP BY A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo
+	) a,
+	(SELECT ScmMaterial.id,Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit
+		Else ScmMaterialPurchase.purUnit end as	purUnit From
+		(Select ScmMaterial.id,ScmMaterialPurchase.purUnit FROM ScmMaterial,ScmMaterialPurchase 
+		where ScmMaterialPurchase.itemId=ScmMaterial.id and ScmMaterialPurchase.orgUnitNo=#{controlUnitNo}) ScmMaterial
+		LEFT JOIN ScmMaterialPurchase On ScmMaterialPurchase.itemId=ScmMaterial.id and ScmMaterialPurchase.orgUnitNo in ${purOrgUnitNo}) b
+	Where a.itemId=b.id
+	GROUP BY a.vendorId,a.purOrgUnitNo,a.itemId,a.storageOrgUnitNo,b.purUnit
+	ORDER BY a.purOrgUnitNo,a.vendorId,a.storageOrgUnitNo,a.itemId
+	</select>
+ 	
+ 	<select id="scmpurreport.selectPODueOrNot" resultType="ScmPurOrder2" parameterType="Map">
+        <choose>
+            <when test="flag == 1">
+				select 
+				temp1.poNo, now() as addInDate, temp2.addInDate as receiveDate, temp1.rowStatus as status, temp1.bizType, temp1.vendorId,
+				temp1.orgUnitNo as purOrgUnitNo, temp1.reqOrgUnitNo, temp1.receiveOrgUnitNo as recOrgUnitNo, temp1.itemId, temp1.itemNo, temp1.itemName, temp1.spec, temp1.purUnit,
+				SUM(IFNULL(temp1.qty,0)) as qty, 0 as addInQty, 
+				SUM(IFNULL((temp2.addInQty/(case IFNULL(temp1.convrate,0) when 0 then 1 else temp1.convrate end)),0)) as receiveQty,
+				SUM(IFNULL(temp1.qty,0)) - SUM(IFNULL((temp2.addInQty/(case IFNULL(temp1.convrate,0) when 0 then 1 else temp1.convrate end)),0)) as notReceiveQty,
+				'1' as flag, 
+				temp1.buyerId 
+				from (
+				select 
+				spo.poNo, spoe.rowStatus, spo.bizType, spo.vendorId, spo.orgUnitNo, spoe.reqOrgUnitNo, spoe.receiveOrgUnitNo,
+				spoe.itemId, smt.itemNo, smt.itemName, smt.spec, spoe.purUnit, IFNULL(spoe.qty,0) as qty, 
+				smur.convrate, spoe.id, spoe.buyerId
+				from  scmpurorderentry spoe, scmpurorder spo, scmmaterialunitrelation smur, scmmaterial smt
+				where spo.id = spoe.poId
+				and spoe.itemId = smt.id
+				and smur.itemId = smt.id
+				and spoe.purUnit = smur.targetUnitId
+                <if test="bizType !=null and bizType !=''">
+                    and spo.bizType = #{bizType}
+                </if>
+                <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+                    and spo.orgUnitNo in ${purOrgUnitNo}
+                </if>
+                <if test="reqOrgUnitNo !=null and reqOrgUnitNo !=''">
+                    and spoe.reqOrgUnitNo in ${reqOrgUnitNo}
+                </if>
+                <if test="materialId !=null and materialId !=0">
+                    and spoe.itemId = #{materialId}
+                </if>
+                <if test="vendorId !=null and vendorId !=0">
+                    and spo.vendorId = #{vendorId}
+                </if>
+                <if test="buyerId !=null and buyerId !=0">
+                    and IFNULL(spoe.buyerId,0) = #{buyerId}
+                </if>
+                <if test="reqDate !=null and reqDate !=''">
+                    and spoe.reqDate = #{reqDate}
+                </if>
+                <if test="endDate !=null and endDate !=''">
+                    and spo.orderDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+                </if>   				
+				) temp1 
+				LEFT JOIN 
+				(
+				select MAX(siw.bizDate) as addInDate, c.poDtlId, SUM(IFNULL(siwe.baseQty,0)) as addInQty 
+				from scminvpurinwarehsbillentry siwe, scminvpurinwarehsbill siw,
+				(select spre.id, spre.poDtlId
+				from 
+				scmpurreceiveentry spre, 
+				(
+				select 
+				spo.poNo, spoe.rowStatus, spo.bizType, spo.vendorId, spo.orgUnitNo, spoe.reqOrgUnitNo, spoe.receiveOrgUnitNo,
+				spoe.itemId, smt.itemNo, smt.itemName, smt.spec, spoe.purUnit, IFNULL(spoe.qty,0) as qty, 
+				smur.convrate, spoe.id, spoe.buyerId
+				from  scmpurorderentry spoe, scmpurorder spo, scmmaterialunitrelation smur, scmmaterial smt
+				where spo.id = spoe.poId
+				and spoe.itemId = smt.id
+				and smur.itemId = smt.id
+				and spoe.purUnit = smur.targetUnitId
+                <if test="bizType !=null and bizType !=''">
+                    and spo.bizType = #{bizType}
+                </if>
+                <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+                    and spo.orgUnitNo in ${purOrgUnitNo}
+                </if>
+                <if test="reqOrgUnitNo !=null and reqOrgUnitNo !=''">
+                    and spoe.reqOrgUnitNo in ${reqOrgUnitNo}
+                </if>
+                <if test="materialId !=null and materialId !=0">
+                    and spoe.itemId = #{materialId}
+                </if>
+                <if test="vendorId !=null and vendorId !=0">
+                    and spo.vendorId = #{vendorId}
+                </if>
+                <if test="buyerId !=null and buyerId !=0">
+                    and IFNULL(spoe.buyerId,0) = #{buyerId}
+                </if>
+                <if test="reqDate !=null and reqDate !=''">
+                    and spoe.reqDate = #{reqDate}
+                </if>
+                <if test="endDate !=null and endDate !=''">
+                    and spo.orderDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+                </if>   
+				) temp1 
+				where spre.poDtlId = temp1.id) c
+				where siwe.wrId = siw.wrId 
+				and siwe.sourceBillDtlId = c.id
+				<if test="endDate !=null and endDate !=''">
+                    and siw.bizDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+                </if>
+				group by c.poDtlId) temp2 on temp1.id = temp2.poDtlId
+				where temp1.qty - IFNULL((temp2.addInQty/(case IFNULL(temp1.convrate,0) when 0 then 1 else temp1.convrate end)),0) &gt; 0
+				group by temp1.poNo, temp2.addInDate, temp1.rowStatus, temp1.bizType, temp1.vendorId, 
+				temp1.orgUnitNo, temp1.reqOrgUnitNo, temp1.receiveOrgUnitNo, temp1.itemId, temp1.itemNo, temp1.itemName, temp1.spec, temp1.purUnit, temp1.buyerId
+				order by temp1.poNo, temp2.addInDate, temp1.rowStatus, temp1.bizType, temp1.vendorId, 
+                temp1.orgUnitNo, temp1.reqOrgUnitNo, temp1.receiveOrgUnitNo, temp1.itemId, temp1.purUnit, temp1.buyerId 
+            </when>
+            <otherwise>
+				select 
+				temp1.poNo, temp2.receiveDate, now() as addInDate, temp1.rowStatus as status, temp1.bizType, temp1.vendorId, 
+				temp1.orgUnitNo as purOrgUnitNo, temp1.reqOrgUnitNo, temp1.receiveOrgUnitNo as recOrgUnitNo, temp1.itemId, temp1.itemNo, temp1.itemName, temp1.spec, temp1.purUnit,
+				SUM(IFNULL(temp1.qty,0)) as qty, 
+				SUM(IFNULL((temp2.receiveQty/(case IFNULL(temp1.convrate,0) when 0 then 1 else temp1.convrate end)),0)) as receiveQty,
+				SUM(IFNULL(temp1.qty,0)) - SUM(IFNULL((temp2.receiveQty/(case IFNULL(temp1.convrate,0) when 0 then 1 else temp1.convrate end)),0)) as notReceiveQty,
+				0 as addInQty, 
+				'2' as flag, 
+				temp1.buyerId
+				from 
+				(select 
+				spo.poNo, spoe.rowStatus, spo.bizType, spo.vendorId, spo.orgUnitNo, spoe.reqOrgUnitNo, spoe.receiveOrgUnitNo,
+				spoe.itemId, smt.itemNo, smt.itemName, smt.spec, spoe.purUnit, IFNULL(spoe.qty,0) as qty, 
+				smur.convrate, spoe.id, spoe.buyerId
+				from  scmpurorderentry spoe, scmpurorder spo, scmmaterialunitrelation smur, scmmaterial smt
+				where spo.id = spoe.poId
+				and spoe.itemId = smt.id
+				and smur.itemId = smt.id
+				and spoe.purUnit = smur.targetUnitId
+		        <if test="bizType !=null and bizType !=''">
+		            and spo.bizType = #{bizType}
+		        </if>
+		        <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+                    and spo.orgUnitNo in ${purOrgUnitNo}
+                </if>
+		        <if test="reqOrgUnitNo !=null and reqOrgUnitNo !=''">
+		            and spoe.reqOrgUnitNo in ${reqOrgUnitNo}
+		        </if>
+		        <if test="materialId !=null and materialId !=0">
+		            and spoe.itemId = #{materialId}
+		        </if>
+		        <if test="vendorId !=null and vendorId !=0">
+                    and spo.vendorId = #{vendorId}
+                </if>
+                <if test="buyerId !=null and buyerId !=0">
+                    and IFNULL(spoe.buyerId,0) = #{buyerId}
+                </if>
+		        <if test="reqDate !=null and reqDate !=''">
+		            and spoe.reqDate = #{reqDate}
+		        </if>
+		        <if test="endDate !=null and endDate !=''">
+		            and spo.orderDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+		        </if>				
+				) temp1 
+				LEFT JOIN 
+				(
+				select MAX(spr.receiveDate) as receiveDate, spre.poDtlId, SUM(IFNULL(spre.baseQty,0)) as receiveQty 
+				from 
+				scmpurreceiveentry spre, scmpurreceive spr, 
+				(select 
+				spo.poNo, spoe.rowStatus, spo.bizType, spo.vendorId, spo.orgUnitNo, spoe.reqOrgUnitNo, spoe.receiveOrgUnitNo,
+				spoe.itemId, smt.itemNo, smt.itemName, smt.spec, spoe.purUnit, IFNULL(spoe.qty,0) as qty, 
+				smur.convrate, spoe.id, spoe.buyerId
+				from  scmpurorderentry spoe, scmpurorder spo, scmmaterialunitrelation smur, scmmaterial smt
+				where spo.id = spoe.poId
+				and spoe.itemId = smt.id
+				and smur.itemId = smt.id
+				and spoe.purUnit = smur.targetUnitId
+                <if test="bizType !=null and bizType !=''">
+                    and spo.bizType = #{bizType}
+                </if>
+                <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+                    and spo.orgUnitNo in ${purOrgUnitNo}
+                </if>
+                <if test="reqOrgUnitNo !=null and reqOrgUnitNo !=''">
+                    and spoe.reqOrgUnitNo in ${reqOrgUnitNo}
+                </if>
+                <if test="materialId !=null and materialId !=0">
+                    and spoe.itemId = #{materialId}
+                </if>
+                <if test="vendorId !=null and vendorId !=0">
+                    and spo.vendorId = #{vendorId}
+                </if>
+                <if test="buyerId !=null and buyerId !=0">
+                    and IFNULL(spoe.buyerId,0) = #{buyerId}
+                </if>
+                <if test="reqDate !=null and reqDate !=''">
+                    and spoe.reqDate = #{reqDate}
+                </if>
+                <if test="endDate !=null and endDate !=''">
+                    and spo.orderDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+                </if>				
+				) temp1 
+				where spre.pvId = spr.id 
+				and spre.poDtlId = temp1.id
+                <if test="endDate !=null and endDate !=''">
+                    and spr.receiveDate &lt; DATE_ADD(#{endDate},INTERVAL 1 DAY)
+                </if>				
+				group by spre.poDtlId ) temp2 on temp1.id = temp2.poDtlId
+				where temp1.qty - IFNULL((temp2.receiveQty/(case IFNULL(temp1.convrate,0) when 0 then 1 else temp1.convrate end)),0) &gt; 0
+				group by temp1.poNo, temp2.receiveDate, temp1.rowStatus, temp1.bizType, temp1.vendorId, 
+				temp1.orgUnitNo, temp1.reqOrgUnitNo, temp1.receiveOrgUnitNo, temp1.itemId, temp1.itemNo, temp1.itemName, temp1.spec, temp1.purUnit, temp1.buyerId
+				order by temp1.poNo, temp2.receiveDate, temp1.rowStatus, temp1.bizType, temp1.vendorId, 
+                temp1.orgUnitNo, temp1.reqOrgUnitNo, temp1.receiveOrgUnitNo, temp1.itemId, temp1.purUnit, temp1.buyerId
+            </otherwise>
+        </choose>
+    </select>
+    
+    <select id="scmpurreport.selectOrderDeliverySummary" resultType="scmpurrequire2" parameterType="Map">
+        <choose>
+            <when test='flag == "1"'>
+				select vendorName, itemNo, itemName, purUnit, className, spec, unitName,
+		        orgUnitNo, qty, amt, ftype, remarks, '1' as flag from( 
+		        
+		        select temp.vendorName, temp.itemNo, temp.itemName, temp.purUnit,
+		        temp.className, temp.spec, temp.unitName, temp.orgUnitNo,
+		        temp.qty, temp.amt,temp.remarks, 1 as ftype 
+		        from 
+		        (select ssp.vendorName, 
+		            smt.itemNo, smt.itemName, spqe.purUnit, 
+		            smg.className, smt.spec, smu.unitName, 
+		            spqe.orgUnitNo,
+		            SUM(spqe.qty) as qty,
+		            SUM(spqe.amt) as amt,
+		            GROUP_CONCAT(spqe.remarks) as remarks
+		        from 
+		            scmpurrequire spq, scmpurrequireentry spqe left join scmsupplier ssp on spqe.vendorId = ssp.id,
+		            scmmaterial smt, scmmaterialgroup smg,
+		            scmmaterialgroupdetail smgd, 
+		            scmmaterialgroupstandard smgs,
+		            scmmeasureunit smu
+		        where 
+		            spq.id = spqe.prId And smg.standardId=smgs.id And smgs.standardType='1'
+		            and smg.id = smgd.classId
+		            and smt.id = spqe.itemId
+		            and smt.id = smgd.itemId
+		            and smu.id = spqe.purUnit
+		            and spqe.rowStatus in ('A','E','C')
+		            <if test="purOrgUnitNo != null and purOrgUnitNo !='' ">
+		                and spqe.purOrgUnitNo in ${purOrgUnitNo}
+		            </if>
+		            <if test="date_s != null and date_s !='' ">
+		                and spqe.reqDate &gt;= #{date_s}
+		            </if>   
+		            <if test="date_s != null and date_s !='' ">
+		                and spqe.reqDate &lt; DATE_ADD(#{date_e},INTERVAL 1 day)
+		            </if> 
+		            <if test="vendorId != null and vendorId !=0 ">
+		                and spqe.vendorId = #{vendorId}
+		            </if>
+		            <if test="reqOrgUnitNo != null and reqOrgUnitNo !='' ">
+		                and spqe.orgUnitNo in ${reqOrgUnitNo}
+		            </if>
+		            <if test="materialClassIds !=null and materialClassIds !=''">
+                        and smg.id in ${materialClassIds}
+                    </if>
+		            <if test="status != null and status !='' ">
+		                and spqe.rowStatus = #{status}
+		            </if>       
+		        group by 
+		            ssp.vendorName,
+		            smg.className, 
+		            smt.itemNo,
+		            smt.itemName,
+		            smt.spec,
+		            spqe.purUnit,
+		            spqe.orgUnitNo) temp
+		        UNION
+		        select temp2.vendorName, temp2.itemNo, temp2.itemName, temp2.purUnit,
+		        temp2.className, temp2.spec, temp2.unitName, '小计',
+		        SUM(temp2.qty), SUM(temp2.amt),'', 2 as ftype 
+		        from 
+		        (select ssp.vendorName, 
+		            smt.itemNo, smt.itemName, spqe.purUnit, 
+		            smg.className, smt.spec, smu.unitName, 
+		            spqe.orgUnitNo,
+		            SUM(spqe.qty) as qty,
+		            SUM(spqe.amt) as amt,
+		            GROUP_CONCAT(spqe.remarks) as remarks
+		        from 
+		            scmpurrequire spq, scmpurrequireentry spqe left join scmsupplier ssp on spqe.vendorId = ssp.id,
+		            scmmaterial smt, scmmaterialgroup smg,
+		            scmmaterialgroupdetail smgd, 
+		            scmmaterialgroupstandard smgs,
+		            scmmeasureunit smu
+		        where 
+		            spq.id = spqe.prId And smg.standardId=smgs.id And smgs.standardType='1'
+		            and smg.id = smgd.classId
+		            and smt.id = spqe.itemId
+		            and smt.id = smgd.itemId
+		            and smu.id = spqe.purUnit
+		            and spqe.rowStatus in ('A','E','C')
+		            <if test="purOrgUnitNo != null and purOrgUnitNo !='' ">
+                        and spqe.purOrgUnitNo in ${purOrgUnitNo}
+                    </if>
+                    <if test="date_s != null and date_s !='' ">
+                        and spqe.reqDate &gt;= #{date_s}
+                    </if>   
+                    <if test="date_s != null and date_s !='' ">
+                        and spqe.reqDate &lt; DATE_ADD(#{date_e},INTERVAL 1 day)
+                    </if> 
+                    <if test="vendorId != null and vendorId !=0 ">
+                        and spqe.vendorId = #{vendorId}
+                    </if>
+                    <if test="reqOrgUnitNo != null and reqOrgUnitNo !='' ">
+                        and spqe.orgUnitNo in ${reqOrgUnitNo}
+                    </if>
+                    <if test="materialClassIds !=null and materialClassIds !=''">
+                        and smg.id in ${materialClassIds}
+                    </if>
+                    <if test="status != null and status !='' ">
+                        and spqe.rowStatus = #{status}
+                    </if>
+		        group by 
+		            ssp.vendorName,
+		            smg.className, 
+		            smt.itemNo,
+		            smt.itemName,
+		            smt.spec,
+		            spqe.purUnit,
+		            spqe.orgUnitNo) temp2 
+		        group by 
+		        temp2.vendorName,
+		        temp2.className,
+		        temp2.itemNo,
+		        temp2.itemName,
+		        temp2.spec,
+		        temp2.purUnit having count(*) > 1) t
+		        order by 
+		            vendorName,
+		            className, 
+		            itemNo,
+		            itemName,
+		            spec,
+		            purUnit,
+		            orgUnitNo                 
+            </when>
+            <otherwise>  
+                select vendorName, itemNo, itemName, purUnit, className, spec, unitName,
+                orgUnitNo, qty, amt, ftype, remarks, '2' as flag from( 
+                
+                select temp.vendorName, temp.itemNo, temp.itemName, temp.purUnit,
+                temp.className, temp.spec, temp.unitName, temp.orgUnitNo,
+                temp.qty, temp.amt,temp.remarks, 1 as ftype 
+                from 
+                (select ssp.vendorName, 
+                    smt.itemNo, smt.itemName, spqe.purUnit, 
+                    smg.className, smt.spec, smu.unitName, 
+                    spq.finOrgUnitNo as orgUnitNo,
+                    SUM(spqe.qty) as qty,
+                    SUM(spqe.amt) as amt,
+                    GROUP_CONCAT(spqe.remarks) as remarks
+                from 
+                    scmpurrequire spq, scmpurrequireentry spqe left join scmsupplier ssp on spqe.vendorId = ssp.id,
+                    scmmaterial smt, scmmaterialgroup smg,
+                    scmmaterialgroupdetail smgd, 
+                    scmmaterialgroupstandard smgs,
+                    scmmeasureunit smu
+                where 
+                    spq.id = spqe.prId And smg.standardId=smgs.id and smgs.standardType='1'
+                    and smg.id = smgd.classId
+                    and smt.id = spqe.itemId
+                    and smt.id = smgd.itemId
+                    and smu.id = spqe.purUnit
+                    and spqe.rowStatus in ('A','E','C')
+                    <if test="purOrgUnitNo != null and purOrgUnitNo !='' ">
+                        and spqe.purOrgUnitNo in ${purOrgUnitNo}
+                    </if>
+                    <if test="date_s != null and date_s !='' ">
+                        and spqe.reqDate &gt;= #{date_s}
+                    </if>   
+                    <if test="date_s != null and date_s !='' ">
+                        and spqe.reqDate &lt; DATE_ADD(#{date_e},INTERVAL 1 day)
+                    </if> 
+                    <if test="vendorId != null and vendorId !=0 ">
+                        and spqe.vendorId = #{vendorId}
+                    </if>
+                    <if test="reqOrgUnitNo != null and reqOrgUnitNo !='' ">
+                        and spqe.orgUnitNo in ${reqOrgUnitNo}
+                    </if>
+                    <if test="materialClassIds !=null and materialClassIds !=''">
+                        and smg.id in ${materialClassIds}
+                    </if>
+                    <if test="status != null and status !='' ">
+                        and spqe.rowStatus = #{status}
+                    </if>      
+                group by 
+                    ssp.vendorName,
+                    smg.className, 
+                    smt.itemNo,
+                    smt.itemName,
+                    smt.spec,
+                    spqe.purUnit,
+                    spq.finOrgUnitNo) temp
+                UNION
+                select temp2.vendorName, temp2.itemNo, temp2.itemName, temp2.purUnit,
+                temp2.className, temp2.spec, temp2.unitName, '小计',
+                SUM(temp2.qty), SUM(temp2.amt),'', 2 as ftype 
+                from 
+                (select ssp.vendorName, 
+                    smt.itemNo, smt.itemName, spqe.purUnit, 
+                    smg.className, smt.spec, smu.unitName, 
+                    spq.finOrgUnitNo as orgUnitNo,
+                    SUM(spqe.qty) as qty,
+                    SUM(spqe.amt) as amt,
+                    GROUP_CONCAT(spqe.remarks) as remarks
+                from 
+                    scmpurrequire spq, scmpurrequireentry spqe left join scmsupplier ssp on spqe.vendorId = ssp.id,
+                    scmmaterial smt, scmmaterialgroup smg,
+                    scmmaterialgroupdetail smgd, 
+                    scmmaterialgroupstandard smgs,
+                    scmmeasureunit smu
+                where 
+                    spq.id = spqe.prId And smg.standardId=smgs.id and smgs.standardType='1'
+                    and smg.id = smgd.classId
+                    and smt.id = spqe.itemId
+                    and smt.id = smgd.itemId
+                    and smu.id = spqe.purUnit
+                    and spqe.rowStatus in ('A','E','C')
+                    <if test="purOrgUnitNo != null and purOrgUnitNo !='' ">
+                        and spqe.purOrgUnitNo in ${purOrgUnitNo}
+                    </if>
+                    <if test="date_s != null and date_s !='' ">
+                        and spqe.reqDate &gt;= #{date_s}
+                    </if>   
+                    <if test="date_s != null and date_s !='' ">
+                        and spqe.reqDate &lt; DATE_ADD(#{date_e},INTERVAL 1 day)
+                    </if> 
+                    <if test="vendorId != null and vendorId !=0 ">
+                        and spqe.vendorId = #{vendorId}
+                    </if>
+                    <if test="reqOrgUnitNo != null and reqOrgUnitNo !='' ">
+                        and spqe.orgUnitNo in ${reqOrgUnitNo}
+                    </if>
+                    <if test="materialClassIds !=null and materialClassIds !=''">
+                        and smg.id in ${materialClassIds}
+                    </if>
+                    <if test="status != null and status !='' ">
+                        and spqe.rowStatus = #{status}
+                    </if>
+                group by 
+                    ssp.vendorName,
+                    smg.className, 
+                    smt.itemNo,
+                    smt.itemName,
+                    smt.spec,
+                    spqe.purUnit,
+                    spq.finOrgUnitNo) temp2 
+                group by 
+                temp2.vendorName,
+                temp2.className,
+                temp2.itemNo,
+                temp2.itemName,
+                temp2.spec,
+                temp2.purUnit having count(*) > 1) t
+                order by 
+                    vendorName,
+                    className, 
+                    itemNo,
+                    itemName,
+                    spec,
+                    purUnit,
+                    orgUnitNo           
+            </otherwise>
+        </choose>
+		
+    </select>
+    
+    <select id="scmpurreport.selectDeptApplySummary" resultType="scmpurrequire2" parameterType="Map">
+        select vendorName, itemNo, itemName, purUnit, spec, unitName,
+        orgUnitNo, qty, amt, ftype, remarks from( 
+            select temp.vendorName, temp.itemNo, temp.itemName, temp.purUnit, 
+                temp.spec, temp.unitName, temp.orgUnitNo, 
+                temp.qty, temp.amt, temp.remarks, 1 as ftype 
+            from (
+                select 
+                    ssp.vendorName,
+                    smt.itemNo, smt.itemName, smt.spec,
+                    spqe.purUnit, smu.unitName,
+                    spqe.orgUnitNo, 
+                    SUM(spqe.qty) as qty,
+                    SUM(spqe.amt) as amt,
+                    GROUP_CONCAT(spqe.remarks) as remarks
+                from 
+                    scmpurrequire spq, scmpurrequireentry spqe left join scmsupplier ssp on spqe.vendorId = ssp.id, 
+                    scmmaterial smt, scmmaterialgroup smg, 
+                    scmmaterialgroupstandard smgs, 
+                    scmmaterialgroupdetail smgd, 
+                    scmmeasureunit smu
+                where
+                    spq.id = spqe.prId  And smg.standardId=smgs.id And smgs.standardType='1'
+                    and smg.id = smgd.classId
+                    and smt.id = spqe.itemId
+                    and smt.id = smgd.itemId
+                    and smu.id = spqe.purUnit
+                    and spqe.rowStatus in ('A','E','C')
+                    <if test="reqOrgUnitNo != null and reqOrgUnitNo !='' ">
+                        and spqe.orgUnitNo in ${reqOrgUnitNo}
+                    </if>
+                    <if test="applyBegDate != null and applyBegDate !='' ">
+                        and spq.applyDate &gt;= #{applyBegDate}
+                    </if>   
+                    <if test="applyEndDate != null and applyEndDate !='' ">
+                        and spq.applyDate &lt; DATE_ADD(#{applyEndDate},INTERVAL 1 day)
+                    </if>
+                    <if test="reqBegDate != null and reqBegDate !='' ">
+                        and spqe.reqDate &gt;= #{reqBegDate}
+                    </if>   
+                    <if test="reqEndDate != null and reqEndDate !='' ">
+                        and spqe.reqDate &lt; DATE_ADD(#{reqEndDate},INTERVAL 1 day)
+                    </if>
+                    <if test="vendorId != null and vendorId !=0 ">
+                        and spqe.vendorId = #{vendorId}
+                    </if>
+                    <if test="materialClassIds !=null and materialClassIds !=''">
+			            and smg.id in ${materialClassIds}
+			        </if>
+                    <if test="status != null and status !='' ">
+                        and spqe.rowStatus = #{status}
+                    </if>
+                group by 
+                    ssp.vendorName,
+                    smt.itemNo,
+                    smt.itemName,
+                    smt.spec,
+                    spqe.purUnit,
+                    spqe.orgUnitNo) temp
+            union all
+            select temp2.vendorName, temp2.itemNo, temp2.itemName, temp2.purUnit, 
+                temp2.spec, temp2.unitName, '小计',
+                SUM(temp2.qty), SUM(temp2.amt),'', 2 as ftype 
+            from (
+                select 
+                    ssp.vendorName,
+                    smt.itemNo, smt.itemName, smt.spec,
+                    spqe.purUnit, smu.unitName,
+                    spqe.orgUnitNo, 
+                    SUM(spqe.qty) as qty,
+                    SUM(spqe.amt) as amt,
+                    GROUP_CONCAT(spqe.remarks) as remarks
+                from 
+                    scmpurrequire spq, scmpurrequireentry spqe left join scmsupplier ssp on spqe.vendorId = ssp.id,
+                    scmmaterial smt, scmmaterialgroup smg, 
+                    scmmaterialgroupstandard smgs, 
+                    scmmaterialgroupdetail smgd,
+                    scmmeasureunit smu
+                where
+                    spq.id = spqe.prId And smg.standardId=smgs.id And smgs.standardType='1'
+                    and smg.id = smgd.classId
+                    and smt.id = spqe.itemId
+                    and smt.id = smgd.itemId
+                    and smu.id = spqe.purUnit
+                    and spqe.rowStatus in ('A','E','C')
+                    <if test="reqOrgUnitNo != null and reqOrgUnitNo !='' ">
+                        and spqe.orgUnitNo in ${reqOrgUnitNo}
+                    </if>
+                    <if test="applyBegDate != null and applyBegDate !='' ">
+                        and spq.applyDate &gt;= #{applyBegDate}
+                    </if>   
+                    <if test="applyEndDate != null and applyEndDate !='' ">
+                        and spq.applyDate &lt; DATE_ADD(#{applyEndDate},INTERVAL 1 day)
+                    </if>
+                    <if test="reqBegDate != null and reqBegDate !='' ">
+                        and spqe.reqDate &gt;= #{reqBegDate}
+                    </if>   
+                    <if test="reqEndDate != null and reqEndDate !='' ">
+                        and spqe.reqDate &lt; DATE_ADD(#{reqEndDate},INTERVAL 1 day)
+                    </if>
+                    <if test="vendorId != null and vendorId !=0 ">
+                        and spqe.vendorId = #{vendorId}
+                    </if>
+                    <if test="materialClassIds !=null and materialClassIds !=''">
+                        and smg.id in ${materialClassIds}
+                    </if>
+                    <if test="status != null and status !='' ">
+                        and spqe.rowStatus = #{status}
+                    </if>
+                group by 
+                    ssp.vendorName,
+                    smt.itemNo,
+                    smt.itemName,
+                    smt.spec,
+                    spqe.purUnit,
+                    spqe.orgUnitNo) temp2
+            group by 
+            temp2.vendorName,
+            temp2.itemNo,
+            temp2.itemName,
+            temp2.spec,
+            temp2.purUnit having count(*) > 1) t
+        order by 
+            vendorName,
+            itemNo,
+            spec,
+            purUnit,
+            orgUnitNo		   
+    </select>
+    
+    <select id="scmpurreport.selectPurPriceInfo" resultType="ScmPurPrice2" parameterType="Map">
+        <choose>
+            <when test='priceType == "1"'>
+				select sppe.itemId, smt.itemNo, smt.itemName, smt.spec, sppe.purUnit, spp.orgUnitNo as purOrgUnitNo, spp.selVndrId, 
+				spp.pmNo as billNo, sppe.price,sppe.taxRate, spp.begDate, spp.endDate, '1' as priceType from 
+				scmpurprice spp, scmpurpriceentry sppe, scmmaterialgroupdetail smgd, scmmaterial smt, scmmaterialgroupstandard smgs, scmmaterialgroup smg
+				where 1=1 
+				and spp.id = sppe.pmId   
+				and spp.status = 'E' 
+				and sppe.itemId = smt.id 
+				and smgd.classId = smg.id  
+				and smgd.itemId = smt.id 
+				And smgd.standardId=smgs.id And smgs.standardType='1'
+		        <if test="bizDate != null and bizDate !='' ">
+		            and spp.begDate &lt;= #{bizDate}
+		            and spp.endDate &gt;= #{bizDate}
+		        </if>
+		        <if test="materialId != null and materialId !=0 ">
+                    and smt.id = #{materialId}
+                </if>
+                <if test="materialClassIds !=null and materialClassIds !=''">
+		            and smg.id in ${materialClassIds}
+		        </if>
+		        <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+                    and spp.orgUnitNo in (${purOrgUnitNo})
+                </if>
+				and sppe.id in 
+				(
+				    select MAX(sppe.id) as iid from 
+				    scmpurprice spp, scmpurpriceentry sppe, scmmaterialgroupdetail smgd, scmmaterial smt, scmmaterialgroupstandard smgs, scmmaterialgroup smg
+				    where 1 = 1
+				    and spp.id = sppe.pmId
+				    and spp.status = 'E'
+				    and sppe.itemId = smt.id 
+				    and smgd.classId = smg.id  
+				    and smgd.itemId = smt.id 
+				    And smgd.standardId=smgs.id And smgs.standardType='1'
+				    <if test="bizDate != null and bizDate !='' ">
+	                    and spp.begDate &lt;= #{bizDate}
+	                    and spp.endDate &gt;= #{bizDate}
+	                </if>
+	                <if test="materialId != null and materialId !=0 ">
+	                    and smt.id = #{materialId}
+	                </if>
+	                <if test="materialClassIds !=null and materialClassIds !=''">
+	                    and smg.id in ${materialClassIds}
+	                </if>
+	                <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+	                    and spp.orgUnitNo in (${purOrgUnitNo})
+	                </if>
+				    group by sppe.itemId
+				    order by sppe.itemId);
+            </when>
+            <otherwise> 
+                select spqe.itemId, smt.itemNo, smt.itemName, smt.spec, spqe.purUnit, spq.orgUnitNo as purOrgUnitNo, spq.vendorId as selVndrId, 
+                spq.pqNo as billNo, spqe.taxPrice as price,spqe.taxRate, spq.begDate, spq.endDate, '2' as priceType from 
+                scmpurquotation spq, scmpurquotationentry spqe, scmmaterialgroupdetail smgd, scmmaterial smt, scmmaterialgroupstandard smgs, scmmaterialgroup smg
+                where 1=1 
+                and spq.id = spqe.pqId  
+                and spq.status = 'E' 
+                and spqe.itemId = smt.id 
+                and smgd.classId = smg.id  
+                and smgd.itemId = smt.id 
+                And smgd.standardId=smgs.id And smgs.standardType='1'
+                <if test="bizDate != null and bizDate !='' ">
+	                and spq.begDate &lt;= #{bizDate}
+	                and spq.endDate &gt;= #{bizDate}
+                </if>
+                <if test="materialId != null and materialId !=0 ">
+                    and smt.id = #{materialId}
+                </if>
+                <if test="materialClassIds !=null and materialClassIds !=''">
+                    and smg.id in ${materialClassIds}
+                </if>
+                <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+                    and spq.orgUnitNo in (${purOrgUnitNo})
+                </if>
+	                and spqe.id in 
+	                (
+	                    select MAX(spqe.id) as iid from 
+	                    scmpurquotation spq, scmpurquotationentry spqe, scmmaterialgroupdetail smgd, scmmaterial smt, scmmaterialgroupstandard smgs, scmmaterialgroup smg
+	                    where 1 = 1
+	                    and spq.id = spqe.pqId
+	                    and spq.status = 'E'
+	                    and spqe.itemId = smt.id 
+	                    and smgd.classId = smg.id  
+	                    and smgd.itemId = smt.id
+	                    And smgd.standardId=smgs.id And smgs.standardType='1' 
+	                    <if test="bizDate != null and bizDate !='' ">
+	                        and spq.begDate &lt;= #{bizDate}
+	                        and spq.endDate &gt;= #{bizDate}
+                        </if>
+                        <if test="materialId != null and materialId !=0 ">
+                            and smt.id = #{materialId}
+                        </if>
+                        <if test="materialClassIds !=null and materialClassIds !=''">
+                            and smg.id in ${materialClassIds}
+                        </if>
+                        <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+                            and spq.orgUnitNo in (${purOrgUnitNo})
+                        </if>
+	                    group by spqe.itemId
+	                    order by spqe.itemId);          
+            </otherwise>
+        </choose>
+    </select>
+    
+        <!-- 采购价格信息核查  -->
+    <select id="scmpurreport.selectPurPriceInfoCheck" resultType="ScmPurPrice2" parameterType="Map">
+    	<choose>
+            <when test='priceType == "1"'>
+                select sppe.itemId, smt.itemNo, smt.itemName, smt.spec, sppe.purUnit, spp.orgUnitNo as purOrgUnitNo,
+                spp.pmNo as billNo, sppe.price, spp.begDate, spp.endDate, spp.creator, '1' as priceType from 
+                scmpurprice spp, scmpurpriceentry sppe, scmmaterialgroupdetail smgd, scmmaterial smt, scmmaterialgroupstandard smgs, scmmaterialgroup smg
+                where 1=1 
+                and spp.id = sppe.pmId   
+                and spp.status = 'E' 
+                and sppe.itemId = smt.id 
+                and smgd.classId = smg.id  
+                and smgd.itemId = smt.id 
+                And smgd.standardId=smgs.id And smgs.standardType='1' 
+                <if test="bizDate != null and bizDate !='' ">
+                    and spp.begDate &lt;= #{bizDate}
+                    and spp.endDate &gt;= #{bizDate}
+                </if>
+                <if test="materialId != null and materialId !=0 ">
+                    and smt.id = #{materialId}
+                </if>
+                <if test="materialClassIds !=null and materialClassIds !=''">
+                    and smg.id in ${materialClassIds}
+                </if>
+                <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+                    and spp.orgUnitNo in (${purOrgUnitNo})
+                </if>
+                order by sppe.itemId, smt.itemNo, spp.begDate, spp.pmNo 
+            </when>
+            <otherwise> 
+				select spqe.itemId, smt.itemNo, smt.itemName, smt.spec, spqe.purUnit, spq.orgUnitNo as purOrgUnitNo, 
+				spq.pqNo as billNo, spqe.price, spq.begDate, spq.endDate, spq.creator, '2' as priceType from 
+				scmpurquotation spq, scmpurquotationentry spqe, scmmaterialgroupdetail smgd, scmmaterialgroupstandard smgs, scmmaterial smt, scmmaterialgroup smg
+				where 1=1 
+				    and spq.id = spqe.pqId  
+				    and spq.status = 'E' 
+				    and spqe.itemId = smt.id 
+				    and smgd.classId = smg.id  
+				    and smgd.itemId = smt.id
+				    And smgd.standardId=smgs.id And smgs.standardType='1'  
+					<if test="bizDate != null and bizDate !='' ">
+					    and spq.begDate &lt;= #{bizDate}
+					    and spq.endDate &gt;= #{bizDate}
+					</if>
+					<if test="materialId != null and materialId !=0 ">
+					    and smt.id = #{materialId}
+					</if>
+					<if test="materialClassIds !=null and materialClassIds !=''">
+					    and smg.id in ${materialClassIds}
+					</if>
+					<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					    and spq.orgUnitNo in (${purOrgUnitNo})
+					</if>
+				order by spqe.itemId, smt.itemNo, spq.begDate, spq.pqNo
+            </otherwise>
+        </choose>
+    </select>
+    
+    <!-- 采购历史价格查询表 -->
+	<select id="scmpurreport.selectPurHistoryPrice" resultType="ScmPurHistoryPrice" parameterType="Map">
+		SELECT smm.itemNo ,smm.itemName ,smm.spec ,ssp.vendorName ,
+		spd.orderDate ,spd.poNo ,smu.unitName as purUnitName ,spo.qty ,spo.price ,
+		spo.amt ,spo.remarks ,spd.orgUnitNo as purOrgUnitNo,spo.taxPrice,spo.taxAmt
+		FROM scmpurorderentry spo
+		inner join scmmaterial smm on smm.id=spo.itemId
+		inner join scmpurorder spd on spd.id=spo.poId
+		inner join scmsupplier ssp on ssp.id=spd.vendorId
+		inner join scmmeasureunit smu on smu.id=spo.purUnit
+		WHERE 1=1
+		<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+			AND spd.orgUnitNo in ${purOrgUnitNo}
+		</if>
+		<if test="vendorName !=null and vendorName !=''">
+			AND ssp.id =#{vendorName}
+		</if>
+		<if test="materialName !=null and materialName !=''">
+			AND smm.id =#{materialName}
+		</if>	
+		<if test="rowStatus !=null and rowStatus !=''">
+			AND spo.rowStatus =#{rowStatus}
+		</if>	
+		<if test="minOrderDate !=null and minOrderDate !='' and maxOrderDate !=null and maxOrderDate !=''">
+			AND spd.orderDate BETWEEN DATE(#{minOrderDate}) AND DATE(#{maxOrderDate})	
+		</if>		
+			ORDER BY spd.orderDate DESC
+	</select>
+ 	
+	<!-- 订货跟进明细表 -->
+ 	<select id="scmpurreport.selectSupplierDetails" resultType="ScmPurOrderTransInfo" parameterType="Map">
+   		SELECT T1.poNo,T1.orderDate,T1.vendorId,T1.purOrgUnitNo,T1.purGroupId,T1.buyerId,T1.itemId,T1.purUnit,T1.storageOrgUnitNo,
+		T1.finorgunitno,T1.qty,T1.price,T1.amt,T1.taxPrice,T1.taxAmt,IFNULL(T5.receiveQty,0) as receiveQty,IFNULL(T5.receiveAmt,0) as receiveAmt,IFNULL(T5.receiveTaxAmt,0) as receiveTaxAmt,
+		Case When IFNULL(T6.convrate,0)=0 Then IFNULL(T2.addInQty,0) Else IFNULL(T2.addInQty,0)/IFNULL(T6.convrate,0) end as addInQty,
+		IFNULL(T2.addInAmt,0) as addInAmt,IFNULL(T2.addInTaxAmt,0) as addInTaxAmt,IFNULL(T3.returnQty,0) as returnQty,
+		IFNULL(T3.returnAmt,0) as returnAmt,IFNULL(T3.returnTaxAmt,0) as returnTaxAmt,
+		Case When IFNULL(T6.convrate,0)=0 Then IFNULL(T4.outQty,0) Else IFNULL(T4.outQty,0)/IFNULL(T6.convrate,0) End as outQty,
+		IFNULL(T4.outAmt,0) as outAmt,IFNULL(T4.outTaxAmt,0) as outTaxAmt FROM
+		(SELECT B.id,A.poNo,A.orderDate,A.vendorId,A.orgUnitNo as purOrgUnitNo,A.purGroupId,A.buyerId,B.itemId,B.purUnit,B.receiveOrgUnitNo as storageOrgUnitNo,B.id as sourceDtlId,
+		B.receiveFinOrgUnitNo as finorgunitno,B.qty,B.price,B.amt,B.taxPrice,B.taxAmt,B.lineId
+		FROM scmpurorder A,scmpurorderentry B 
+		where A.id=B.poId And A.status in ('A','E','C','F')
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.orgunitno in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.receiveorgunitno in ${invOrgUnitNo}
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.orderdate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.orderdate &lt;= #{maxOrderDate}
+				</if>
+		GROUP BY B.id) T1
+		LEFT JOIN 
+		(SELECT B.id as sourceDtlId,IFNULL(sum(D.baseQty),0) as addInQty,IFNULL(sum(D.amt),0) as addInAmt,IFNULL(sum(D.taxAmt),0) as addInTaxAmt
+		FROM scmpurorder A,scmpurorderentry B,scmpurreceiveentry C,scminvpurinwarehsbillentry D,scminvpurinwarehsbill E
+		Where A.id=B.poId And B.id=C.poDtlId And C.id=D.sourceBillDtlId And D.wrId=E.wrId And E.status = 'E'
+		And E.bizType='1' And A.status in ('A','E','C','F')
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.orgunitno in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.receiveorgunitno in ${invOrgUnitNo}
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.orderdate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.orderdate &lt;= #{maxOrderDate}
+				</if>
+		GROUP BY B.id) T2 ON T1.sourceDtlId=T2.sourceDtlId
+		LEFT JOIN
+		(SELECT B.id as sourceDtlId,IFNULL(sum(D.qty),0) as returnQty,IFNULL(sum(D.amt),0) as returnAmt,IFNULL(sum(D.taxAmt),0) as returnTaxAmt
+		FROM scmpurorder A,scmpurorderentry B,scmpurreceiveentry C,scmpurreturnsentry D 
+		where A.id=B.poId And B.id=C.poDtlId And C.id = D.sourceDtlId And D.rowStatus in ('A','E','C')
+		And A.status in ('A','E','C','F')
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.orgunitno in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.receiveorgunitno in ${invOrgUnitNo}
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.orderdate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.orderdate &lt;= #{maxOrderDate}
+				</if>
+		 GROUP BY B.id) T3 ON T1.sourceDtlId=T3.sourceDtlId
+		LEFT JOIN
+		(SELECT B.id as sourceDtlId,IFNULL(sum(D.baseQty),0) as outQty,IFNULL(sum(D.amt),0) as outAmt,IFNULL(sum(D.taxAmt),0) as outTaxAmt
+		FROM scmpurorder A,scmpurorderentry B,scmpurreturnsentry C,scminvpurinwarehsbillentry D,scminvpurinwarehsbill E,scmpurreceiveentry F
+		Where A.id=B.poId And B.id=F.poDtlId And F.id = C.sourceDtlId And C.id=D.sourceBillDtlId And D.wrId=E.wrId And E.status = 'E'
+		And E.bizType='6' And A.status in ('A','E','C','F')
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.orgunitno in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.receiveorgunitno in ${invOrgUnitNo}
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.orderdate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.orderdate &lt;= #{maxOrderDate}
+				</if>
+		 GROUP BY B.id) T4 ON T1.sourceDtlId=T4.sourceDtlId
+		LEFT JOIN 
+		(SELECT B.id as sourceDtlId,IFNULL(Sum(CASE When D.unified=1 THEN C.deliveryQty Else C.qty End),0) as receiveQty,IFNULL(sum(C.amt),0) as receiveAmt,IFNULL(sum(C.taxAmt),0) as receiveTaxAmt
+		FROM scmpurorder A,scmpurorderentry B,scmpurreceiveentry C,scmpurreceive D
+		Where A.id=B.poId And B.id=C.poDtlId And D.id=C.pvId And D.status in ('A','E','C','F')
+		And A.status in ('A','E','C','F')
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.orgunitno in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.receiveorgunitno in ${invOrgUnitNo}
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.orderdate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.orderdate &lt;= #{maxOrderDate}
+				</if>
+		GROUP BY B.id) T5 ON T1.sourceDtlId=T5.sourceDtlId
+		Left JOIN scmmaterialunitrelation T6 ON T1.itemId=T6.itemId And T1.purUnit=T6.targetUnitId
+		ORDER BY T1.pono,T1.lineId
+ 	</select>
+ 	
+	<!-- 订货跟进汇总表-->
+ 	<select id="scmpurreport.selectSupplierSummary" resultType="ScmPurOrderTransTotal" parameterType="Map">
+ 		SELECT T1.vendorId,T1.purOrgUnitNo,T1.storageOrgUnitNo,sum(T1.amt) as amt,sum(T1.taxAmt) as taxAmt,IFNULL(sum(T5.receiveAmt),0) as receiveAmt,IFNULL(sum(T5.receiveTaxAmt),0) as receiveTaxAmt,
+		IFNULL(sum(T2.addInAmt),0) as addInAmt,IFNULL(sum(T2.addInTaxAmt),0) as addInTaxAmt,IFNULL(sum(T3.returnAmt),0) as returnAmt,
+		IFNULL(sum(T3.returnTaxAmt),0) as returnTaxAmt,IFNULL(sum(T4.outAmt),0) as outAmt,IFNULL(sum(T4.outTaxAmt),0) as outTaxAmt FROM
+		(SELECT A.vendorId,A.orgUnitNo as purOrgUnitNo,B.receiveOrgUnitNo as storageOrgUnitNo,B.id as sourceDtlId,B.amt,B.taxAmt
+		FROM scmpurorder A,scmpurorderentry B 
+		where A.id=B.poId And A.status in ('A','E','C','F')
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.orgunitno in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.receiveorgunitno in ${invOrgUnitNo}
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.orderdate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.orderdate &lt;= #{maxOrderDate}
+				</if>	) T1
+		LEFT JOIN 
+		(SELECT B.id as sourceDtlId,Sum(IFNULL(D.amt,0)) as addInAmt,Sum(IFNULL(D.taxAmt,0)) as addInTaxAmt
+		FROM scmpurorder A,scmpurorderentry B,scmpurreceiveentry C,scminvpurinwarehsbillentry D,scminvpurinwarehsbill E
+		Where A.id=B.poId And B.id=C.poDtlId And C.id=D.sourceBillDtlId And D.wrId=E.wrId And E.status = 'E'
+		And E.bizType='1' And A.status in ('A','E','C','F')
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.orgunitno in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.receiveorgunitno in ${invOrgUnitNo}
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.orderdate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.orderdate &lt;= #{maxOrderDate}
+				</if>
+		GROUP BY B.id) T2 ON T1.sourceDtlId=T2.sourceDtlId
+		LEFT JOIN
+		(SELECT B.id as sourceDtlId,IFNULL(sum(D.amt),0) as returnAmt,IFNULL(sum(D.taxAmt),0) as returnTaxAmt
+		FROM scmpurorder A,scmpurorderentry B,scmpurreceiveentry C,scmpurreturnsentry D 
+		where A.id=B.poId And B.id=C.poDtlId and C.id = D.sourceDtlId And D.rowStatus in ('A','E','C')
+		And A.status in ('A','E','C','F')
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.orgunitno in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.receiveorgunitno in ${invOrgUnitNo}
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.orderdate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.orderdate &lt;= #{maxOrderDate}
+				</if>
+		 GROUP BY B.id) T3 ON T1.sourceDtlId=T3.sourceDtlId
+		LEFT JOIN
+		(SELECT B.id as sourceDtlId,IFNULL(sum(D.amt),0) as outAmt,IFNULL(sum(D.taxAmt),0) as outTaxAmt
+		FROM scmpurorder A,scmpurorderentry B,scmpurreturnsentry C,scminvpurinwarehsbillentry D,scminvpurinwarehsbill E,scmpurreceiveentry F
+		Where A.id=B.poId And B.id=F.poDtlId And F.id = C.sourceDtlId And C.id=D.sourceBillDtlId And D.wrId=E.wrId And E.status = 'E'
+		And E.bizType='6' And A.status in ('A','E','C','F')
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.orgunitno in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.receiveorgunitno in ${invOrgUnitNo}
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.orderdate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.orderdate &lt;= #{maxOrderDate}
+				</if>
+		 GROUP BY B.id) T4 ON T1.sourceDtlId=T4.sourceDtlId
+		LEFT JOIN 
+		(SELECT B.id as sourceDtlId,IFNULL(sum(C.amt),0) as receiveAmt,IFNULL(sum(C.taxAmt),0) as receiveTaxAmt
+		FROM scmpurorder A,scmpurorderentry B,scmpurreceiveentry C,scmpurreceive D
+		Where A.id=B.poId And B.id=C.poDtlId And D.id=C.pvId And D.status in ('A','E','C','F')
+		And A.status in ('A','E','C','F')
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.orgunitno in ${purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.receiveorgunitno in ${invOrgUnitNo}
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.orderdate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.orderdate &lt;= #{maxOrderDate}
+				</if>
+		GROUP BY B.id) T5 ON T1.sourceDtlId=T5.sourceDtlId
+		GROUP BY T1.vendorId,T1.purOrgUnitNo,T1.storageOrgUnitNo
+ 	</select>
+    
+    <!-- 供应商订货汇总表 -->
+ 	<select id="scmpurreport.selectSupplierOrderSummary" resultType="ScmPurRequireEntry2" parameterType="Map"> 
+		select
+		    case #{groupType} when '1' then spre.orgUnitNo else spr.finOrgUnitNo end as orgUnitNo,
+		    smgd.classId, smg.className, smt.itemNo, smt.itemName, smt.spec, spre.purUnit, smu.unitName,
+		    spre.vendorId, SUM(spre.qty) as qty, SUM(spre.amt) as amt
+		from scmpurrequireentry spre, scmpurrequire spr,
+		    scmmaterial smt, scmmaterialgroupdetail smgd, scmmaterialgroup smg,scmmaterialgroupstandard smd, scmmeasureunit smu
+		where 1 = 1
+		    and spr.id = spre.prId
+		    and smt.id = spre.itemId
+		    and smgd.itemId = smt.id
+		    and smg.id = smgd.classId and smgd.standardId = smd.id and smd.standardType='1'
+		    and smu.id = spre.purUnit
+		    and spre.rowStatus in ('A', 'E', 'C')
+		    <if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+	            and spre.purOrgUnitNo in ${purOrgUnitNo}
+	        </if>
+	        <if test="minOrderDate != null and minOrderDate !='' ">
+	            and spre.reqDate &gt;= #{minOrderDate}
+	        </if>
+	        <if test="maxOrderDate != null and maxOrderDate !='' ">
+	            and spre.reqDate &lt; date_add(#{maxOrderDate},INTERVAL '1' day)
+	        </if>
+	        <if test="vendorId !=null and vendorId !=0">
+	            and spre.vendorId = #{vendorId}
+	        </if>
+	        <if test="reqOrgUnitNo !=null and reqOrgUnitNo !=''">
+	            and spre.orgUnitNo in ${reqOrgUnitNo}
+	        </if>
+	        <if test="materialClassIds !=null and materialClassIds !=''">
+	            and smg.id in ${materialClassIds}
+	        </if>
+	        <if test="rowStatus !=null and rowStatus !=''">
+	            and spre.rowStatus = #{rowStatus}
+	        </if>	        	        	        	        
+		group by 
+		    case #{groupType} when '1' then spre.orgUnitNo else spr.finOrgUnitNo end,
+		    smgd.classId, smg.className, smt.id, smt.itemNo, smt.itemName, smt.spec, spre.purUnit, smu.unitName, 
+		    spre.vendorId
+	    order by 
+            spre.vendorId, smgd.classId, smg.className, smt.itemNo, spre.purUnit     		
+ 	</select>
+
+	<select id="scmpurreport.selectPurchaseReturn" resultType="ScmPurReturnInfo" parameterType="Map">
+		Select A.bizDate,A.orgUnitNo as invOrgUnitNo,A.vendorId,B.itemId,B.unit as purUnit,
+		B.qty,B.price,B.amt,B.taxPrice,B.taxAmt,'' as reasonCode,b.wrid
+		from scminvpurinwarehsbill A, scminvpurinwarehsbillentry B
+		where A.wrId = B.wrId and A.bizType = '8'
+		<choose>
+       <when test='status == "P"'>
+					and A.status = 'E' 
+		</when>
+       <when test='status == "N"'>
+					and A.status != 'E' 
+		</when>
+		</choose>
+ 		<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+				and A.orgUnitNo = #{invOrgUnitNo}
+		</if>
+		<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				and B.purOrgUnitNo in ${purOrgUnitNo}
+		</if>
+		<if test="vendorId !=null and vendorId !=0">
+				and A.vendorId = #{vendorId}
+		</if>
+		<if test="minOrderDate !=null and minOrderDate !=''">
+				and A.bizDate &gt;= #{minOrderDate}
+		</if>
+		<if test="maxOrderDate !=null and maxOrderDate !=''">
+				and A.bizDate &lt;= #{maxOrderDate}
+		</if> 
+			<if test="reasonCode !=null and reasonCode !=''">
+						And 1=0
+			</if>
+		<if test='status !="P"'>
+		UNION
+		SELECT A.bizDate,A.orgUnitNo,A.vendorId,B.itemId,B.purunit,B.qty,B.price,B.amt,B.taxPrice,B.taxAmt,B.reasonCode,b.rtId
+			 FROM ScmPurReturns A,ScmPurReturnsEntry B        
+			 WHERE a.id=B.rtId and a.Status not in ('I','D','P','N','C','F')       
+			<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					and A.orgUnitNo = #{invOrgUnitNo}
+			</if>
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					and A.purOrgUnitNo in ${purOrgUnitNo}
+			</if>
+			<if test="vendorId !=null and vendorId !=0">
+					and A.vendorId = #{vendorId}
+			</if>
+			<if test="minOrderDate !=null and minOrderDate !=''">
+					and A.bizDate &gt;= #{minOrderDate}
+			</if>
+			<if test="maxOrderDate !=null and maxOrderDate !=''">
+					and A.bizDate &lt;= #{maxOrderDate}
+			</if> 
+			<if test="reasonCode !=null and reasonCode !=''">
+						And B.reasonCode=#{reasonCode}
+			</if>
+		</if>
+		UNION
+		 SELECT a.bizDate,a.orgUnitNo,a.vendorId,B.itemId,B.purunit,B.qty,B.price,B.amt,B.taxPrice,B.taxAmt,B.reasonCode,b.rtId
+		  from ScmPurReturns A,ScmPurReturnsEntry B,ScmInvPurInWarehsBill c ,ScmInvPurInWarehsBillEntry d      
+		 where a.id=B.rtId and c.wrid=d.wrid       
+	    and a.Status not in ('I','D','P','N')      
+	    and d.sourceBillDtlId= B.id      
+                    and c.bizType = 6
+		<choose>
+       		<when test='status == "P"'>
+				and C.status = 'E' 
+			</when>
+       		<when test='status == "N"'>
+				and C.status != 'E' 
+			</when>
+		</choose>
+		<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+				and A.orgUnitNo = #{invOrgUnitNo}
+		</if>
+		<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				and A.purOrgUnitNo in ${purOrgUnitNo}
+		</if>
+		<if test="vendorId !=null and vendorId !=0">
+				and A.vendorId = #{vendorId}
+		</if>
+		<if test="minOrderDate !=null and minOrderDate !=''">
+				and A.bizDate &gt;= #{minOrderDate}
+		</if>
+		<if test="maxOrderDate !=null and maxOrderDate !=''">
+				and A.bizDate &lt;= #{maxOrderDate}
+		</if> 
+		<if test="reasonCode !=null and reasonCode !=''">
+					And B.reasonCode=#{reasonCode}
+		</if>
+	</select>
+	
+	<!-- 供应商考核明细表 -->
+ 	<select id="scmpurreport.selectScmPurSupplierAppraiseDetails" resultType="ScmPurSupplierAppraiseDetails" parameterType="Map"> 
+	 	SELECT IFNULL(scmsupplier.vendorName, '无') as vendorName, '订货发放拒绝' as appraiseType, '订货发放' as billType,
+			recStorageOrgUnitNo as orgUnitNo,ScmPurRequireEntry.reqDate as bizDate,
+	        scmpurrequire.prNo as billNo,ScmMaterialGroup.className,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,
+			ScmMeasureUnit.unitName as unitName,scmpurrequireentry.Qty as orderQty,0  as receiveQty,'' as remarks  
+		FROM scmpurrequireentry
+			left join ScmMeasureUnit on scmpurrequireentry.purUnit=ScmMeasureUnit.id
+			left join ScmMaterialUnitRelation on scmpurrequireentry.itemId=ScmMaterialUnitRelation.itemId 
+				And ScmMaterialUnitRelation.targetUnitId=scmpurrequireentry.purUnit
+			left join scmsupplier on scmsupplier.id=scmpurrequireentry.vendorId
+			Left Join ScmSupplierUnified ON scmPurRequireEntry.vendorId = ScmSupplierUnified.vendorId
+			And scmPurRequireEntry.recStorageOrgUnitNo = ScmSupplierUnified.orgUnitNo,
+			Scmpurrequire,scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE scmpurrequireentry.prId=scmpurrequire.id and scmpurrequireentry.itemId=scmmaterial.id
+			And ScmMaterial.id=ScmMaterialGroupDetail.itemId And scmpurrequireentry.orderQty=0 
+			AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id 
+	    	AND ScmMaterialGroupStandard.standardNo='BaseStandard'
+	    	AND scmpurrequireentry.baseQty &gt; scmpurrequireentry.orderQty 
+	    	AND scmpurrequireentry.rowStatus = 'C' 
+	    	<if test="begDate !=null and begDate !=''">
+				AND ScmPurRequireEntry.reqDate &gt;= #{begDate}
+			</if>
+			<if test="endDate !=null and endDate !=''">
+				AND ScmPurRequireEntry.reqDate &lt;= #{endDate}
+			</if>
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND ScmPurRequireEntry.purOrgUnitNo = #{purOrgUnitNo}
+			</if>
+			<if test="vendorIds !=null and vendorIds !=''">
+				AND ScmPurRequireEntry.vendorId in (${vendorIds})
+			</if>
+			<if test="materialClassIds != null and materialClassIds !='' ">
+           		And ScmMaterialGroup.id in (${materialClassIds})
+        	</if>
+        	<if test="materialIds != null and materialIds !='' ">
+           		And ScmPurRequireEntry.itemId in (${materialIds})
+        	</if>
+        	<if test="appraiseTypeIds != null and appraiseTypeIds !='' ">
+           		And 1 in (${appraiseTypeIds})
+        	</if>
+	    	 
+		UNION
+	
+		SELECT IFNULL(scmsupplier.vendorName, '无'),'供应商没货' as  appraiseType,'订货单' as billType,
+			scmpurorderentry.reqFinOrgUnitNo as orgUnitNo,scmpurorderentry.reqDate as bizDate,
+	        scmpurorder.poNo as billno,ScmMaterialGroup.className,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,
+			ScmMeasureUnit.unitName as unitName,scmpurorderentry.Qty as orderQty,0 as receiveQty,'' as remarks  
+		FROM   scmpurorderentry
+			left join ScmMeasureUnit on scmpurorderentry.purUnit=ScmMeasureUnit.id
+			left join ScmMaterialUnitRelation on scmpurorderentry.itemId=ScmMaterialUnitRelation.itemId And ScmMaterialUnitRelation.targetUnitId=scmpurorderentry.purUnit,scmpurorder
+			left join scmsupplier on scmsupplier.id=scmpurorder.vendorId,scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE  scmpurorderentry.poId=scmpurorder.id 
+	    	and scmpurorderentry.itemId=scmmaterial.id
+			And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+	    	And scmpurorderentry.Qty=0
+			AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id 
+	    	And ScmMaterialGroupStandard.standardNo='BaseStandard'
+	    	and scmpurorder.status !='I'
+	      	<if test="begDate !=null and begDate !=''">
+				AND scmpurorderentry.reqDate &gt;= #{begDate}
+			</if>
+			<if test="endDate !=null and endDate !=''">
+				AND scmpurorderentry.reqDate &lt;= #{endDate}
+			</if>
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND scmpurorder.OrgUnitNo = #{purOrgUnitNo}
+			</if>
+			<if test="vendorIds !=null and vendorIds !=''">
+				AND scmpurorder.vendorId in (${vendorIds})
+			</if>
+			<if test="materialClassIds != null and materialClassIds !='' ">
+           		And ScmMaterialGroup.id in (${materialClassIds})
+        	</if>
+        	<if test="materialIds != null and materialIds !='' ">
+           		And scmpurorderentry.itemId in (${materialIds})
+        	</if>
+        	<if test="appraiseTypeIds != null and appraiseTypeIds !='' ">
+           		And 2 in (${appraiseTypeIds})
+        	</if>
+
+		UNION
+	
+		SELECT IFNULL(scmsupplier.vendorName, '无'),'供应商缺供' as  appraiseType,'验收单' as billType,scmpurreceive.finOrgUnitNo as orgUnitNo,scmpurcheck.checkDate as bizDate,
+			scmpurcheck.ckNo as billno,ScmMaterialGroup.className,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,
+			ScmMeasureUnit.unitName as unitName,scmpurreceiveentry.orderQty as orderQty,scmpurreceiveentry.Qty as receiveQty,'' as remarks  
+		FROM scmpurcheck,scmpurreceiveentry
+			left join ScmMeasureUnit on scmpurreceiveentry.purUnit=ScmMeasureUnit.id
+			left join ScmMaterialUnitRelation on scmpurreceiveentry.itemId=ScmMaterialUnitRelation.itemId And ScmMaterialUnitRelation.targetUnitId=scmpurreceiveentry.purUnit ,scmpurreceive
+			left join scmsupplier on scmsupplier.id=scmpurreceive.vendorId,scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE  scmpurcheck.Id=scmpurreceive.ckId
+			and scmpurreceive.id=scmpurreceiveentry.pvid 
+			and scmpurreceiveentry.itemId=scmmaterial.id
+			And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+			And scmpurreceiveentry.Qty=0
+			AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id 
+			And ScmMaterialGroupStandard.standardNo='BaseStandard' 
+			and scmpurcheck.flag=1
+			<if test="begDate !=null and begDate !=''">
+				AND scmpurcheck.checkDate &gt;= #{begDate}
+			</if>
+			<if test="endDate !=null and endDate !=''">
+				AND scmpurcheck.checkDate &lt;= #{endDate}
+			</if>
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND scmpurcheck.OrgUnitNo = #{purOrgUnitNo}
+			</if>
+			<if test="vendorIds !=null and vendorIds !=''">
+				AND scmpurreceive.vendorId in (${vendorIds})
+			</if>
+			<if test="materialClassIds != null and materialClassIds !='' ">
+           		And ScmMaterialGroup.id in (${materialClassIds})
+        	</if>
+        	<if test="materialIds != null and materialIds !='' ">
+           		And scmpurreceiveentry.itemId in (${materialIds})
+        	</if>
+        	<if test="appraiseTypeIds != null and appraiseTypeIds !='' ">
+           		And 3 in (${appraiseTypeIds})
+        	</if>
+        	
+		UNION
+	
+		SELECT IFNULL(scmsupplier.vendorName, '无'),'供应商缺供' as  appraiseType,'收货单' as billType,scmpurreceive.finOrgUnitNo as orgUnitNo,scmpurreceive.receiveDate as bizDate,
+			scmpurreceive.pvNo as billno,ScmMaterialGroup.className,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,
+			ScmMeasureUnit.unitName as unitName,scmpurreceiveentry.orderQty as orderQty,scmpurreceiveentry.Qty as receiveQty,'' as remarks  
+		FROM scmpurreceiveentry
+			left join ScmMeasureUnit on scmpurreceiveentry.purUnit=ScmMeasureUnit.id
+			left join ScmMaterialUnitRelation on scmpurreceiveentry.itemId=ScmMaterialUnitRelation.itemId And ScmMaterialUnitRelation.targetUnitId=scmpurreceiveentry.purUnit ,scmpurreceive
+			left join scmsupplier on scmsupplier.id=scmpurreceive.vendorId,scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE scmpurreceive.id=scmpurreceiveentry.pvid 
+			and scmpurreceiveentry.itemId=scmmaterial.id
+			And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+			And scmpurreceiveentry.Qty=0
+			AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id 
+			And ScmMaterialGroupStandard.standardNo='BaseStandard'
+			and scmpurreceive.unified=0
+			and scmpurreceive.status='C'  
+			<if test="begDate !=null and begDate !=''">
+				AND scmpurreceive.receiveDate &gt;= #{begDate}
+			</if>
+			<if test="endDate !=null and endDate !=''">
+				AND scmpurreceive.receiveDate &lt;= #{endDate}
+			</if>
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND scmpurreceive.purOrgUnitNo = #{purOrgUnitNo}
+			</if>
+			<if test="vendorIds !=null and vendorIds !=''">
+				AND scmpurreceive.vendorId in (${vendorIds})
+			</if>
+			<if test="materialClassIds != null and materialClassIds !='' ">
+           		And ScmMaterialGroup.id in (${materialClassIds})
+        	</if>
+        	<if test="materialIds != null and materialIds !='' ">
+           		And scmpurreceiveentry.itemId in (${materialIds})
+        	</if>
+        	<if test="appraiseTypeIds != null and appraiseTypeIds !='' ">
+           		And 3 in (${appraiseTypeIds})
+        	</if>
+	
+		UNION
+	
+		SELECT IFNULL(scmsupplier.vendorName, '无'),'供应商少供' as  appraiseType,'收货单' as billType,scmpurreceive.finOrgUnitNo as orgUnitNo,scmpurreceive.receiveDate as bizDate,
+			scmpurreceive.pvNo as billno,ScmMaterialGroup.className,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,
+			ScmMeasureUnit.unitName as unitName,scmpurreceiveentry.orderQty as orderQty,scmpurreceiveentry.Qty as receiveQty,'' as remarks  
+		FROM   scmpurreceiveentry
+			left join ScmMeasureUnit on scmpurreceiveentry.purUnit=ScmMeasureUnit.id
+			left join ScmMaterialUnitRelation on scmpurreceiveentry.itemId=ScmMaterialUnitRelation.itemId And ScmMaterialUnitRelation.targetUnitId=scmpurreceiveentry.purUnit ,scmpurreceive
+			left join scmsupplier on scmsupplier.id=scmpurreceive.vendorId,scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE scmpurreceive.id=scmpurreceiveentry.pvid 
+			and scmpurreceiveentry.itemId=scmmaterial.id
+			And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+			And scmpurreceiveentry.orderQty &gt; scmpurreceiveentry.Qty 
+			and scmpurreceiveentry.Qty != 0
+			AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id 
+			And ScmMaterialGroupStandard.standardNo='BaseStandard'
+			and scmpurreceive.unified=0
+			and scmpurreceive.status='C'
+			<if test="begDate !=null and begDate !=''">
+				AND scmpurreceive.receiveDate &gt;= #{begDate}
+			</if>
+			<if test="endDate !=null and endDate !=''">
+				AND scmpurreceive.receiveDate &lt;= #{endDate}
+			</if>
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND scmpurreceive.purOrgUnitNo = #{purOrgUnitNo}
+			</if>
+			<if test="vendorIds !=null and vendorIds !=''">
+				AND scmpurreceive.vendorId in (${vendorIds})
+			</if>
+			<if test="materialClassIds != null and materialClassIds !='' ">
+           		And ScmMaterialGroup.id in (${materialClassIds})
+        	</if>
+        	<if test="materialIds != null and materialIds !='' ">
+           		And scmpurreceiveentry.itemId in (${materialIds})
+        	</if>
+        	<if test="appraiseTypeIds != null and appraiseTypeIds !='' ">
+           		And 4 in (${appraiseTypeIds})
+        	</if>    
+	
+		UNION
+
+		SELECT IFNULL(scmsupplier.vendorName, '无'),'供应商少供' as  appraiseType,'退货申请' as billType,ScmPurReturns.finOrgUnitNo as orgUnitNo,ScmPurReturns.bizDate as bizDate,
+			ScmPurReturns.rtNo as billno,ScmMaterialGroup.className,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,
+			ScmMeasureUnit.unitName as unitName,scmpurreceiveentry.orderQty,
+			scmpurreceiveentry.orderQty-scmpurreturnsentry.Qty as receiveQty,scmpurreturnsentry.remarks
+		FROM scmpurreturnsentry
+			left join ScmMeasureUnit on ScmPurReturnsentry.purUnit=ScmMeasureUnit.id
+			left join ScmMaterialUnitRelation on ScmPurReturnsentry.itemId=ScmMaterialUnitRelation.itemId And ScmMaterialUnitRelation.targetUnitId=ScmPurReturnsentry.purUnit ,ScmPurReturns
+			left join scmsupplier on scmsupplier.id=ScmPurReturns.vendorId,scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard,scmpurreceiveentry
+		WHERE ScmPurReturns.id=ScmPurReturnsentry.rtId 
+			and ScmPurReturnsentry.itemId=scmmaterial.id
+			And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+			and scmpurreturnsentry.sourceDtlId=scmpurreceiveentry.id
+			and scmpurreturnsentry.reasoncode=2
+			AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id 
+			And ScmMaterialGroupStandard.standardNo='BaseStandard'   
+			And ScmPurReturns.status='C' 
+			<if test="begDate !=null and begDate !=''">
+				AND ScmPurReturns.bizDate &gt;= #{begDate}
+			</if>
+			<if test="endDate !=null and endDate !=''">
+				AND ScmPurReturns.bizDate &lt;= #{endDate}
+			</if>
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND ScmPurReturns.purOrgUnitNo = #{purOrgUnitNo}
+			</if>
+			<if test="vendorIds !=null and vendorIds !=''">
+				AND ScmPurReturns.vendorId in (${vendorIds})
+			</if>
+			<if test="materialClassIds != null and materialClassIds !='' ">
+           		And ScmMaterialGroup.id in (${materialClassIds})
+        	</if>
+        	<if test="materialIds != null and materialIds !='' ">
+           		And ScmPurReturnsentry.itemId in (${materialIds})
+        	</if>
+        	<if test="appraiseTypeIds != null and appraiseTypeIds !='' ">
+           		And 4 in (${appraiseTypeIds})
+        	</if> 
+        	   
+		UNION
+	
+		SELECT IFNULL(scmsupplier.vendorName, '无'),'不合格' as  appraiseType,'收货单' as billType,scmpurreceive.finOrgUnitNo as orgUnitNo,scmpurreceive.receiveDate as bizDate,
+			scmpurreceive.pvNo as billno,ScmMaterialGroup.className,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,
+			ScmMeasureUnit.unitName as unitName,scmpurreceiveentry.orderQty as orderQty,
+			scmpurreceiveentry.orderQty -(unqualifiedQty*(1-concessiveRecRate)) receiveQty,'' as remarks  
+		FROM scmpurreceiveentry
+			left join ScmMeasureUnit on scmpurreceiveentry.purUnit=ScmMeasureUnit.id
+			left join ScmMaterialUnitRelation on scmpurreceiveentry.itemId=ScmMaterialUnitRelation.itemId And ScmMaterialUnitRelation.targetUnitId=scmpurreceiveentry.purUnit ,scmpurreceive
+			left join scmsupplier on scmsupplier.id=scmpurreceive.vendorId,scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE scmpurreceive.id=scmpurreceiveentry.pvid 
+	    	and scmpurreceiveentry.itemId=scmmaterial.id
+			And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+	    	And scmpurreceiveentry.orderQty &gt; scmpurreceiveentry.Qty 
+	    	and scmpurreceiveentry.unqualifiedQty &gt; 0
+			AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id 
+	    	And ScmMaterialGroupStandard.standardNo='BaseStandard'
+	    	and scmpurreceive.unified=0 
+	    	and scmpurreceive.status='C'
+	    	<if test="begDate !=null and begDate !=''">
+				AND scmpurreceive.receiveDate &gt;= #{begDate}
+			</if>
+			<if test="endDate !=null and endDate !=''">
+				AND scmpurreceive.receiveDate &lt;= #{endDate}
+			</if>
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND scmpurreceive.purOrgUnitNo = #{purOrgUnitNo}
+			</if>
+			<if test="vendorIds !=null and vendorIds !=''">
+				AND scmpurreceive.vendorId in (${vendorIds})
+			</if>
+			<if test="materialClassIds != null and materialClassIds !='' ">
+           		And ScmMaterialGroup.id in (${materialClassIds})
+        	</if>
+        	<if test="materialIds != null and materialIds !='' ">
+           		And scmpurreceiveentry.itemId in (${materialIds})
+        	</if>
+        	<if test="appraiseTypeIds != null and appraiseTypeIds !='' ">
+           		And 5 in (${appraiseTypeIds})
+        	</if>    
+	
+		UNION
+		
+			SELECT IFNULL(scmsupplier.vendorName, '无'),'不合格' as  appraiseType,'退货申请' as billType,ScmPurReturns.finOrgUnitNo as orgUnitNo,ScmPurReturns.bizDate as bizDate,
+				ScmPurReturns.rtNo as billno,ScmMaterialGroup.className,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,
+				ScmMeasureUnit.unitName as unitName,scmpurreceiveentry.orderQty,
+				scmpurreceiveentry.orderQty-scmpurreturnsentry.Qty as receiveQty,scmpurreturnsentry.remarks
+			FROM scmpurreturnsentry
+				left join ScmMeasureUnit on ScmPurReturnsentry.purUnit=ScmMeasureUnit.id
+				left join ScmMaterialUnitRelation on ScmPurReturnsentry.itemId=ScmMaterialUnitRelation.itemId And ScmMaterialUnitRelation.targetUnitId=ScmPurReturnsentry.purUnit ,ScmPurReturns
+				left join scmsupplier on scmsupplier.id=ScmPurReturns.vendorId,scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard,scmpurreceiveentry
+			WHERE ScmPurReturns.id=ScmPurReturnsentry.rtId 
+		    	and ScmPurReturnsentry.itemId=scmmaterial.id
+				And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		    	and scmpurreturnsentry.sourceDtlId=scmpurreceiveentry.id
+		    	and scmpurreturnsentry.reasoncode=3
+				AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+				AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+				AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id 
+		    	And ScmMaterialGroupStandard.standardNo='BaseStandard'
+		    	And ScmPurReturns.status='C'
+		    	<if test="begDate !=null and begDate !=''">
+					AND ScmPurReturns.bizDate &gt;= #{begDate}
+				</if>
+				<if test="endDate !=null and endDate !=''">
+					AND ScmPurReturns.bizDate &lt;= #{endDate}
+				</if>
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND ScmPurReturns.purOrgUnitNo = #{purOrgUnitNo}
+				</if>
+				<if test="vendorIds !=null and vendorIds !=''">
+					AND ScmPurReturns.vendorId in (${vendorIds})
+				</if>
+				<if test="materialClassIds != null and materialClassIds !='' ">
+	           		And ScmMaterialGroup.id in (${materialClassIds})
+	        	</if>
+	        	<if test="materialIds != null and materialIds !='' ">
+	           		And ScmPurReturnsentry.itemId in (${materialIds})
+	        	</if>
+	        	<if test="appraiseTypeIds != null and appraiseTypeIds !='' ">
+	           		And 5 in (${appraiseTypeIds})
+	        	</if> 
+	
+		UNION
+
+		SELECT IFNULL(scmsupplier.vendorName, '无'),'配送缺供' as  appraiseType,'退货申请' as billType,ScmPurReturns.finOrgUnitNo as orgUnitNo,ScmPurReturns.bizDate as bizDate,
+			ScmPurReturns.rtNo as billno,ScmMaterialGroup.className,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,
+			ScmMeasureUnit.unitName as unitName,scmpurreceiveentry.orderQty,
+	        0 receiveQty,scmpurreturnsentry.remarks
+		FROM scmpurreturnsentry
+			left join ScmMeasureUnit on ScmPurReturnsentry.purUnit=ScmMeasureUnit.id
+			left join ScmMaterialUnitRelation on ScmPurReturnsentry.itemId=ScmMaterialUnitRelation.itemId And ScmMaterialUnitRelation.targetUnitId=ScmPurReturnsentry.purUnit ,ScmPurReturns
+			left join scmsupplier on scmsupplier.id=ScmPurReturns.vendorId,scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard,scmpurreceiveentry
+		WHERE   ScmPurReturns.id=ScmPurReturnsentry.rtId 
+			and ScmPurReturnsentry.itemId=scmmaterial.id
+			And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+			and scmpurreturnsentry.sourceDtlId=scmpurreceiveentry.id
+	    	and scmpurreturnsentry.reasoncode=1
+			AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id 
+	    	And ScmMaterialGroupStandard.standardNo='BaseStandard'    
+	    	And ScmPurReturns.status='C'
+			<if test="begDate !=null and begDate !=''">
+				AND ScmPurReturns.bizDate &gt;= #{begDate}
+			</if>
+			<if test="endDate !=null and endDate !=''">
+				AND ScmPurReturns.bizDate &lt;= #{endDate}
+			</if>
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND ScmPurReturns.purOrgUnitNo = #{purOrgUnitNo}
+			</if>
+			<if test="vendorIds !=null and vendorIds !=''">
+				AND ScmPurReturns.vendorId in (${vendorIds})
+			</if>
+			<if test="materialClassIds != null and materialClassIds !='' ">
+           		And ScmMaterialGroup.id in (${materialClassIds})
+        	</if>
+        	<if test="materialIds != null and materialIds !='' ">
+           		And ScmPurReturnsentry.itemId in (${materialIds})
+        	</if>
+        	<if test="appraiseTypeIds != null and appraiseTypeIds !='' ">
+           		And 6 in (${appraiseTypeIds})
+        	</if> 
+		
+		UNION
+	
+		SELECT IFNULL(scmsupplier.vendorName, '无'),'供应商多供' as  appraiseType,'收货单' as billType,scmpurreceive.finOrgUnitNo as orgUnitNo,scmpurreceive.receiveDate as bizDate,
+			scmpurreceive.pvNo as billno,ScmMaterialGroup.className,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,
+			ScmMeasureUnit.unitName as unitName,scmpurreceiveentry.orderQty as orderQty,scmpurreceiveentry.Qty as receiveQty,'' as remarks  
+		FROM scmpurreceiveentry
+			left join ScmMeasureUnit on scmpurreceiveentry.purUnit=ScmMeasureUnit.id
+			left join ScmMaterialUnitRelation on scmpurreceiveentry.itemId=ScmMaterialUnitRelation.itemId And ScmMaterialUnitRelation.targetUnitId=scmpurreceiveentry.purUnit ,scmpurreceive
+			left join scmsupplier on scmsupplier.id=scmpurreceive.vendorId,scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE scmpurreceive.id=scmpurreceiveentry.pvid 
+	    	and scmpurreceiveentry.itemId=scmmaterial.id
+			And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+	    	And scmpurreceiveentry.orderQty &lt; scmpurreceiveentry.Qty 
+	    	and scmpurreceiveentry.Qty !=0
+			AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+			AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id 
+	    	And ScmMaterialGroupStandard.standardNo='BaseStandard'
+	    	and scmpurreceive.unified=0 
+	    	and scmpurreceive.status='C'   
+	    	<if test="begDate !=null and begDate !=''">
+				AND scmpurreceive.receiveDate &gt;= #{begDate}
+			</if>
+			<if test="endDate !=null and endDate !=''">
+				AND scmpurreceive.receiveDate &lt;= #{endDate}
+			</if>
+			<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				AND scmpurreceive.purOrgUnitNo = #{purOrgUnitNo}
+			</if>
+			<if test="vendorIds !=null and vendorIds !=''">
+				AND scmpurreceive.vendorId in (${vendorIds})
+			</if>
+			<if test="materialClassIds != null and materialClassIds !='' ">
+           		And ScmMaterialGroup.id in (${materialClassIds})
+        	</if>
+        	<if test="materialIds != null and materialIds !='' ">
+           		And scmpurreceiveentry.itemId in (${materialIds})
+        	</if>
+        	<if test="appraiseTypeIds != null and appraiseTypeIds !='' ">
+           		And 7 in (${appraiseTypeIds})
+        	</if> 
+		ORDER BY  vendorName,appraiseType,billtype,orgUnitNo,bizDate
+ 	</select>
+</mapper>

@@ -1,0 +1,191 @@
+
+
+java:S3252õ"cUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKSTATUS".(À®œ†ùÿÿÿÿ
+x
+java:S3252Ñ"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKTYPE".(ˆ„ƒÂ
+
+java:S3252—"cUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKSTATUS".(À®œ†ùÿÿÿÿ
+S
+java:S2589á"7Remove this expression which always evaluates to "true"(È›ôÕÿÿÿÿÿ
+N
+java:S2589Ë"7Remove this expression which always evaluates to "true"(ØŞå°
+}
+java:S3252“"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKCODE".(ù…ƒîşÿÿÿÿ
+z
+java:S3252Ò"dUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_PRODUCTCODE".(ÊÖ·$
+y
+java:S3252—"bUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKOWNER".(òäùÍ
+
+java:S3252Ô"cUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKSTATUS".(À®œ†ùÿÿÿÿ
+Z
+java:S1854Ñ">Remove this useless assignment to local variable "systemTask".(ıóäôşÿÿÿÿ
+n
+java:S3776 "RRefactor this method to reduce its Cognitive Complexity from 40 to the 15 allowed.(ü—êùûÿÿÿÿ
+y
+java:S3252ô"bUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKOWNER".(òäùÍ
+n
+java:S3776½"RRefactor this method to reduce its Cognitive Complexity from 34 to the 15 allowed.(Ïœ³˜ÿÿÿÿÿ
+F
+java:S3740ı"/Provide the parametrized type for this generic.(È´ª
+
+java:S3252˜"cUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKSTATUS".(À®œ†ùÿÿÿÿ
+}
+java:S3252”"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKCODE".(ù…ƒîşÿÿÿÿ
+y
+java:S3252¶"bUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKOWNER".(òäùÍ
+z
+java:S3252µ"dUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_PRODUCTCODE".(ÊÖ·$
+}
+java:S3252³"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKCODE".(ù…ƒîşÿÿÿÿ
+p
+java:S2293´"YReplace the type specification in this constructor call with the diamond operator ("<>").(«üÎŒ
+}
+java:S3252ñ"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKCODE".(ù…ƒîşÿÿÿÿ
+}
+java:S3252”"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKCODE".(ù…ƒîşÿÿÿÿ
+y
+java:S3252–"bUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKOWNER".(òäùÍ
+
+java:S3252·"cUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKSTATUS".(À®œ†ùÿÿÿÿ
+_
+java:S1192Ø"HDefine a constant instead of duplicating this literal "SCM_FBC" 6 times.(ÆÜĞÔ
+2
+java:S3626Ü"Remove this redundant jump.(ÉŠ©ƒ
+p
+java:S1192º"TDefine a constant instead of duplicating this literal "generateCostConsume" 5 times.(ªÂäÏûÿÿÿÿ
+B
+java:S1168°"+Return an empty collection instead of null.(¥¹ï
+z
+java:S3252Ò"dUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_PRODUCTCODE".(ÊÖ·$
+x
+java:S3252ò"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKTYPE".(ˆ„ƒÂ
+}
+java:S3252¸"fUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_CONTROLUNITNO".( ÉØì
+y
+java:S3252Ó"bUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKOWNER".(òäùÍ
+}
+java:S3252ñ"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKCODE".(ù…ƒîşÿÿÿÿ
+z
+java:S3252ó"dUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_PRODUCTCODE".(ÊÖ·$
+n
+java:S1192ş"RDefine a constant instead of duplicating this literal "yyyy-MM-dd HH:mm" 10 times.(ŠÇÑĞıÿÿÿÿ
+}
+java:S3252˜"fUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_CONTROLUNITNO".( ÉØì
+}
+java:S3252˜"fUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_CONTROLUNITNO".( ÉØì
+}
+java:S3252ö"fUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_CONTROLUNITNO".( ÉØì
+z
+java:S3252•"dUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_PRODUCTCODE".(ÊÖ·$
+W	java:S125Ç"<This block of commented-out lines of code should be removed.(„¶ÁŠøÿÿÿÿ
+y
+java:S3252—"bUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKOWNER".(òäùÍ
+z
+java:S3252ó"dUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_PRODUCTCODE".(ÊÖ·$
+x
+java:S3252´"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKTYPE".(ˆ„ƒÂ
+
+java:S3252˜"cUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKSTATUS".(À®œ†ùÿÿÿÿ
+
+java:S3252·"cUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKSTATUS".(À®œ†ùÿÿÿÿ
+}
+java:S3252“"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKCODE".(ù…ƒîşÿÿÿÿ
+i
+java:S3776ñ"RRefactor this method to reduce its Cognitive Complexity from 36 to the 15 allowed.(ºÖ´ø
+x
+java:S3252•"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKTYPE".(ˆ„ƒÂ
+S
+java:S2589ò"7Remove this expression which always evaluates to "true"(øÂĞÅùÿÿÿÿ
+y
+java:S3252¶"bUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKOWNER".(òäùÍ
+z
+java:S3252–"dUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_PRODUCTCODE".(ÊÖ·$
+}
+java:S3252™"fUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_CONTROLUNITNO".( ÉØì
+i
+java:S3776"RRefactor this method to reduce its Cognitive Complexity from 34 to the 15 allowed.(ÀĞÌ
+W	java:S125œ"<This block of commented-out lines of code should be removed.(„¶ÁŠøÿÿÿÿ
+F
+java:S3740ê"/Provide the parametrized type for this generic.(³é‘
+f
+java:S1192Ì"ODefine a constant instead of duplicating this literal "calcFbcRptData" 5 times.(­ñÕ›
+j
+java:S1192„"SDefine a constant instead of duplicating this literal "updateFbcItemPrice" 5 times.(ÛÎ„œ
+i
+java:S3776Ş"RRefactor this method to reduce its Cognitive Complexity from 34 to the 15 allowed.(€ı¿
+z
+java:S3252•"dUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_PRODUCTCODE".(ÊÖ·$
+y
+java:S3252–"bUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKOWNER".(òäùÍ
+}
+java:S3252Ğ"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKCODE".(ù…ƒîşÿÿÿÿ
+2
+java:S3626Ò"Remove this redundant jump.(ÉŠ©ƒ
+W	java:S125½"<This block of commented-out lines of code should be removed.(„¶ÁŠøÿÿÿÿ
+2
+java:S3626õ"Remove this redundant jump.(ÉŠ©ƒ
+x
+java:S3252”"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKTYPE".(ˆ„ƒÂ
+y
+java:S3252ô"bUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKOWNER".(òäùÍ
+x
+java:S3252´"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKTYPE".(ˆ„ƒÂ
+‹
+java:S1192i"pDefine a constant instead of duplicating this literal "quartz.util.ScmTaskUtil.excuteTaskThread.error" 16 times.(Îí¤íşÿÿÿÿ
+i
+java:S3776ı"RRefactor this method to reduce its Cognitive Complexity from 51 to the 15 allowed.(È´ª
+}
+java:S3252ö"fUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_CONTROLUNITNO".( ÉØì
+y
+java:S3252Ó"bUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKOWNER".(òäùÍ
+2
+java:S3626±"Remove this redundant jump.(ÉŠ©ƒ
+g
+java:S1192–"PDefine a constant instead of duplicating this literal "getFbmSalePrice" 5 times.(Åà¿
+}
+java:S3252Õ"fUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_CONTROLUNITNO".( ÉØì
+F
+java:S3740ê"/Provide the parametrized type for this generic.(³é‘
+
+java:S3252Ô"cUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKSTATUS".(À®œ†ùÿÿÿÿ
+}
+java:S3252Ğ"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKCODE".(ù…ƒîşÿÿÿÿ
+B
+java:S1172ı"+Remove this unused method parameter "list".(È´ª
+i
+java:S3776€"RRefactor this method to reduce its Cognitive Complexity from 34 to the 15 allowed.(øé™É
+x
+java:S3252Ñ"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKTYPE".(ˆ„ƒÂ
+}
+java:S3252³"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKCODE".(ù…ƒîşÿÿÿÿ
+N
+java:S2589Ë"7Remove this expression which always evaluates to "true"(ØŞå°
+W	java:S125û"<This block of commented-out lines of code should be removed.(„¶ÁŠøÿÿÿÿ
+x
+java:S3252ò"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKTYPE".(ˆ„ƒÂ
+z
+java:S3252–"dUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_PRODUCTCODE".(ÊÖ·$
+
+java:S3252õ"cUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKSTATUS".(À®œ†ùÿÿÿÿ
+}
+java:S3252™"fUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_CONTROLUNITNO".( ÉØì
+i
+java:S1192¨"SDefine a constant instead of duplicating this literal "updateFbcCostPrice" 5 times.(ÇšÑ
+2
+java:S3626"Remove this redundant jump.(ÉŠ©ƒ
+}
+java:S3252Õ"fUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_CONTROLUNITNO".( ÉØì
+}
+java:S3252¸"fUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_CONTROLUNITNO".( ÉØì
+x
+java:S3252•"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKTYPE".(ˆ„ƒÂ
+
+java:S3252—"cUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKSTATUS".(À®œ†ùÿÿÿÿ
+W	java:S125à"<This block of commented-out lines of code should be removed.(„¶ÁŠøÿÿÿÿ
+x
+java:S3252”"aUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_TASKTYPE".(ˆ„ƒÂ
+n
+java:S3776Ä"RRefactor this method to reduce its Cognitive Complexity from 23 to the 15 allowed.(Æ¯Œ¶ùÿÿÿÿ
+z
+java:S3252µ"dUse static access with "com.armitage.server.iscm.common.model.ScmSyncTaskInfo" for "FN_PRODUCTCODE".(ÊÖ·$
+W	java:S125ø"<This block of commented-out lines of code should be removed.(ı’ñÜıÿÿÿÿ

@@ -1,0 +1,64 @@
+
+G
+java:S1874ÿ"+Remove this use of "put"; it is deprecated.(÷¶ãüÿÿÿÿ
+o
+java:S2293F"YReplace the type specification in this constructor call with the diamond operator ("<>").(ëÈèå
+N
+java:S1135¾"2Complete the task associated to this TODO comment.(æœÿ·øÿÿÿÿ
+K
+java:S2864Ê"4Iterate over the "entrySet" instead of the "keySet".(ÿ—û
+G
+java:S1874Ê"+Remove this use of "put"; it is deprecated.(îÃ‰üÿÿÿÿ
+B
+java:S1874ˆ"+Remove this use of "put"; it is deprecated.(Æë®°
+c
+java:S1192š"GDefine a constant instead of duplicating this literal "height" 3 times.(¯Î˜ğüÿÿÿÿ
+d
+java:S1854D"IRemove this useless assignment to local variable "highLightedActivities".(ÅË¦Ñıÿÿÿÿ
+G
+java:S1874é"+Remove this use of "put"; it is deprecated.(…©ùÿÿÿÿ
+N
+java:S1135ê"2Complete the task associated to this TODO comment.(£¦çÍıÿÿÿÿ
+I
+java:S1135"2Complete the task associated to this TODO comment.(±£œ³
+R	java:S125ä"<This block of commented-out lines of code should be removed.(§¿‚
+G
+java:S1874œ"+Remove this use of "put"; it is deprecated.(ßÄ±¥ıÿÿÿÿ
+A
+java:S1874Ï"+Remove this use of "put"; it is deprecated.(¨¼;
+o
+java:S3776€"SRefactor this method to reduce its Cognitive Complexity from 105 to the 15 allowed.(Èù›»ÿÿÿÿÿ
+G
+java:S1874¼"+Remove this use of "put"; it is deprecated.(„¢¦ùÿÿÿÿ
+]
+java:S1192™"FDefine a constant instead of duplicating this literal "width" 3 times.(¡·ìÖ
+G
+java:S1874¸"+Remove this use of "put"; it is deprecated.(‹Èªøÿÿÿÿ
+K
+java:S1066‰"/Merge this if statement with the enclosing one.(ÜöÕ¯ıÿÿÿÿ
+G
+java:S1874×"+Remove this use of "put"; it is deprecated.(ÙÆ–áıÿÿÿÿ
+G
+java:S1874½"+Remove this use of "put"; it is deprecated.(£É¬½ÿÿÿÿÿ
+B
+java:S1874É"+Remove this use of "put"; it is deprecated.(µíĞé
+A
+java:S5411Ò"*Use the primitive boolean expression here.(ĞÍ÷
+G
+java:S1874Ä"+Remove this use of "put"; it is deprecated.(ÿ°­üÿÿÿÿ
+u
+java:S2293ß"YReplace the type specification in this constructor call with the diamond operator ("<>").(—äÄ»ùÿÿÿÿ
+G
+java:S1874Ø"+Remove this use of "put"; it is deprecated.(”¯’¶ÿÿÿÿÿ
+u
+java:S2293å"YReplace the type specification in this constructor call with the diamond operator ("<>").(æşî•üÿÿÿÿ
+G
+java:S1874—"+Remove this use of "put"; it is deprecated.(ÙÒÛóÿÿÿÿÿ
+h
+java:S3776A"RRefactor this method to reduce its Cognitive Complexity from 47 to the 15 allowed.(›ËØ²
+G
+java:S1874Õ"+Remove this use of "put"; it is deprecated.(úÈ–Şûÿÿÿÿ
+A
+java:S1874v"+Remove this use of "put"; it is deprecated.(íƒè
+B
+java:S1874‰"+Remove this use of "put"; it is deprecated.(ˆˆ‘Ø

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurchasecanuseset">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurchasecanuseset.findAll" resultType="ScmPurchaseCanuseSet" >
+	    SELECT * FROM ScmPurchaseCanuseSet WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurchasecanuseset.findAllPage" resultType="ScmPurchaseCanuseSet" parameterType="Map"> 
+		SELECT * FROM ScmPurchaseCanuseSet WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpurchasecanuseset.selectById" resultType="ScmPurchaseCanuseSet" parameterType="Long">
+		SELECT * FROM ScmPurchaseCanuseSet WHERE id = #{value}
+	</select> 
+	<insert id="scmpurchasecanuseset.add" parameterType="ScmPurchaseCanuseSet"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurchaseCanuseSet (
+        orgUnitNo,
+        name,
+        deptScope,
+        itemScope,
+        bizTypeScope,
+        dateScope,
+        dateSlot,
+        timeScope,
+        timeSlot,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        flag,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{name},
+        #{deptScope},
+        #{itemScope},
+        #{bizTypeScope},
+        #{dateScope},
+        #{dateSlot},
+        #{timeScope},
+        #{timeSlot},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{flag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpurchasecanuseset.update" parameterType="ScmPurchaseCanuseSet">
+		UPDATE ScmPurchaseCanuseSet set
+        orgUnitNo=#{orgUnitNo},
+        name=#{name},
+        deptScope=#{deptScope},
+        itemScope=#{itemScope},
+        bizTypeScope=#{bizTypeScope},
+        dateScope=#{dateScope},
+        dateSlot=#{dateSlot},
+        timeScope=#{timeScope},
+        timeSlot=#{timeSlot},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        flag=#{flag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurchasecanuseset.delete" parameterType="String">
+		DELETE FROM ScmPurchaseCanuseSet WHERE id IN (${value})
+	</delete> 
+	<select id="scmpurchasecanuseset.checkDate" resultType="ScmPurchaseCanuseSet" parameterType="Map">
+		SELECT ScmPurchaseCanuseSet.*
+		FROM ScmPurchaseCanuseSet
+		WHERE ScmPurchaseCanuseSet.orgUnitNo=#{purOrgUnitNo} And ScmPurchaseCanuseSet.controlUnitNo=#{controlUnitNo}
+		And (ScmPurchaseCanuseSet.deptScope='A' Or Exists(Select 1 From ScmPurchaseCanuseSetOrg Where ScmPurchaseCanuseSetOrg.pcsId=ScmPurchaseCanuseSet.id And ScmPurchaseCanuseSetOrg.orgUnitNo = #{orgUnitNo}))
+		And (ScmPurchaseCanuseSet.bizTypeScope = 'A' Or Exists(Select 1 From ScmPurchaseCanuseSetBizType Where ScmPurchaseCanuseSetBizType.pcsId=ScmPurchaseCanuseSet.id And ScmPurchaseCanuseSetBizType.purTypeId = #{bizTypeId}))
+		And ScmPurchaseCanuseSet.flag=1 
+	</select>
+
+</mapper>
+ 

@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvsaleissuebill">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvsaleissuebill.findAll" resultType="ScmInvSaleIssueBill2" >
+	    SELECT * FROM scminvsaleissuebill WHERE  1=1  
+	</select>
+ 
+	<select id="scminvsaleissuebill.findAllPage" resultType="ScmInvSaleIssueBill2" parameterType="Map"> 
+		SELECT *, IFNULL((Select sum(amt) FROM scminvsaleissuebillentry where otId=scminvsaleissuebill.otId),0) as amt,
+			IFNULL((Select sum(taxAmt) FROM scminvsaleissuebillentry	where otId=scminvsaleissuebill.otId),0) as taxAmt,
+			IFNULL((Select sum(saleTaxAmt) FROM scminvsaleissuebillentry	where otId=scminvsaleissuebill.otId),0) as saleTaxAmt
+		FROM scminvsaleissuebill WHERE  1=1 ORDER BY otNo DESC 
+	</select> 
+	<select id="scminvsaleissuebill.selectById" resultType="ScmInvSaleIssueBill2" parameterType="Long">
+		SELECT *, IFNULL((Select sum(amt) FROM scminvsaleissuebillentry where otId=scminvsaleissuebill.otId),0) as amt,
+			IFNULL((Select sum(taxAmt) FROM scminvsaleissuebillentry	where otId=scminvsaleissuebill.otId),0) as taxAmt,
+			IFNULL((Select sum(saleTaxAmt) FROM scminvsaleissuebillentry	where otId=scminvsaleissuebill.otId),0) as saleTaxAmt
+		FROM scminvsaleissuebill WHERE otId = #{value}
+	</select> 
+	<select id="scminvsaleissuebill.SelectBySaleOrder" resultType="ScmInvSaleIssueBill2" parameterType="Map">
+		Select DISTINCT scminvsaleissuebill.* from scminvsaleissuebill,scminvsaleissuebillentry 
+		where scminvsaleissuebill.otId = scminvsaleissuebillentry.otId And sourceBillDtlId in
+		(Select id From scminvsaleorderentry Where otId=#{otId})
+	</select> 
+	<select id="scminvsaleissuebill.checkUnPostBill" resultType="ScmInvSaleIssueBill2" parameterType="Map">
+		select * From ScmInvSaleIssueBill Where finOrgUnitNo=#{finOrgUnitNo} and periodId=#{periodId} And status not in ('E','N')
+	</select>  
+	<select id="scminvsaleissuebill.checkPostedBill" resultType="ScmInvSaleIssueBill2" parameterType="Map">
+		select * From ScmInvSaleIssueBill Where finOrgUnitNo=#{finOrgUnitNo} and periodId=#{periodId} And status='E'
+	</select> 
+	<select id="scminvsaleissuebill.selectByPurInwareHouse" resultType="ScmInvSaleIssueBill2" parameterType="Map">
+		SELECT Distinct ScmInvSaleIssueBill.* FROM ScmInvSaleIssueBill,ScmInvSaleIssueBillEntry 
+		Where ScmInvSaleIssueBill.otId = ScmInvSaleIssueBillEntry.otId And ScmInvSaleIssueBillEntry.sourceBillDtlId in 
+		(Select A.id FROM ScmInvPurInWarehsBillEntry A,ScmInvPurInWarehsBill B Where A.wrId=B.wrId And B.wrId=#{wrId})
+	</select> 
+	<select id="scminvsaleissuebill.queryForFixPage" resultType="ScmInvSaleIssueBill2" parameterType="map">
+        SELECT * FROM ScmInvSaleIssueBill WHERE finOrgUnitNo = #{finOrgUnitNo} and status = 'E'
+        ORDER BY postDate,checkDate,bizDate
+    </select>
+    <select id="scminvsaleissuebill.countUnPostBill" resultType="Map" parameterType="map">
+		select count(distinct(a.otNo)) as number,group_concat(distinct(a.otNo)) as data from
+		scminvsaleissuebill a,scminvsaleissuebillentry b  where a.otId=b.otId 
+		and a.status not in('E','N') and b.orgUnitNo =#{orgUnitNo} 
+		and b.wareHouseId in (${wareHouseIds})
+		and a.bizDate&lt;=#{bizDate} order by a.otNo
+    </select>
+	<insert id="scminvsaleissuebill.add" parameterType="ScmInvSaleIssueBill"  keyProperty="otId" useGeneratedKeys="true"> 
+		INSERT INTO  scminvsaleissuebill (
+        otNo,
+        finOrgUnitNo,
+        orgUnitNo,
+        bizType,
+        custId,
+        customerRole,
+        bizDate,
+        sysBill,
+        offset,
+        unitedBill,
+        unitedBillId,
+        vouchered,
+        voucherId,
+        billType,
+        saleOrgUnitNo,
+        salesId,
+        currencyNo,
+        exchangeRate,
+        periodId,
+        accountYear,
+        accountPeriod,
+        creator,
+        createDate,
+        createOrgUnitNo,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        workFlowNo,
+        stepNo,
+        checker,
+        checkDate,
+        postDate,
+        prtcount,
+        buildAr,
+        status,
+        otherNo,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{otNo},
+        #{finOrgUnitNo},
+        #{orgUnitNo},
+        #{bizType},
+        #{custId},
+        #{customerRole},
+        #{bizDate},
+        #{sysBill},
+        #{offset},
+        #{unitedBill},
+        #{unitedBillId},
+        #{vouchered},
+        #{voucherId},
+        #{billType},
+        #{saleOrgUnitNo},
+        #{salesId},
+        #{currencyNo},
+        #{exchangeRate},
+        #{periodId},
+        #{accountYear},
+        #{accountPeriod},
+        #{creator},
+        #{createDate},
+        #{createOrgUnitNo},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{workFlowNo},
+        #{stepNo},
+        #{checker},
+        #{checkDate},
+        #{postDate},
+        #{prtcount},
+        #{buildAr},
+        #{status},
+        #{otherNo},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvsaleissuebill.update" parameterType="ScmInvSaleIssueBill">
+		UPDATE scminvsaleissuebill set
+        otNo=#{otNo},
+        finOrgUnitNo=#{finOrgUnitNo},
+        orgUnitNo=#{orgUnitNo},
+        bizType=#{bizType},
+        custId=#{custId},
+        customerRole=#{customerRole},
+        bizDate=#{bizDate},
+        sysBill=#{sysBill},
+        offset=#{offset},
+        unitedBill=#{unitedBill},
+        unitedBillId=#{unitedBillId},
+        vouchered=#{vouchered},
+        voucherId=#{voucherId},
+        billType=#{billType},
+        saleOrgUnitNo=#{saleOrgUnitNo},
+        salesId=#{salesId},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        periodId=#{periodId},
+        accountYear=#{accountYear},
+        accountPeriod=#{accountPeriod},
+        creator=#{creator},
+        createDate=#{createDate},
+        createOrgUnitNo=#{createOrgUnitNo},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        postDate=#{postDate},
+        prtcount=#{prtcount},
+        buildAr=#{buildAr},
+        status=#{status},
+        otherNo=#{otherNo},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE otId = #{otId}
+	</update>
+ 	<update id="scminvsaleissuebill.updatePostedStatus" parameterType="Map">
+ 		UPDATE ScmInvSaleIssueBill set checker=#{checker},checkDate=#{checkDate},
+ 		postDate=#{postDate},status=#{status} Where otId = #{otId} 
+ 		<choose>
+ 			<when test='status!=null and status=="E"'>
+ 				and status='A'
+ 			</when>
+ 			<otherwise>
+ 				and status='E'
+ 			</otherwise>
+ 		</choose>
+	</update>
+	<delete id="scminvsaleissuebill.delete" parameterType="String">
+		DELETE FROM scminvsaleissuebill WHERE otId IN (${value})
+	</delete> 
+
+    <select id="scminvsaleissuebill.selectMaxIdByDate" resultType="ScmInvSaleIssueBill2" parameterType="String">
+		SELECT * FROM scminvsaleissuebill 
+		WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY otNo Desc Limit 1
+    </select>
+    
+    <select id="scminvsaleissuebill.checkWareHouseFree" resultType="ScmInvSaleIssueBill2" parameterType="Long">
+        select a.taskId as taskId, a.freeItem as freeItem from scminvcountingtask a, scminvcountingtable b,
+        (select DISTINCT a.orgUnitNo as orgUnitNo, b.wareHouseId as wareHouseId from scminvsaleissuebill a, scminvsaleissuebillentry b
+        where a.otId = b.otId and a.otId = #{value}) as c
+        where a.taskId = b.taskId and 
+        a.orgUnitNo = c.orgUnitNo and 
+        a.costCenter = 0 and 
+        a.status in ('T', 'B') and
+        b.wareHouseId = c.wareHouseId and 
+        a.freeItem = 1    
+    </select>
+    <select id="scminvsaleissuebill.checkMaterialFree" resultType="Integer" parameterType="Map">
+		select count(1) from scminvcountingtable a, scminvcountingtableentry b,
+		scminvsaleissuebill c, scminvsaleissuebillentry d
+		where a.taskId = #{taskId} and 
+		a.tableId = b.tableId and 
+		c.otId = #{otId} and 
+		c.otId = d.otId and 
+		a.wareHouseId = d.wareHouseId and 
+		b.itemId = d.itemId    
+    </select>
+    <select id="scminvsaleissuebill.checkOrgFree" resultType="ScmInvSaleIssueBill2" parameterType="Long">
+		select a.taskId as taskId, a.freeItem as freeItem from
+		scminvcountingtask a, ScmInvCountingCostCenter b,
+		(select DISTINCT a.orgUnitNo as orgUnitNo, b.outOrgUnitNo as
+		outOrgUnitNo,b.outCostOrgUnitNo,a.finOrgUnitNo from scminvsaleissuebill
+		a, scminvsaleissuebillentry b
+		where a.otId = b.otId and a.otId = #{value}) as c
+		where a.taskId = b.taskId and
+		a.costCenter = 1 and
+		a.finOrgUnitNo = c.finOrgUnitNo and
+		a.status in ('T', 'B') and
+		b.orgUnitNo = c.outCostOrgUnitNo and
+		b.useOrgUnitNo = c.outOrgUnitNo and
+		a.freeItem = 1   
+    </select>
+</mapper>
+ 

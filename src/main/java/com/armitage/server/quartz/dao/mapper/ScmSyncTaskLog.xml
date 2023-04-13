@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsynctasklog">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsynctasklog.findAll" resultType="ScmSyncTaskLog" >
+	    SELECT * FROM ScmSyncTaskLog WHERE  1=1  
+	</select>
+ 
+	<select id="scmsynctasklog.findAllPage" resultType="ScmSyncTaskLog" parameterType="Map"> 
+		SELECT * FROM ScmSyncTaskLog WHERE  1=1 ORDER BY logtime desc
+	</select> 
+	<select id="scmsynctasklog.selectById" resultType="ScmSyncTaskLog" parameterType="Long">
+		SELECT * FROM ScmSyncTaskLog WHERE id = #{value}
+	</select> 
+	<insert id="scmsynctasklog.add" parameterType="ScmSyncTaskLog"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmSyncTaskLog (
+        orgUnitNo,
+        taskType,
+        logtime,
+        taskStatus,
+        errorMessage,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{taskType},
+        #{logtime},
+        #{taskStatus},
+        #{errorMessage},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsynctasklog.update" parameterType="ScmSyncTaskLog">
+		UPDATE ScmSyncTaskLog set
+        orgUnitNo=#{orgUnitNo},
+        taskType=#{taskType},
+        logtime=#{logtime},
+        taskStatus=#{taskStatus},
+        errorMessage=#{errorMessage},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsynctasklog.delete" parameterType="String">
+		DELETE FROM ScmSyncTaskLog WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

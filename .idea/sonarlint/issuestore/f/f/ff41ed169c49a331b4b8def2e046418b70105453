@@ -1,0 +1,15 @@
+
+y
+java:S4144T"^Update this method so that its implementation is not identical to "getSearchCount" on line 75.(ÿÇª¹ÿÿÿÿÿ
+A
+java:S2387"+"records" is the name of a field in "Page".(‘ˆ—ë
+C
+java:S2387%"("size" is the name of a field in "Page".(ÙÊ˜žýÿÿÿÿ
+F
+java:S2387+"+"current" is the name of a field in "Page".(¦€¡Ìøÿÿÿÿ
+?
+java:S1948")Make "records" transient or serializable.(‘ˆ—ë
+?
+java:S2387")"total" is the name of a field in "Page".(Ø¨¿¡
+L
+java:S23871"1"isSearchCount" is the name of a field in "Page".(›èõ¥üÿÿÿÿ

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurrereuse">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurrereuse.findAll" resultType="Scmpurrereuse" >
+	    SELECT * FROM scmpurrereuse WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurrereuse.findAllPage" resultType="Scmpurrereuse" parameterType="Map"> 
+		SELECT * FROM scmpurrereuse WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpurrereuse.selectById" resultType="Scmpurrereuse" parameterType="Long">
+		SELECT * FROM scmpurrereuse WHERE id = #{value}
+	</select> 
+	<insert id="scmpurrereuse.add" parameterType="Scmpurrereuse"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurrereuse (
+        entryBillId,
+        opinion,
+        rowStatus,
+        oper,
+        flag,
+        operDate        )
+		VALUES (
+        #{entryBillId},
+        #{opinion},
+        #{rowStatus},
+        #{oper},
+        #{flag},
+        #{operDate}        )
+	</insert>
+ 
+	<update id="scmpurrereuse.update" parameterType="Scmpurrereuse">
+		UPDATE scmpurrereuse set
+        entryBillId=#{entryBillId},
+        opinion=#{opinion},
+        rowStatus=#{rowStatus},
+        oper=#{oper},
+        flag=#{flag},
+        operDate=#{operDate}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurrereuse.delete" parameterType="String">
+		DELETE FROM scmpurrereuse WHERE id IN (${value})
+	</delete> 
+	
+	<update id="scmpurrereuse.cancelRefuse" parameterType="Map">
+		UPDATE scmpurrereuse set flag=0 where id in (SELECT * FROM(select max(id) from scmpurrereuse where scmpurrereuse.rowStatus="C" and entryBillId in(${entryBillId}) GROUP BY entryBillId)T)
+	</update>
+	
+	<select id="scmpurrereuse.selectByEntryId" resultType="Scmpurrereuse" parameterType="Map"> 
+		SELECT * FROM scmpurrereuse WHERE id=(select max(id) from scmpurrereuse where entryBillId in(${entryBillId}) and scmpurrereuse.rowStatus="I")
+	</select>
+	<delete id="scmpurrereuse.deleteByEntryId" parameterType="Map">
+		DELETE FROM scmpurrereuse WHERE entryBillId IN (${entryBillId})
+	</delete>
+</mapper>
+ 

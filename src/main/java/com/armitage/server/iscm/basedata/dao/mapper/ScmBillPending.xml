@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmbillpending">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmbillpending.findAll" resultType="ScmBillPending" >
+	    SELECT * FROM ScmBillPending WHERE  1=1  
+	</select>
+ 
+	<select id="scmbillpending.findAllPage" resultType="ScmBillPending" parameterType="Map"> 
+		SELECT Distinct ScmBillPending.* FROM ScmBillPending,ScmBillPendingToUsr WHERE ScmBillPending.id = ScmBillPendingToUsr.pendingId
+		And ScmBillPending.controlUnitNo=#{controlUnitNo} and ScmBillPendingToUsr.usrCode=#{usrCode}
+		ORDER BY ScmBillPending.billType ASC,ScmBillPending.billNo ASC 
+	</select> 
+	<select id="scmbillpending.selectById" resultType="ScmBillPending" parameterType="Long">
+		SELECT * FROM ScmBillPending WHERE id = #{value}
+	</select>
+	<select id="scmbillpending.selectRequireByUsrCode" resultType="ScmBillPending" parameterType="Map">
+		SELECT Distinct ScmBillPending.* FROM ScmBillPending,ScmBillPendingToUsr WHERE ScmBillPending.id = ScmBillPendingToUsr.pendingId
+		And ScmBillPending.controlUnitNo=#{controlUnitNo} and ScmBillPendingToUsr.usrCode=#{usrCode} and billType = 'PurRequire' AND ScmBillPendingToUsr.processed=0  
+		ORDER BY ScmBillPending.billType ASC,ScmBillPending.billNo ASC 
+	</select> 
+	<select id="scmbillpending.checkExistPendingBill" resultType="Integer" parameterType="Map">
+		SELECT count(Distinct ScmBillPending.id) FROM ScmBillPending,ScmBillPendingToUsr WHERE ScmBillPending.id = ScmBillPendingToUsr.pendingId
+		And ScmBillPending.controlUnitNo=#{controlUnitNo} and ScmBillPendingToUsr.usrCode=#{usrCode} and ScmBillPendingToUsr.processed=0
+	</select> 
+	<select id="scmbillpending.selectByUsrCode" resultType="ScmBillPending" parameterType="Long">
+		SELECT ScmBillPending.* FROM ScmBillPending,ScmBillPendingToUsr 
+		WHERE ScmBillPending.billId = #{billId} and ScmBillPending.billType = #{billType} and ScmBillPending.processed=0
+		And ScmBillPending.id = ScmBillPendingToUsr.pendingId And ScmBillPendingToUsr.usrCode=#{usrCode} and ScmBillPendingToUsr.processed=0
+		Order By id Desc Limit 1
+	</select> 
+	<select id="scmbillpending.selectLastUsrPended" resultType="ScmBillPending" parameterType="Long">
+		SELECT ScmBillPending.* FROM ScmBillPending,ScmBillPendingToUsr 
+		WHERE ScmBillPending.billId = #{billId} and ScmBillPending.billType = #{billType}
+		And ScmBillPending.id = ScmBillPendingToUsr.pendingId And ScmBillPendingToUsr.usrCode=#{usrCode} and ScmBillPendingToUsr.processed=1
+		ORDER BY ScmBillPending.id DESC LIMIT 1
+	</select>
+	<select id="scmbillpending.selectLastUsrPending" resultType="ScmBillPending" parameterType="Long">
+		SELECT * FROM ScmBillPending WHERE billId = #{billId} and billType = #{billType} and ScmBillPending.processed=0
+		ORDER BY ScmBillPending.id DESC LIMIT 1
+	</select> 
+	<select id="scmbillpending.selectPendingUsr" resultType="ScmBillPending2" parameterType="Long">
+		Select ScmBillPending.billId,ScmBillPending.billNo,GROUP_CONCAT(ScmBillPendingToUsr.usrCode) as usrCodes
+		from ScmBillPending,ScmBillPendingToUsr 
+		where scmbillpending.billtype=#{billType} and scmbillpending.id = scmbillpendingtousr.pendingId 
+		and scmbillpending.billId=#{billId} and scmbillpending.processed=0
+		GROUP BY scmbillpending.billId,scmbillpending.billNo
+	</select> 
+	
+    <select id="scmbillpending.selectUsrApprovedPage" resultType="ScmBillPending" parameterType="Map"> 
+		SELECT * FROM ScmBillPending 
+		LEFT JOIN ScmBillPendingToUsr ON ScmBillPending.id = ScmBillPendingToUsr.pendingId
+		WHERE ScmBillPending.ID IN(
+		 SELECT MAX(ID) FROM ScmBillPending
+		   WHERE billNo in (
+				 SELECT Distinct billNo FROM ScmBillPending WHERE 
+				 ScmBillPending.controlUnitNo=#{controlUnitNo} and ScmBillPending.checker=#{usrCode}
+		   ) and  ScmBillPending.controlUnitNo=#{controlUnitNo}  and ScmBillPending.checker=#{usrCode}  GROUP BY billNo
+		)
+	</select> 
+	
+	<insert id="scmbillpending.add" parameterType="ScmBillPending"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmBillPending (
+        billId,
+        billNo,
+        billType,
+        orgUnitNo,
+        billDate,
+        checker,
+        confirmor,
+        submitDate,
+        counterSign,
+        processed,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{billId},
+        #{billNo},
+        #{billType},
+        #{orgUnitNo},
+        #{billDate},
+        #{checker},
+        #{confirmor},
+        #{submitDate},
+        #{counterSign},
+        #{processed},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmbillpending.update" parameterType="ScmBillPending">
+		UPDATE ScmBillPending set
+        billId=#{billId},
+        billNo=#{billNo},
+        billType=#{billType},
+        orgUnitNo=#{orgUnitNo},
+        billDate=#{billDate},
+        checker=#{checker},
+        confirmor=#{confirmor},
+        submitDate=#{submitDate},
+        counterSign=#{counterSign},
+        processed=#{processed},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmbillpending.delete" parameterType="String">
+		DELETE FROM ScmBillPending WHERE id IN (${value})
+	</delete> 
+
+	<delete id="scmbillpending.deletePendingBill" parameterType="Map">
+		DELETE FROM ScmBillPending WHERE billId=#{billId} and billType=#{billType}
+	</delete> 
+</mapper>
+ 

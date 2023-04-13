@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurpriceentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurpriceentry.findAll" resultType="ScmPurPriceEntry2" >
+	    SELECT * FROM scmpurpriceentry WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurpriceentry.findAllPage" resultType="ScmPurPriceEntry2" parameterType="Map"> 
+		<!-- SELECT * FROM scmpurpriceentry WHERE  1=1 ORDER BY id ASC  -->
+		SELECT scmpurpriceentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as purUnitName
+		FROM scmpurpriceentry
+		left join scmmaterial on scmpurpriceentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scmpurpriceentry.purUnit=ScmMeasureUnit.id
+		WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpurpriceentry.selectById" resultType="ScmPurPriceEntry2" parameterType="Long">
+		<!-- SELECT * FROM scmpurpriceentry WHERE id = #{value} -->
+		SELECT scmpurpriceentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as purUnitName
+		FROM scmpurpriceentry
+		left join scmmaterial on scmpurpriceentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scmpurpriceentry.purUnit=ScmMeasureUnit.id
+		WHERE scmpurpriceentry.id = #{value}
+	</select> 
+	<select id="scmpurpriceentry.selectByPmId" resultType="ScmPurPriceEntry2" parameterType="Map"> 
+		SELECT scmpurpriceentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as purUnitName
+		FROM scmpurpriceentry
+		left join scmmaterial on scmpurpriceentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scmpurpriceentry.purUnit=ScmMeasureUnit.id
+		WHERE scmpurpriceentry.pmId=#{pmId} 
+		ORDER BY scmpurpriceentry.lineId ASC
+	</select>
+	<select id="scmpurpriceentry.selectTaxRateByPmId" resultType="ScmPurPriceEntry2" parameterType="Map">
+		SELECT id,pmId,taxRate FROM scmpurpriceentry WHERE id=(SELECT MAX(id) FROM scmpurpriceentry
+		WHERE pmid=#{pmid} and itemId =#{itemId})
+	</select> 
+	<insert id="scmpurpriceentry.add" parameterType="ScmPurPriceEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurpriceentry (
+        pmId,
+        lineId,
+        itemId,
+        purUnit,
+        inquiryPrice1,
+        inquiryPrice2,
+        inquiryPrice3,
+        riseInquiryRate,
+        price1,
+        price2,
+        price3,
+        taxRate1,
+        taxRate2,
+        taxRate3,
+        prePrice,
+        lastYearPrice,
+        price,
+        riseRate,
+        differCost,
+        prePurQty,
+        taxRate,
+        selVndrId,
+        prNos,
+        rowStatus,
+        checker,
+        checkDate,
+        remarks        )
+		VALUES (
+        #{pmId},
+        #{lineId},
+        #{itemId},
+        #{purUnit},
+        #{inquiryPrice1},
+        #{inquiryPrice2},
+        #{inquiryPrice3},
+        #{riseInquiryRate},
+        #{price1},
+        #{price2},
+        #{price3},
+        #{taxRate1},
+        #{taxRate2},
+        #{taxRate3},
+        #{prePrice},
+        #{lastYearPrice},
+        #{price},
+        #{riseRate},
+        #{differCost},
+        #{prePurQty},
+        #{taxRate},
+        #{selVndrId},
+        #{prNos},
+        #{rowStatus},
+        #{checker},
+        #{checkDate},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scmpurpriceentry.update" parameterType="ScmPurPriceEntry">
+		UPDATE scmpurpriceentry set
+        pmId=#{pmId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        purUnit=#{purUnit},
+        inquiryPrice1=#{inquiryPrice1},
+        inquiryPrice2=#{inquiryPrice2},
+        inquiryPrice3=#{inquiryPrice3},
+        riseInquiryRate=#{riseInquiryRate},
+        price1=#{price1},
+        price2=#{price2},
+        price3=#{price3},
+        taxRate1=#{taxRate1},
+        taxRate2=#{taxRate2},
+        taxRate3=#{taxRate3},
+        prePrice=#{prePrice},
+        lastYearPrice=#{lastYearPrice},
+        price=#{price},
+        riseRate=#{riseRate},
+        differCost=#{differCost},
+        prePurQty=#{prePurQty},
+        taxRate=#{taxRate},
+        selVndrId=#{selVndrId},
+        rowStatus=#{rowStatus},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        prNos=#{prNos},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+ 	<update id="scmpurpriceentry.updateVendorQuotation" parameterType="Map">
+ 		UPDATE scmpurpriceentry set price1=#{price1},
+        price2=#{price2},
+        price3=#{price3},
+        taxRate1=#{taxRate1},
+        taxRate2=#{taxRate2},
+        taxRate3=#{taxRate3},
+        price=#{price},
+        taxRate=#{taxRate},
+        selVndrId=#{selVndrId}
+ 		WHERE id = #{entryId}
+	</update>
+	<delete id="scmpurpriceentry.delete" parameterType="String">
+		DELETE FROM scmpurpriceentry WHERE id IN (${value})
+	</delete> 
+	<update id="scmpurpriceentry.updateRowStatusByPmId" parameterType="map">
+		UPDATE scmpurpriceentry set
+        rowStatus=#{rowStatus}	 WHERE pmId = #{pmId}
+	</update>
+</mapper>
+ 

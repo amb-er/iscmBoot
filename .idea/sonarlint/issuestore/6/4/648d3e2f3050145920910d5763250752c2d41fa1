@@ -1,0 +1,15 @@
+
+D
+java:S3740,"/Provide the parametrized type for this generic.(£ϋΛ
+
+_
+java:S2259-"IA "NullPointerException" could be thrown; "orgBaseUnit" is nullable here.(Π’§‹
+e
+java:S4488"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(„σ“χώÿÿÿÿ
+A
+java:S19054"&Remove this unnecessary cast to "int".(©®ίωÿÿÿÿ
+e
+java:S4488B"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(ι®«ώÿÿÿÿ
+<
+java:S1905W"&Remove this unnecessary cast to "int".(½ε
+V	java:S1256"<This block of commented-out lines of code should be removed.(ΑφώΎϊÿÿÿÿ

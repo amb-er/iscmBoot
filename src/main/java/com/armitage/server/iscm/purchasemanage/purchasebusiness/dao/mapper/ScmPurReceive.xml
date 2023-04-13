@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurreceive">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurreceive.findAll" resultType="ScmPurReceive2" >
+	    SELECT * FROM scmpurreceive WHERE  1=1  
+	</select>
+	<select id="scmpurreceive.findAllPage" resultType="ScmPurReceive2" parameterType="Map"> 
+		SELECT Distinct scmpurreceive.* FROM scmpurreceive,scmpurreceiveentry,scmmaterial 
+		WHERE scmpurreceive.id=scmpurreceiveentry.pvId and scmpurreceiveentry.itemId=scmmaterial.id
+		<choose>
+			<when test="sortByDate != null and sortByDate !='' "> 
+				ORDER BY receiveDate Desc,pvNo Desc 
+			</when>
+			<otherwise>
+				ORDER BY pvNo Desc 
+			</otherwise>
+		</choose>
+ 	</select> 
+	<select id="scmpurreceive.selectById" resultType="ScmPurReceive2" parameterType="Long">
+		SELECT * FROM scmpurreceive WHERE id = #{value}
+	</select>
+	<select id="scmpurreceive.selectByBillCode" resultType="ScmPurReceive2" parameterType="Map">
+		SELECT * FROM ScmPurReceive WHERE pvNo = #{pvNo} and controlUnitNo=#{controlUnitNo}
+	</select>
+	<select id="scmpurreceive.selectMaxIdByDate" resultType="ScmPurReceive2" parameterType="String">
+		SELECT *
+		FROM ScmPurReceive
+		WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY pvNo Desc Limit 1
+	</select>
+	<select id="scmpurreceive.selectByPurOrder" resultType="ScmPurReceive2" parameterType="String">
+		SELECT Distinct ScmPurReceive.*
+		FROM ScmPurReceive,ScmPurReceiveEntry,ScmPurOrder,ScmPurOrderEntry
+		WHERE ScmPurReceive.id=ScmPurReceiveEntry.pvId And ScmPurReceiveEntry.poDtlId=ScmPurOrderEntry.id 
+		And ScmPurOrderEntry.poId=ScmPurOrder.id And ScmPurOrderEntry.poId=#{poId} Order BY pvNo
+	</select>
+	<select id="scmpurreceive.selectByCkId" resultType="ScmPurReceive2" parameterType="Map">
+		SELECT * FROM scmpurreceive WHERE ckId = #{ckId}
+	</select>
+	<select id="scmpurreceive.selectBySaleIssueBill" resultType="ScmPurReceive2" parameterType="Map">
+		SELECT Distinct ScmPurReceive.* FROM ScmPurReceive,ScmPurReceiveEntry,
+		ScmPurOrderEntry,ScmInvSaleIssueBillEntry,ScmInvSaleOrderEntry
+		WHERE ScmPurReceive.id=ScmPurReceiveEntry.pvId And ScmPurReceiveEntry.poDtlId=ScmPurOrderEntry.id 
+		And ScmInvSaleIssueBillEntry.otId=#{otId} And ScmInvSaleIssueBillEntry.sourceBillDtlId=ScmInvSaleOrderEntry.id
+		And ScmInvSaleOrderEntry.sourceBillDtlId=ScmPurOrderEntry.Id
+	</select>
+	<select id="scmpurreceive.selectDrillBills" resultType="ScmPurBillDrillResult" parameterType="Map">
+		SELECT group_concat(distinct scmpurreceiveentry.poDtlId) as poDetailId,scmpurreceiveentry.itemId,scmmaterial.itemNo,scmmaterial.itemName,
+		a.prNo,a.prIds,a.status as prStatus,b.poNo,b.poIds,b.status as poStatus,c.wrNo,c.wrIds,c.status as wrStatus,
+		case when scmpurprice.pmNo is null then scmpurquotation.pqNo else scmpurprice.pmNo end as priceBillNo,
+		case when scmpurprice.status is null then scmpurquotation.status else scmpurprice.status end as priceBillStatus,
+		scmpurreceiveentry.refPriceStatus
+ 		from scmpurreceive,scmpurreceiveentry 
+		LEFT JOIN (select scmpurrequire.prNo,scmpurrequire.status,group_concat(distinct scmpurrequire.id) as prIds,
+		scmpurrequireentry.itemId
+ 		from scmpurrequire,scmpurrequireentry,scmpurorderentry,scmpurreceiveentry where scmpurrequire.id=scmpurrequireentry.prId
+		and scmpurorderentry.prDtlId=scmpurrequireentry.id and scmpurreceiveentry.poDtlId=scmpurorderentry.id and scmpurreceiveentry.pvId=${pvId}
+		group by scmpurrequireentry.itemId order by scmpurrequire.id asc) a on scmpurreceiveentry.itemId=a.itemId
+		LEFT JOIN (select scmpurorder.poNo,scmpurorder.status,group_concat(distinct scmpurorder.id) as poIds,
+		scmpurorderentry.itemId
+ 		from scmpurorder,scmpurorderentry,scmpurreceiveentry where scmpurorder.id=scmpurorderentry.poId
+		and scmpurreceiveentry.poDtlId=scmpurorderentry.id and scmpurreceiveentry.pvId=${pvId}
+		group by scmpurorderentry.itemId order by scmpurorder.id asc) b on scmpurreceiveentry.itemId=b.itemId
+		LEFT JOIN (select scminvpurinwarehsbill.wrNo,scminvpurinwarehsbill.status,group_concat(distinct scminvpurinwarehsbill.wrId) as wrIds,
+	    scminvpurinwarehsbillentry.itemId
+	    from scminvpurinwarehsbill left join scminvpurinwarehsbillentry on scminvpurinwarehsbill.wrId=scminvpurinwarehsbillentry.wrId
+	    left join scmpurreceiveentry on scminvpurinwarehsbillentry.sourceBillDtlId=scmpurreceiveentry.id
+	    left join scmpurorderentry on scmpurreceiveentry.poDtlId=scmpurorderentry.id
+	    left join scmpurrequireentry on scmpurorderentry.prDtlId=scmpurrequireentry.id where scmpurreceiveentry.pvId=${pvId}
+	    group by scminvpurinwarehsbillentry.itemId order by scminvpurinwarehsbill.wrId asc) c on scmpurreceiveentry.itemId=c.itemId
+		LEFT JOIN scmpurprice on scmpurreceiveentry.priceBillId=scmpurprice.id and IFNULL(scmpurreceiveentry.refPriceStatus,'')!='' and scmpurreceiveentry.refPriceStatus!='1'
+		LEFT JOIN scmpurquotation on scmpurreceiveentry.priceBillId=scmpurquotation.id and IFNULL(scmpurreceiveentry.refPriceStatus,'')!='' and scmpurreceiveentry.refPriceStatus='1',
+		scmmaterial
+		where scmpurreceive.id=scmpurreceiveentry.pvId
+		and scmpurreceive.id=${pvId}
+		and scmpurreceiveentry.itemId=scmmaterial.id
+		group by scmpurreceiveentry.itemId
+	</select> 
+	<select id="scmpurreceive.selectByOtherIssueBill" resultType="ScmPurReceive2" parameterType="Map">
+		SELECT Distinct ScmPurReceive.* FROM ScmPurReceive,ScmPurReceiveEntry,
+		ScmPurOrderEntry,ScmInvOtherIssueBillEntry
+		WHERE ScmPurReceive.id=ScmPurReceiveEntry.pvId And ScmPurReceiveEntry.poDtlId=ScmPurOrderEntry.id 
+		And ScmInvOtherIssueBillEntry.otId=#{otId} And ScmInvOtherIssueBillEntry.sourceBillDtlId=ScmPurOrderEntry.id
+	</select>
+	
+	<select id="scmpurreceive.findBypvNos" resultType="ScmPurReceive2" parameterType="Map">
+		SELECT * FROM scmpurreceive WHERE pvno in (${pvNos}) and controlUnitNo=#{controlUnitNo}
+	</select>
+	
+	<insert id="scmpurreceive.add" parameterType="ScmPurReceive"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurreceive (
+        pvNo,
+        finOrgUnitNo,
+        orgUnitNo,
+        pdNo,
+        poNos,
+        ckId,
+        ckNo,
+        vendorId,
+        receiveDate,
+        receiveTime,
+        receiver,
+        deliverer,
+        unified,
+        purOrgUnitNo,
+        buyerId,
+        purGroupId,
+        currencyNo,
+        exchangeRate,
+        amt,
+        taxAmt,
+        periodId,
+        accountYear,
+        accountPeriod,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        checker,
+        checkDate,
+        prtcount,
+        existsSource,
+        useOrgUnitNos,
+        wareHouseIds,
+        status,
+        remarks,
+        workFlowNo,
+        stepNo,
+        pendingUsr,
+        controlUnitNo        )
+		VALUES (
+        #{pvNo},
+        #{finOrgUnitNo},
+        #{orgUnitNo},
+        #{pdNo},
+        #{poNos},
+        #{ckId},
+        #{ckNo},
+        #{vendorId},
+        #{receiveDate},
+        #{receiveTime},
+        #{receiver},
+        #{deliverer},
+        #{unified},
+        #{purOrgUnitNo},
+        #{buyerId},
+        #{purGroupId},
+        #{currencyNo},
+        #{exchangeRate},
+        #{amt},
+        #{taxAmt},
+        #{periodId},
+        #{accountYear},
+        #{accountPeriod},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{checker},
+        #{checkDate},
+        #{prtcount},
+        #{existsSource},
+        #{useOrgUnitNos},
+        #{wareHouseIds},
+        #{status},
+        #{remarks},
+        #{workFlowNo},
+        #{stepNo},
+        #{pendingUsr},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpurreceive.update" parameterType="ScmPurReceive">
+		UPDATE scmpurreceive set
+        pvNo=#{pvNo},
+        finOrgUnitNo=#{finOrgUnitNo},
+        orgUnitNo=#{orgUnitNo},
+        pdNo=#{pdNo},
+        poNos=#{poNos},
+        ckId=#{ckId},
+        ckNo=#{ckNo},
+        vendorId=#{vendorId},
+        receiveDate=#{receiveDate},
+        receiveTime=#{receiveTime},
+        receiver=#{receiver},
+        deliverer=#{deliverer},
+        unified=#{unified},
+        purOrgUnitNo=#{purOrgUnitNo},
+        buyerId=#{buyerId},
+        purGroupId=#{purGroupId},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        amt=#{amt},
+        taxAmt=#{taxAmt},
+        periodId=#{periodId},
+        accountYear=#{accountYear},
+        accountPeriod=#{accountPeriod},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        prtcount=#{prtcount},
+        existsSource=#{existsSource},
+        useOrgUnitNos=#{useOrgUnitNos},
+        wareHouseIds=#{wareHouseIds},
+        status=#{status},
+        remarks=#{remarks},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        pendingUsr=#{pendingUsr},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+
+	<delete id="scmpurreceive.delete" parameterType="String">
+		DELETE FROM scmpurreceive WHERE id IN (${value})
+	</delete> 
+</mapper>

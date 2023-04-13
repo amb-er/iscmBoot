@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcostcard">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmcostcard.findAll" resultType="ScmCostCard2" >
+	    SELECT * FROM ScmCostCard WHERE  1=1  
+	</select>
+ 
+	<select id="scmcostcard.findAllPage" resultType="ScmCostCard2" parameterType="Map"> 
+		SELECT * FROM ScmCostCard WHERE  ((#{controlUnitNo}!=#{orgUnitNo} and (orgUnitNo=#{controlUnitNo} or orgUnitNo=#{orgUnitNo})) 
+		or (#{controlUnitNo}=#{orgUnitNo} and controlUnitNo=#{controlUnitNo})) ORDER BY id ASC 
+	</select> 
+	<select id="scmcostcard.selectById" resultType="ScmCostCard2" parameterType="Long">
+		SELECT * FROM ScmCostCard 
+		LEFT JOIN ScmDishCostRatio ON ScmCostCard.id = scmdishcostratio.cardId AND scmcostcard.dishSpecId = ScmDishCostRatio.dishSpecId 
+		WHERE ScmCostCard.id = #{value}
+	</select> 
+	<select id="scmcostcard.selectReplaceScmCostCard" resultType="ScmCostCard2" parameterType="Map">
+		SELECT ScmCostCard.*,ScmCostCardDetail.qty FROM ScmCostCard,ScmCostCardDetail
+		 WHERE ScmCostCard.id=ScmCostCardDetail.cardId
+		 and ScmCostCard.flag=1
+		 <if test="fbmItemCode != null and fbmItemCode != ''">
+			and ScmCostCardDetail.fbmItemCode=#{fbmItemCode}
+		</if>
+		 and ScmCostCardDetail.itemId=#{itemId}
+		 ORDER BY ScmCostCard.id ASC 
+	</select>
+	<select id="scmcostcard.findRepeat" resultType="ScmCostCard2" parameterType="Map">
+		SELECT * FROM ScmCostCard WHERE orgUnitNo = #{orgUnitNo} and dishId=#{dishId}
+	</select> 
+	<insert id="scmcostcard.add" parameterType="ScmCostCard"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmCostCard (
+        orgUnitNo,
+        dishId,
+        dishCode,
+        dishName,
+        fbmItemCode,
+        fbmStatCode,
+        fbmStatName,
+        productionTime,
+        dishSpecId,
+        salePrice,
+        costPrice,
+        effectiveDate,
+        flag,
+        wine,
+        locked,
+        approvaled,
+        resOrgUnitNo,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{dishId},
+        #{dishCode},
+        #{dishName},
+        #{fbmItemCode},
+        #{fbmStatCode},
+        #{fbmStatName},
+        #{productionTime},
+        #{dishSpecId},
+        #{salePrice},
+        #{costPrice},
+        #{effectiveDate},
+        #{flag},
+        #{wine},
+        #{locked},
+        #{approvaled},
+        #{resOrgUnitNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmcostcard.update" parameterType="ScmCostCard">
+		UPDATE ScmCostCard set
+        orgUnitNo=#{orgUnitNo},
+        dishId=#{dishId},
+        dishCode=#{dishCode},
+        dishName=#{dishName},
+        fbmItemCode=#{fbmItemCode},
+        fbmStatCode=#{fbmStatCode},
+        fbmStatName=#{fbmStatName},
+        productionTime=#{productionTime},
+        dishSpecId=#{dishSpecId},
+        salePrice=#{salePrice},
+        costPrice=#{costPrice},
+        effectiveDate=#{effectiveDate},
+        flag=#{flag},
+        wine=#{wine},
+        locked=#{locked},
+        approvaled=#{approvaled},
+        resOrgUnitNo=#{resOrgUnitNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmcostcard.delete" parameterType="String">
+		DELETE FROM ScmCostCard WHERE id IN (${value})
+	</delete> 
+
+</mapper>

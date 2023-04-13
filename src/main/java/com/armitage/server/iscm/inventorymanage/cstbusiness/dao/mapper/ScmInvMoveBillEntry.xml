@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvmovebillentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvmovebillentry.findAll" resultType="ScmInvMoveBillEntry2" >
+	    SELECT * FROM scminvmovebillentry WHERE  1=1  
+	</select>
+ 
+	<select id="scminvmovebillentry.findAllPage" resultType="ScmInvMoveBillEntry2" parameterType="Map"> 
+		SELECT scminvmovebillentry.*,scmmaterial.itemNo as itemNo,scminvmovebill.wtNo,scminvmovebill.status,
+		scminvmovebill.bizDate,scminvmovebill.postDate,scminvmovebill.creator,D.unitName as pieUnitName,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,scminvmovebill.outCstOrgUnitNo,scminvmovebill.outOrgUnitNo,
+		scminvmovebill.inCstOrgUnitNo,scminvmovebill.inOrgUnitNo,A.unitName as unitName,ScmMaterialGroup.className as groupName,
+		ScmMaterialGroup.classCode as groupCode,ScmMaterialGroup.longNo as longNo,ScmMaterialGroup.id as groupId,scminvmovebill.periodId
+		FROM scminvmovebill,scminvmovebillEntry
+		left join scmmeasureunit D on scminvmovebillentry.pieUnit=D.id
+		left join ScmMeasureUnit A on scminvmovebillEntry.unit=A.id,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE  scminvmovebill.wtId=scminvmovebillEntry.wtId  And scminvmovebillEntry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		ORDER BY scminvmovebillEntry.id ASC
+	</select> 
+	<select id="scminvmovebillentry.selectById" resultType="ScmInvMoveBillEntry2" parameterType="Long">
+		select scminvmovebillentry.* , 
+            scmmaterial.itemNo as itemNo, scmmaterial.itemName as itemName,scmmaterial.spec as spec, 
+            A.unitName as unitName, B.unitName as baseUnitName,D.unitName as pieUnitName,
+            scmmaterialunitrelation.convrate as convrate
+            from scminvmovebillentry
+            left join scmmaterial on scminvmovebillentry.itemId=scmmaterial.id
+            left join scmmeasureunit A on scminvmovebillentry.unit=A.id
+            left join scmmeasureunit D on scminvmovebillentry.pieUnit=D.id
+            left join scmmeasureunit B on scminvmovebillentry.baseUnit=B.id
+            left join scmmaterialunitrelation on scminvmovebillentry.itemId=scmmaterialunitrelation.itemId
+            and scminvmovebillentry.unit=scmmaterialunitrelation.targetUnitId
+            left join (
+                select ScmMaterial.id,ScmMaterialGroup.className as className 
+                    from ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+                    where ScmMaterial.id=ScmMaterialGroupDetail.itemId
+                    and ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+					and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+        			and ScmMaterialGroupStandard.standardType='1'
+            ) C on scminvmovebillentry.itemId=C.id
+            where scminvmovebillentry.id=#{value}
+	</select> 
+	
+	<select id="scminvmovebillentry.selectByWtId" resultType="ScmInvMoveBillEntry2" parameterType="Map"> 
+        select scminvmovebillentry.* , 
+            scmmaterial.itemNo as itemNo, scmmaterial.itemName as itemName,scmmaterial.spec as spec, 
+            A.unitName as unitName, B.unitName as baseUnitName, D.unitName as pieUnitName,C.groupId,
+            scmmaterialunitrelation.convrate as convrate
+            from scminvmovebillentry
+            left join scmmaterial on scminvmovebillentry.itemId=scmmaterial.id
+            left join scmmeasureunit A on scminvmovebillentry.unit=A.id
+            left join scmmeasureunit B on scminvmovebillentry.baseUnit=B.id
+            left join scmmeasureunit D on scminvmovebillentry.pieUnit=D.id
+            left join scmmaterialunitrelation on scminvmovebillentry.itemId=scmmaterialunitrelation.itemId
+            and scminvmovebillentry.unit=scmmaterialunitrelation.targetUnitId
+            left join (
+                select ScmMaterial.id,ScmMaterialGroup.className as className,ScmMaterialGroup.id as groupId  
+                    from ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+                    where ScmMaterial.id=ScmMaterialGroupDetail.itemId
+                    and ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+                    and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+        			and ScmMaterialGroupStandard.standardType='1'
+            ) C on scminvmovebillentry.itemId=C.id
+            where scminvmovebillentry.wtId=#{wtId}
+            order by scminvmovebillentry.lineId ASC
+    </select>
+    <select id="scminvmovebillentry.selectOutEffectRow" resultType="ScmInvPurInWarehsBillEntry2" parameterType="Map"> 
+		select c.outOrgUnitNo, c.outCstOrgUnitNo, b.itemId, b.lot, b.unit, b.price, b.taxRate, b.taxPrice, 
+	            SUM(b.qty) as qty, SUM(b.amt) as amt, SUM(b.pieQty) as pieQty, SUM(b.baseQty) as baseQty, SUM(b.taxAmt) as taxAmt,b.stockId
+	            from scminvmovebillentry as b,scminvmovebill c
+	        where c.wtId = b.wtId and c.wtId = #{wtId}
+	        group by c.outOrgUnitNo, c.outCstOrgUnitNo, b.itemId, b.lot, b.unit, b.stockId
+	</select>
+	<select id="scminvmovebillentry.selectCancelEffectRow" resultType="ScmInvPurInWarehsBillEntry2" parameterType="Map"> 
+		select c.inOrgUnitNo, c.inCstOrgUnitNo, b.itemId, b.lot, b.unit, b.price, b.taxRate, b.taxPrice, c.bizDate, 
+				SUM(b.qty) as qty, SUM(b.amt) as amt, SUM(b.pieQty) as pieQty, SUM(b.baseQty) as baseQty, SUM(b.taxAmt) as taxAmt
+				from scminvmovebillentry as b,scminvmovebill c
+			where c.wtId = b.wtId and c.wtId = #{wtId}
+			group by c.inOrgUnitNo, c.inCstOrgUnitNo, b.itemId, b.lot, b.unit
+	</select>
+	<insert id="scminvmovebillentry.add" parameterType="ScmInvMoveBillEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvmovebillentry (
+        wtId,
+        lineId,
+        itemId,
+        unit,
+        pieUnit,
+        lot,
+        qty,
+        pieQty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        baseUnit,
+        baseQty,
+        expDate,
+        offset,
+        sourceBillDtlId,
+        stockId,
+        invDate,
+        orgSourceId,
+        orgSourceVendorId,
+        remarks,
+        costUseTypeOutId,
+        costUseTypeInId        )
+		VALUES (
+        #{wtId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{lot},
+        #{qty},
+        #{pieQty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{baseUnit},
+        #{baseQty},
+        #{expDate},
+        #{offset},
+        #{sourceBillDtlId},
+        #{stockId},
+        #{invDate},
+        #{orgSourceId},
+        #{orgSourceVendorId},
+        #{remarks},
+        #{costUseTypeOutId},
+        #{costUseTypeInId}        )
+	</insert>
+ 
+	<update id="scminvmovebillentry.update" parameterType="ScmInvMoveBillEntry">
+		UPDATE scminvmovebillentry set
+        wtId=#{wtId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        lot=#{lot},
+        qty=#{qty},
+        pieQty=#{pieQty},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        baseUnit=#{baseUnit},
+        baseQty=#{baseQty},
+        expDate=#{expDate},
+        offset=#{offset},
+        sourceBillDtlId=#{sourceBillDtlId},
+        stockId=#{stockId},
+        invDate=#{invDate},
+        orgSourceId=#{orgSourceId},
+        orgSourceVendorId=#{orgSourceVendorId},
+        remarks=#{remarks},
+        costUseTypeOutId=#{costUseTypeOutId},
+        costUseTypeInId=#{costUseTypeInId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvmovebillentry.delete" parameterType="String">
+		DELETE FROM scminvmovebillentry WHERE id IN (${value})
+	</delete> 
+    <select id="scminvmovebillentry.selectMoveInSumPage" resultType="ScmInvMoveBillEntry2" parameterType="Map"> 
+		SELECT ScmInvMoveBill.finOrgUnitNo,ScmInvMoveBill.inCstOrgUnitNo,ScmMaterialGroup.className as groupName,ScmMaterialGroup.classCode as groupCode,ScmMaterialGroup.longNo as longNo,
+		ScmMaterialGroup.id as groupId,ScmInvMoveBillEntry.costUseTypeInId,sum(ScmInvMoveBillEntry.amt) as amt,
+		sum(ScmInvMoveBillEntry.taxAmt) as taxAmt
+		FROM ScmInvMoveBill,ScmInvMoveBillEntry,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE  ScmInvMoveBill.wtId=ScmInvMoveBillEntry.wtId  And ScmInvMoveBillEntry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id and ScmInvMoveBill.controlUnitNo=#{controlUnitNo}
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		GROUP BY ScmInvMoveBill.finOrgUnitNo,ScmInvMoveBill.inCstOrgUnitNo,ScmMaterialGroup.id,ScmInvMoveBillEntry.costUseTypeInId
+		ORDER BY ScmInvMoveBill.finOrgUnitNo,ScmInvMoveBill.inCstOrgUnitNo,ScmMaterialGroup.classCode,ScmInvMoveBillEntry.costUseTypeInId
+	</select>
+	<select id="scminvmovebillentry.selectMoveOutSumPage" resultType="ScmInvMoveBillEntry2" parameterType="Map"> 
+		SELECT ScmInvMoveBill.finOrgUnitNo,ScmInvMoveBill.outCstOrgUnitNo,ScmMaterialGroup.className as groupName,ScmMaterialGroup.classCode as groupCode,ScmMaterialGroup.longNo as longNo,
+		ScmMaterialGroup.id as groupId,ScmInvMoveBillEntry.costUseTypeOutId,sum(ScmInvMoveBillEntry.amt) as amt,
+		sum(ScmInvMoveBillEntry.taxAmt) as taxAmt
+		FROM ScmInvMoveBill,ScmInvMoveBillEntry,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmInvMoveBill.wtId=ScmInvMoveBillEntry.wtId  And ScmInvMoveBillEntry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id and ScmInvMoveBill.controlUnitNo=#{controlUnitNo}
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		GROUP BY ScmInvMoveBill.finOrgUnitNo,ScmInvMoveBill.outCstOrgUnitNo,ScmMaterialGroup.id,ScmInvMoveBillEntry.costUseTypeOutId
+		ORDER BY ScmInvMoveBill.finOrgUnitNo,ScmInvMoveBill.outCstOrgUnitNo,ScmMaterialGroup.classCode,ScmInvMoveBillEntry.costUseTypeOutId
+	</select>  
+</mapper>
+ 

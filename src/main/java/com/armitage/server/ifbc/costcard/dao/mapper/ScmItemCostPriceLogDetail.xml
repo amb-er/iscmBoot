@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmitemcostpricelogdetail">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmitemcostpricelogdetail.findAll" resultType="ScmItemCostPriceLogDetail" >
+	    SELECT * FROM ScmItemCostPriceLogDetail WHERE  1=1  
+	</select>
+ 
+	<select id="scmitemcostpricelogdetail.findAllPage" resultType="ScmItemCostPriceLogDetail" parameterType="Map"> 
+		SELECT * FROM ScmItemCostPriceLogDetail WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmitemcostpricelogdetail.selectById" resultType="ScmItemCostPriceLogDetail" parameterType="Long">
+		SELECT * FROM ScmItemCostPriceLogDetail WHERE id = #{value}
+	</select> 
+	<select id="scmitemcostpricelogdetail.getItemPrice" resultType="ScmItemCostPriceLogDetail2" parameterType="Long">
+		Select T1.itemId,T3.itemNo,T3.itemName,Case When T2.invUnitId is null Then T4.unitId Else T2.invUnitId end as invUnitId,
+			IFNULL(T2.invPrice,0) as invPrice,T6.convrate,T1.cstUnitId,IFNULL(round(T2.invPrice/T6.convrate,6),0) as price,T2.priceSourceBillType,T2.priceSourceBillId,T2.billNo FROM
+		(SELECT Distinct A.itemId,A.cstUnit as cstUnitId FROM ScmCostCardDetailHistory A,ScmMaterialGroupDetail B,ScmMaterialGroupStandard C
+		 where (A.orgUnitNo=#{controlUnitNo} or A.orgUnitNo=#{orgUnitNo})
+				AND A.beginDate &lt;=#{endDate} and A.endDate &gt;=#{begDate}
+		And A.itemId=B.itemId And B.standardId=C.id And C.standardType='1' 		
+		<if test="classId!=null and classId!=''">
+			AND B.classId in(${classId})
+		</if>
+		<if test="itemId!=null and itemId!=''">
+			And A.itemId=#{itemId}
+		</if>
+				) T1 LEFT JOIN
+		(Select billNo,priceSourceBillId,priceSourceBillType,itemId,taxPrice as invPrice,invUnitId FROM
+		(Select * from
+		(Select A.wrNo as billNo,A.wrId as priceSourceBillId,'WR' as priceSourceBillType,A.bizDate,A.createDate,B.itemId,B.taxPrice,B.unit as invUnitId
+		From scminvpurinwarehsbill A,scminvpurinwarehsbillentry B,ScmMaterialGroupDetail C,ScmMaterialGroupStandard D Where A.wrId=B.wrId 
+		And B.itemId=C.itemId And C.standardId=D.id And D.standardType='1' And B.useOrgUnitNo in 
+				<foreach item="item" index="index" collection="useOrgList"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach> 
+		And A.bizDate &gt;=DATE_ADD(#{begDate},INTERVAL -${days} DAY) and A.status='E'
+		<if test="classId!=null and classId!=''">
+			AND C.classId in(${classId})
+		</if>
+		<if test="itemId!=null and itemId!=''">
+			And B.itemId=#{itemId}
+		</if>
+		UNION
+		Select A.otNo as billNo,A.otId as priceSourceBillId,'WI' as priceSourceBillType,A.bizDate,A.createDate,B.itemId,B.taxPrice,B.unit as invUnitId
+		From ScmInvMaterialReqBill A,ScmInvMaterialReqBillEntry B,ScmMaterialGroupDetail C,ScmMaterialGroupStandard D Where A.otId=B.otId 
+		And B.itemId=C.itemId And C.standardId=D.id And D.standardType='1' And A.useOrgUnitNo in 
+				<foreach item="item" index="index" collection="useOrgList"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach> 
+		And A.bizDate&gt;=DATE_ADD(#{begDate},INTERVAL -${days} DAY) and A.status='E'
+		<if test="classId!=null and classId!=''">
+			AND C.classId in(${classId})
+		</if>
+		<if test="itemId!=null and itemId!=''">
+			And B.itemId=#{itemId}
+		</if>
+		) T1
+		ORDER BY bizDate Desc,createDate Desc limit ${maxInt}) T
+		GROUP BY itemId) T2 ON T1.itemId=T2.itemId
+		LEFT JOIN ScmMaterial T3 ON T1.itemId=T3.id
+		LEFT JOIN scmmaterialinventory T4 ON T1.itemId=T4.itemId and T4.orgUnitNo=#{controlUnitNo},
+		ScmMaterialUnitRelation T6	Where T1.itemId=T6.itemId 
+		and Case When T2.invUnitId is null Then T4.unitId Else T2.invUnitId end=T6.targetUnitId
+	</select>
+	<select id="scmitemcostpricelogdetail.getItemPriceByInvStock" resultType="ScmItemCostPriceLogDetail2" parameterType="Map">
+		SELECT T1.itemId,T3.itemNo,T3.itemName,Case When T2.invUnitId is null Then T4.unitId Else T2.invUnitId end as invUnitId,
+		IFNULL(T2.invPrice,0) as invPrice,T6.convrate,T1.cstUnitId,IFNULL(round(T2.invPrice/T6.convrate,6),0)
+		as price,T2.priceSourceBillType,T2.priceSourceBillId,T2.billNo FROM
+		(SELECT Distinct A.itemId,A.cstUnit as cstUnitId FROM
+		ScmCostCardDetailHistory A,ScmMaterialGroupDetail
+		B,ScmMaterialGroupStandard C
+		where (A.orgUnitNo=#{controlUnitNo} or A.orgUnitNo=#{orgUnitNo})
+		AND A.beginDate &lt;=#{endDate} and A.endDate &gt;=#{begDate}
+		And A.itemId=B.itemId And B.standardId=C.id And C.standardType='1'
+		 <if test="classId!=null and classId!=''">
+			AND B.classId in(${classId})
+		</if>
+		<if test="itemId!=null and itemId!=''">
+			And A.itemId=#{itemId}
+		</if>) T1
+		LEFT JOIN (
+		SELECT null as billNo,0 as priceSourceBillId,'STOCK' as
+		priceSourceBillType,scminvstock.invDate as bizDate,null as
+		createDate,scminvstock.itemId,AVG(scminvstock.taxPrice) as
+		invPrice,scminvstock.unit as invUnitId FROM scminvstock, ScmMaterialGroupDetail
+		B,ScmMaterialGroupStandard C where scminvstock.itemId=B.itemId And B.standardId=C.id And C.standardType='1' and
+		<if test="classId!=null and classId!=''">
+			 B.classId in(${classId}) AND
+		</if>
+		<if test="itemId!=null and itemId!=''">
+			 scminvstock.itemId=#{itemId} And
+		</if>
+		costCenter=1 and invDate &gt;=DATE_ADD(#{begDate},INTERVAL -${days} DAY)  and
+		scminvstock.orgUnitNo in
+			<foreach item="item" index="index" collection="useOrgList"
+				open="(" separator="," close=")">
+				#{item}
+			</foreach>  GROUP BY
+		scminvstock.itemId,scminvstock.unit
+		)T2 ON T1.itemId=T2.itemId
+		LEFT JOIN ScmMaterial T3 ON T1.itemId=T3.id
+		LEFT JOIN scmmaterialinventory T4 ON T1.itemId=T4.itemId and T4.orgUnitNo=#{controlUnitNo},ScmMaterialUnitRelation T6
+		Where T1.itemId=T6.itemId
+		and Case When T2.invUnitId is null Then T4.unitId Else T2.invUnitId end=T6.targetUnitId
+	</select>
+	<insert id="scmitemcostpricelogdetail.batchAddItemPrice" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmItemCostPriceLogDetail (logId,itemId,invUnitId,invPrice,convrate,cstUnitId,price,priceSourceBillType,priceSourceBillId,billNo)
+		Select #{logId} as logId,T2.itemId,T2.invUnitId,T2.invPrice,T3.convrate,T1.cstUnitId,round(T2.invPrice/T3.convrate,6) as price,
+		T2.priceSourceBillType,T2.priceSourceBillId,T2.billNo FROM
+		(SELECT itemId,cstUnit as cstUnitId FROM scmcostcarddetailhistory where (orgUnitNo=#{controlUnitNo} or orgUnitNo=#{orgUnitNo})
+		AND beginDate &lt;=#{accDate} and endDate &gt;=#{accDate} GROUP BY itemId,cstUnit) T1,
+		(Select T4.billNo,T4.priceSourceBillId,T4.priceSourceBillType,T4.itemId,T4.taxPrice as invPrice,T4.invUnitId FROM
+		(Select max(createDate) as createDate,itemId from
+		(Select A.wrNo as billNo,A.wrId as priceSourceBillId,'WR' as priceSourceBillType,A.bizDate,A.createDate,B.itemId,B.taxPrice,B.unit as invUnitId
+		From scminvpurinwarehsbill A,scminvpurinwarehsbillentry B Where A.wrId=B.wrId And B.useOrgUnitNo in 
+				<foreach item="item" index="index" collection="useOrgList"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach> 
+		And A.orgUnitNo=#{orgUnitNo} And A.bizDate &gt;=DATE_ADD(#{accDate},INTERVAL -${days} DAY) 
+		UNION
+		Select A.otNo as billNo,A.otId as priceSourceBillId,'WI' as priceSourceBillType,A.bizDate,A.createDate,B.itemId,B.taxPrice,B.unit as invUnitId
+		From ScmInvMaterialReqBill A,ScmInvMaterialReqBillEntry B Where A.otId=B.otId And A.useOrgUnitNo in 
+				<foreach item="item" index="index" collection="useOrgList"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach> 
+		And A.orgUnitNo=#{orgUnitNo} And A.bizDate>=DATE_ADD(#{accDate},INTERVAL -${days} DAY) 
+		) T1
+		GROUP BY itemId
+		ORDER BY bizDate Desc,createDate Desc) T,(Select A.wrNo as billNo,A.wrId as priceSourceBillId,'WR' as priceSourceBillType,A.bizDate,A.createDate,B.itemId,B.taxPrice,B.unit as invUnitId
+		From scminvpurinwarehsbill A,scminvpurinwarehsbillentry B Where A.wrId=B.wrId And B.useOrgUnitNo in 
+				<foreach item="item" index="index" collection="useOrgList"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach> 
+		And A.orgUnitNo=#{orgUnitNo} And A.bizDate &gt;=DATE_ADD(#{accDate},INTERVAL -${days} DAY) 
+		UNION
+		Select A.otNo as billNo,A.otId as priceSourceBillId,'WI' as priceSourceBillType,A.bizDate,A.createDate,B.itemId,B.taxPrice,B.unit as invUnitId
+		From ScmInvMaterialReqBill A,ScmInvMaterialReqBillEntry B Where A.otId=B.otId And A.useOrgUnitNo in 
+				<foreach item="item" index="index" collection="useOrgList"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach> 
+		And A.orgUnitNo=#{orgUnitNo} And A.bizDate>=DATE_ADD(#{accDate},INTERVAL -${days} DAY) 
+		) T4
+		where T.createDate=T4.createDate and T.itemId=T4.itemId) T2,ScmMaterialUnitRelation T3
+		Where T1.itemId=T2.itemId and T2.itemId=T3.itemId and T2.invUnitId=T3.targetUnitId
+	</insert>
+  	<insert id="scmitemcostpricelogdetail.batchAdd" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmItemCostPriceLogDetail (logId,itemId,invUnitId,invPrice,convrate,cstUnitId,price,priceSourceBillType,priceSourceBillId,billNo)
+		VALUES
+		<foreach item="scmItemCostPriceLogDetail" index="index" collection="scmItemCostPriceLogDetailList" separator=",">
+			(#{scmItemCostPriceLogDetail.logId},
+	        #{scmItemCostPriceLogDetail.itemId},
+	        #{scmItemCostPriceLogDetail.invUnitId},
+	        #{scmItemCostPriceLogDetail.invPrice},
+	        #{scmItemCostPriceLogDetail.convrate},
+	        #{scmItemCostPriceLogDetail.cstUnitId},
+	        #{scmItemCostPriceLogDetail.price},
+	        #{scmItemCostPriceLogDetail.priceSourceBillType},
+	        #{scmItemCostPriceLogDetail.priceSourceBillId},
+	        #{scmItemCostPriceLogDetail.billNo})
+		</foreach>
+		ON DUPLICATE KEY UPDATE invPrice=VALUES(invPrice),price=VALUES(price),billNo=VALUES(billNo)
+  	</insert>
+	<insert id="scmitemcostpricelogdetail.add" parameterType="ScmItemCostPriceLogDetail"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmItemCostPriceLogDetail (
+        logId,
+        itemId,
+        invUnitId,
+        invPrice,
+        convrate,
+        cstUnitId,
+        price,
+        priceSourceBillType,
+        priceSourceBillId,
+        billNo        )
+		VALUES (
+        #{logId},
+        #{itemId},
+        #{invUnitId},
+        #{invPrice},
+        #{convrate},
+        #{cstUnitId},
+        #{price},
+        #{priceSourceBillType},
+        #{priceSourceBillId},
+        #{billNo}        )
+	</insert>
+ 
+	<update id="scmitemcostpricelogdetail.update" parameterType="ScmItemCostPriceLogDetail">
+		UPDATE ScmItemCostPriceLogDetail set
+        logId=#{logId},
+        itemId=#{itemId},
+        invUnitId=#{invUnitId},
+        invPrice=#{invPrice},
+        convrate=#{convrate},
+        cstUnitId=#{cstUnitId},
+        price=#{price},
+        priceSourceBillType=#{priceSourceBillType},
+        priceSourceBillId=#{priceSourceBillId},
+        billNo=#{billNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmitemcostpricelogdetail.delete" parameterType="String">
+		DELETE FROM ScmItemCostPriceLogDetail WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

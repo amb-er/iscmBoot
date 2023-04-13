@@ -1,0 +1,148 @@
+﻿<%@ CodeTemplate Language="C#" TargetLanguage="Java" Description="Generates a db<->class mapping file for use with NHibnate." %>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" Category="Context" Description="Table that the mapping file is based on" %>
+<%@ Property Name="package" Type="System.String" Default="com.armitage.model" Category="Object" Description="The class namespace that the mapping file should use" %>
+<%@ Property Name="baseClass" Type="System.String"  Category="Object" Description="??" %>
+
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Text.RegularExpressions" %> 
+ 
+<!-- #include file="common.inc" -->
+package <%=package%>;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Date;
+import javax.xml.bind.annotation.XmlRootElement;
+import com.armitage.server.common.base.model.BaseModel;
+import com.armitage.server.common.base.model.RelationModel;
+ 
+ <%
+          ColumnSchema pkeyProp = SourceTable.PrimaryKey.MemberColumns[0];
+     %> 
+<%
+	String className = baseClass;
+%> 
+@XmlRootElement(name = "<%=CamelCase(className)%>")  
+public class <%=className%> extends BaseModel  {
+	 
+      <%
+        foreach(ColumnSchema col in SourceTable.Columns){
+    %>
+    public static final String FN_<%=col.Name.ToUpper()%> ="<%=col.Name%>";
+    <% }%>	
+    
+	 <%foreach(ColumnSchema col in SourceTable.Columns){%> 
+    private <%=JavaType(col)%> <%=CamelCase(col.Name)%>;
+	<%}%>
+
+   <%foreach(ColumnSchema col in SourceTable.Columns){%> 
+    public <%=JavaType(col)%> <%=Getter(JavaType(col),col.Name)%>() {
+        return <%=CamelCase(col.Name)%>;
+    }
+
+    public void set<%=PascalCase(col.Name)%>(<%=JavaType(col)%> val) {
+        this.<%=CamelCase(col.Name)%> = val;
+    }
+<%}%>	
+
+    public <%=className%>(boolean defaultValue){
+       if(defaultValue){
+	 <%foreach(ColumnSchema col in SourceTable.Columns){ 
+    if (col.ExtendedProperties["CS_Default"].Value != null && col.ExtendedProperties["CS_Default"].Value != ""){
+       string value = col.ExtendedProperties["CS_Default"].Value.ToString().Replace("(","").Replace(")","");
+        if(JavaType(col) =="boolean"){
+            if(value=="1"){
+                value = "true";
+            }else{
+                value = "false";
+            }    
+        }else  if(JavaType(col) =="String"){
+            value = "\""+value+"\"";
+        }
+        
+        %>
+        <%=CamelCase(col.Name)%> = <%=value%>;
+    <%
+        }
+	 }%>
+       }
+    }
+  	public <%=className%>() {
+
+	}
+	public String[] getFieldNames(){
+    	return new String[]{
+    <%foreach(ColumnSchema col in SourceTable.Columns){%>
+            FN_<%=col.Name.ToUpper()%>,
+     <%}%>
+        };
+    }	
+    
+
+	public Map<String, RelationModel> getForeignMap() {
+        
+        /*
+        DEMO:
+		HashMap<String, RelationModel> map = new HashMap<String, RelationModel>();
+		map.put(FN_STATUS, new RelationModel(Code.class, Code.FN_CODE)
+				.addFilter(Code.FN_CATEGORY, "UserStatus"));
+		return map;
+        */
+        return null;
+	}
+    public List<String[]> getUniqueKeys() {
+		List<String[]> list = new ArrayList<String[]>();
+		//list.add(new String[] { FN_CODE, FN_CATEGORY });
+		return list;
+	}
+	 
+	public String[] getRequiredFields() {
+	    /*DEMO:
+		return new String[] {FN_CODE };
+        */
+		return null;
+	}
+ 
+	public Map<String, List<RelationModel>> getReferenceMap() {
+		
+        /*
+        DEMO:
+        HashMap<String, List<RelationModel>> map = new HashMap<String, List<RelationModel>>();
+
+		List<RelationModel> list = new ArrayList<RelationModel>();
+		list.add(new RelationModel(Code.class, Code.FN_CODE).addFilter(
+				Code.FN_CATEGORY, "UserStatus"));
+
+		map.put(this.FN_STATUS, list);
+		return map;*/
+        
+        return null;
+	}
+    public Map<String, Integer> getDataLengthMap() {
+        
+		HashMap<String, Integer> map = new HashMap<String, Integer>();  
+        <%foreach(ColumnSchema col in SourceTable.Columns){  
+          if(JavaType(col) =="String"){
+        %>
+        map.put(FN_<%=col.Name.ToUpper()%>, <%=col.Size%>);
+       <% } 
+       }%> 
+		return map; 
+	}
+     public String getPkKey() {
+		 
+		return FN_<%=CamelCase(pkeyProp.Name).ToUpper()%>;
+	}
+ 
+	public long getPK() {
+		 
+		return <%=CamelCase(pkeyProp.Name)%>;
+	}
+
+
+}

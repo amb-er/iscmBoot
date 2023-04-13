@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvsupplyrule">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvsupplyrule.findAll" resultType="Scminvsupplyrule" >
+	    SELECT * FROM scminvsupplyrule WHERE  1=1  
+	</select>
+ 
+	<select id="scminvsupplyrule.findAllPage" resultType="Scminvsupplyrule" parameterType="Map"> 
+		SELECT * FROM scminvsupplyrule WHERE  1=1 ORDER BY id DESC 
+	</select> 
+	<select id="scminvsupplyrule.selectById" resultType="Scminvsupplyrule" parameterType="Long">
+		SELECT * FROM scminvsupplyrule WHERE id = #{value}
+	</select> 
+	<insert id="scminvsupplyrule.add" parameterType="Scminvsupplyrule"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvsupplyrule (
+        orgUnitNo,
+        ruleName,
+        wareHouseId,
+        reqOrgUnitNo,
+        includePr,
+        includePo,
+        includeWr,
+        includeWt,
+        includeOr,
+        includeSo,
+        includeRo,
+        includeWo,
+        includeOo,
+        bizType,
+        purOrgUnitNo,
+        creator,
+        createDate,
+        createOrgUnitNo,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        workFlowNo,
+        stepNo,
+        checker,
+        checkDate,
+        status,
+        remarks,
+        execTime,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{ruleName},
+        #{wareHouseId},
+        #{reqOrgUnitNo},
+        #{includePr},
+        #{includePo},
+        #{includeWr},
+        #{includeWt},
+        #{includeOr},
+        #{includeSo},
+        #{includeRo},
+        #{includeWo},
+        #{includeOo},
+        #{bizType},
+        #{purOrgUnitNo},
+        #{creator},
+        #{createDate},
+        #{createOrgUnitNo},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{workFlowNo},
+        #{stepNo},
+        #{checker},
+        #{checkDate},
+        #{status},
+        #{remarks},
+        #{execTime},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvsupplyrule.update" parameterType="Scminvsupplyrule">
+		UPDATE scminvsupplyrule set
+        orgUnitNo=#{orgUnitNo},
+        ruleName=#{ruleName},
+        wareHouseId=#{wareHouseId},
+        reqOrgUnitNo=#{reqOrgUnitNo},
+        includePr=#{includePr},
+        includePo=#{includePo},
+        includeWr=#{includeWr},
+        includeWt=#{includeWt},
+        includeOr=#{includeOr},
+        includeSo=#{includeSo},
+        includeRo=#{includeRo},
+        includeWo=#{includeWo},
+        includeOo=#{includeOo},
+        bizType=#{bizType},
+        purOrgUnitNo=#{purOrgUnitNo},
+        creator=#{creator},
+        createDate=#{createDate},
+        createOrgUnitNo=#{createOrgUnitNo},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        status=#{status},
+        remarks=#{remarks},
+        execTime=#{execTime},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvsupplyrule.delete" parameterType="String">
+		DELETE FROM scminvsupplyrule WHERE id IN (${value})
+	</delete> 
+	
+	<select id="scminvsupplyrule.selectAllBillQtyByItemIds" resultType="ScmMaterial2" parameterType="Map">
+	SELECT
+  		ScmMaterial.id,
+		ScmMaterial.itemName,
+		scminvsupplyruleentry.lineId,
+  		ScmMaterial.baseUnitId,ScmMaterial.status,C.className,ScmMaterial.itemNo,ScmMaterial.spec,ScmMaterial.pieUnitId,
+  		C.groupId,
+		D.prQty,E.poQty,G.invpurQty,H.invmoveQty,J.invotherQty,Q.pvQty,
+		K.invsaleOutQty,L.invmaterialOutQty,M.invmoveOutQty,N.invotherOutQty,O.invreturnQty,F.qty AS stockQty,S.invpurOutQty,
+		Case WHEN ScmMaterialInventory.maxQty is null then ScmMaterial.maxQty ELSE ScmMaterialInventory.maxQty END AS maxQty,
+  		IFNULL(ScmMaterialPurchase.supplyCycle,ScmMaterial.supplyCycle) as purSupplyCycle,
+  		IFNULL(ScmMaterialPurchase.buyerId,ScmMaterial.buyerId) as buyerId, 
+  		Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit Else ScmMaterialPurchase.purUnit end as purUnitId,		
+  		Case WHEN ScmMaterialPurchase.defaultRate is null Then ScmMaterial.defaultRate Else ScmMaterialPurchase.defaultRate end as purTaxRate,
+  		Case WHEN ScmMaterialInventory.unitId is null Then ScmMaterial.unitId Else ScmMaterialInventory.unitId end as unitId,		
+  		Case WHEN ScmMaterialPurchase.receiveTopRatio is null Then ScmMaterial.receiveTopRatio else ScmMaterialPurchase.receiveTopRatio end as receiveTopRatio
+        FROM 
+			(Select
+				ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialPurchase.purUnit,
+				ScmMaterialPurchase.defaultRate,ScmMaterialInventory.unitId,ScmMaterial.status,ScmMaterial.pieUnitId,	
+				ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialInventory.maxQty,
+				Case WHEN ScmMaterialPurchase.status is null Then 'I' Else ScmMaterialPurchase.status End as purStatus,
+				ScmMaterialPurchase.supplyCycle,ScmMaterialPurchase.buyerId,
+				Case WHEN ScmMaterialInventory.status is null Then 'I' Else ScmMaterialInventory.status End as invStatus,
+				IFNULL(ScmMaterialPurchase.receiveTopRatio,0) as receiveTopRatio
+				from ScmMaterial
+				LEFT JOIN ScmMaterialPurchase On ScmMaterial.id=ScmMaterialPurchase.itemId and ScmMaterialPurchase.orgUnitNo=#{controlUnitNo} And ScmMaterial.status='A'
+				LEFT JOIN ScmMaterialInventory On ScmMaterial.id=ScmMaterialInventory.itemId and ScmMaterialInventory.orgUnitNo=#{controlUnitNo} And ScmMaterial.status='A') 
+			ScmMaterial
+			LEFT JOIN ScmMaterialPurchase ON ScmMaterial.id=ScmMaterialPurchase.itemId and ScmMaterialPurchase.orgUnitNo in (#{purOrgUnitNo}) and ScmMaterialPurchase.status='A'
+			LEFT JOIN ScmMaterialInventory ON ScmMaterial.id=ScmMaterialInventory.itemId and ScmMaterialInventory.orgUnitNo in (#{invOrgUnitNo}) and ScmMaterialInventory.status='A'
+				LEFT JOIN (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId,ScmMaterialGroup.className
+						FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+						WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+							AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+							AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId 
+						and ScmMaterialGroupStandard.standardType='1'
+                      and ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id) 
+						C On C.id=ScmMaterial.id
+			LEFT JOIN (SELECT scmpurrequireentry.rowStatus,scmpurrequire.receiveWareHouseId,SUM(scmpurrequireentry.qty - scmpurrequireentry.orderQty) AS prQty,scmpurrequireentry.itemId
+						FROM scmpurrequire,scmpurrequireentry 
+						WHERE scmpurrequire.id = scmpurrequireentry.prId AND scmpurrequireentry.recStorageOrgUnitNo = '${invOrgUnitNo}' AND scmpurrequireentry.wareHouseId > 0
+								AND scmpurrequireentry.rowStatus IN ('D','P','A','E')
+						GROUP BY scmpurrequireentry.itemId)
+						D ON scmmaterial.id = D.itemId
+			LEFT JOIN (SELECT scmpurorderentry.rowStatus,scmpurorderentry.receiveWareHouseId,SUM(CASE WHEN scmpurorderentry.receiveQty is NULL THEN scmpurorderentry.qty ELSE scmpurorderentry.qty - scmpurorderentry.receiveQty END) AS poQty,
+							scmpurorderentry.itemId  
+						FROM scmpurorder,scmpurorderentry 
+						WHERE scmpurorder.id = scmpurorderentry.poId AND scmpurorderentry.reqStorageOrgUnitNo = '${invOrgUnitNo}' AND scmpurorderentry.receiveWareHouseId > 0
+								AND scmpurorderentry.rowStatus IN ('D','P','A','E','I')
+						GROUP BY scmpurorderentry.itemId)
+						E ON scmmaterial.id = E.itemId
+			LEFT JOIN(SELECT scmpurreceiveentry.rowStatus,scmpurreceiveentry.wareHouseId,
+							SUM(CASE WHEN scmpurreceive.unified = 0 THEN scmpurreceiveentry.invQty ELSE scmpurreceiveentry.qty END) AS pvQty,
+											scmpurreceiveentry.itemId 
+						FROM scmpurreceive,scmpurreceiveentry 
+						WHERE scmpurreceive.id = scmpurreceiveentry.pvId 
+								AND scmpurreceiveentry.invOrgUnitNo = '${invOrgUnitNo}' 
+								AND scmpurreceiveentry.wareHouseId > 0
+								AND scmpurreceiveentry.rowStatus IN ('D','P','A','E','I')
+						GROUP BY scmpurreceiveentry.itemId)
+						Q ON scmmaterial.id = Q.itemId
+			LEFT JOIN (SELECT scminvpurinwarehsbill.`status`,SUM(scminvpurinwarehsbillentry.qty) AS invpurQty,scminvpurinwarehsbillentry.itemId  
+						FROM scminvpurinwarehsbill,scminvpurinwarehsbillentry
+						WHERE scminvpurinwarehsbill.wrId = scminvpurinwarehsbillentry.wrId AND scminvpurinwarehsbill.orgUnitNo = '${invOrgUnitNo}' 
+								AND scminvpurinwarehsbill.`status` IN ('D','P','A','I')
+								AND scminvpurinwarehsbillentry.wareHouseId > 0
+								AND scminvpurinwarehsbill.bizType IN ('1','3')
+						GROUP BY scminvpurinwarehsbillentry.itemId)
+						G ON scmmaterial.id = G.itemId
+			LEFT JOIN (SELECT scminvpurinwarehsbill.`status`,SUM(scminvpurinwarehsbillentry.qty) AS invpurOutQty,scminvpurinwarehsbillentry.itemId  
+						FROM scminvpurinwarehsbill,scminvpurinwarehsbillentry
+						WHERE scminvpurinwarehsbill.wrId = scminvpurinwarehsbillentry.wrId AND scminvpurinwarehsbill.orgUnitNo = '${invOrgUnitNo}' 
+								AND scminvpurinwarehsbill.`status` IN ('D','P','A','I')
+								AND scminvpurinwarehsbillentry.wareHouseId > 0
+								AND scminvpurinwarehsbill.bizType IN ('6','8')
+						GROUP BY scminvpurinwarehsbillentry.itemId)
+						S ON scmmaterial.id = S.itemId
+			LEFT JOIN (SELECT scminvmoveinwarehsbill.`status`,SUM(scminvmoveinwarehsbillentry.qty) AS invmoveQty,scminvmoveinwarehsbillentry.itemId  
+						FROM scminvmoveinwarehsbill,scminvmoveinwarehsbillentry
+						WHERE scminvmoveinwarehsbill.wrId = scminvmoveinwarehsbillentry.wrId AND scminvmoveinwarehsbill.orgUnitNo = '${invOrgUnitNo}' 
+								AND scminvmoveinwarehsbill.`status` IN ('D','P','A','I')
+								AND scminvmoveinwarehsbillentry.wareHouseId > 0
+						GROUP BY scminvmoveinwarehsbillentry.itemId)
+						H ON scmmaterial.id = H.itemId
+			LEFT JOIN (SELECT scminvotherinwarehsbill.`status`,SUM(scminvotherinwarehsbillentry.qty) AS invotherQty,scminvotherinwarehsbillentry.itemId  
+						FROM scminvotherinwarehsbill,scminvotherinwarehsbillentry
+						WHERE scminvotherinwarehsbill.wrId = scminvotherinwarehsbillentry.wrId AND scminvotherinwarehsbill.orgUnitNo = '${invOrgUnitNo}' 
+								AND scminvotherinwarehsbill.`status` IN ('D','P','A','I')
+								AND scminvotherinwarehsbillentry.wareHouseId > 0
+						GROUP BY scminvotherinwarehsbillentry.itemId)
+						J ON scmmaterial.id = J.itemId
+			LEFT JOIN (SELECT ScmInvSaleIssueBill.`status`,SUM(scminvsaleissuebillentry.qty) AS invsaleOutQty,scminvsaleissuebillentry.itemId  
+						FROM ScmInvSaleIssueBill,scminvsaleissuebillentry
+						WHERE ScmInvSaleIssueBill.otId = scminvsaleissuebillentry.otId AND ScmInvSaleIssueBill.orgUnitNo = '${invOrgUnitNo}' 
+								AND ScmInvSaleIssueBill.`status` IN ('D','P','A','I')
+								AND scminvsaleissuebillentry.wareHouseId > 0
+						GROUP BY scminvsaleissuebillentry.itemId)
+						K ON scmmaterial.id = K.itemId
+			LEFT JOIN (SELECT scminvmaterialreqbill.`status`,SUM(scminvmaterialreqbillentry.qty) AS invmaterialOutQty,scminvmaterialreqbillentry.itemId  
+						FROM scminvmaterialreqbill,scminvmaterialreqbillentry
+						WHERE scminvmaterialreqbill.otId = scminvmaterialreqbillentry.otId AND scminvmaterialreqbill.orgUnitNo ='${invOrgUnitNo}' 
+								AND scminvmaterialreqbill.`status` IN ('D','P','A','I')
+						GROUP BY scminvmaterialreqbillentry.itemId)
+						L ON scmmaterial.id = L.itemId
+			LEFT JOIN (SELECT scminvmoveissuebill.`status`,SUM(scminvmoveissuebillentry.qty) AS invmoveOutQty,scminvmoveissuebillentry.itemId  
+						FROM scminvmoveissuebill,scminvmoveissuebillentry
+						WHERE scminvmoveissuebill.otId = scminvmoveissuebillentry.otId AND scminvmoveissuebill.orgUnitNo = '${invOrgUnitNo}'
+								AND scminvmoveissuebill.`status` IN ('D','P','A','I')
+								AND scminvmoveissuebillentry.wareHouseId > 0
+						GROUP BY scminvmoveissuebillentry.itemId)
+						M ON scmmaterial.id = M.itemId
+			LEFT JOIN (SELECT scminvotherissuebill.`status`,SUM(scminvotherissuebillentry.qty) AS invotherOutQty,scminvotherissuebillentry.itemId  
+						FROM scminvotherissuebill,scminvotherissuebillentry
+						WHERE scminvotherissuebill.otId = scminvotherissuebillentry.otId AND scminvotherissuebill.orgUnitNo = '${invOrgUnitNo}' 
+								AND scminvotherissuebill.`status` IN ('D','P','A','I')
+								AND scminvotherissuebillentry.wareHouseId > 0
+						GROUP BY scminvotherissuebillentry.itemId)
+						N ON scmmaterial.id = N.itemId
+			LEFT JOIN (SELECT scmpurreturnsentry.rowStatus,SUM(scmpurreturnsentry.qty) AS invreturnQty,scmpurreturnsentry.itemId  
+						FROM scmpurreturns,scmpurreturnsentry
+						WHERE scmpurreturns.id = scmpurreturnsentry.rtId AND scmpurreturnsentry.invOrgUnitNo = '${invOrgUnitNo}' 
+								AND scmpurreturnsentry.rowStatus NOT IN ('C')
+								AND scmpurreturnsentry.wareHouseId > 0
+						GROUP BY scmpurreturnsentry.itemId)
+						O ON scmmaterial.id = O.itemId
+			LEFT JOIN (SELECT scminvstock.invDate,SUM(scminvstock.qty) qty,scminvstock.itemId from scminvstock 
+						where scminvstock.orgUnitNo = '${invOrgUnitNo}' and scminvstock.wareHouseId > 0 GROUP BY scminvstock.itemId)
+						F ON scmmaterial.id = F.itemId
+			LEFT JOIN scminvsupplyruleentry ON scminvsupplyruleentry.itemId = scmmaterial.id AND scminvsupplyruleentry.ruleId = #{ruleId}  			
+		WHERE Case WHEN	ScmMaterialPurchase.status is null Then ScmMaterial.purStatus Else ScmMaterialPurchase.status end='A'
+			And Case WHEN ScmMaterialInventory.status is null Then scmMaterial.invStatus Else ScmMaterialInventory.status end='A'
+			AND case WHEN ScmMaterialInventory.maxQty is null then ScmMaterial.maxQty ELSE ScmMaterialInventory.maxQty end > 0
+  			AND ScmMaterial.id in (${itemIds})
+  		ORDER BY lineId ASC		
+	</select>
+	<select id = "scminvsupplyrule.selectByOrgInv" resultType="Long" parameterType="map">
+		select id from scminvsupplyrule where orgUnitNo =#{orgUnitNo} and wareHouseId=#{wareHouseId}
+	</select>
+	<select id="scminvsupplyrule.selectByIds" resultType="String" parameterType="String">
+		SELECT GROUP_CONCAT(itemName) FROM ScmMaterial WHERE id in (${value})
+	</select>
+</mapper>
+ 

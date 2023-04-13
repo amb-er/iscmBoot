@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcostcarddetail">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmcostcarddetail.findAll" resultType="ScmCostCardDetail2" >
+	    SELECT * FROM ScmCostCardDetail WHERE  1=1  
+	</select>
+ 
+	<select id="scmcostcarddetail.findAllPage" resultType="ScmCostCardDetail2" parameterType="Map"> 
+		SELECT * FROM ScmCostCardDetail WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmcostcarddetail.selectById" resultType="ScmCostCardDetail2" parameterType="Long">
+		SELECT * FROM ScmCostCardDetail WHERE id = #{value}
+	</select> 
+	<select id="scmcostcarddetail.selectByCardId" resultType="ScmCostCardDetail2" parameterType="Map"> 
+		SELECT ScmCostCardDetail.*,ScmCostCard.resOrgUnitNo
+		FROM ScmCostCardDetail,ScmCostCard
+		WHERE ScmCostCard.id = ScmCostCardDetail.cardId and ScmCostCardDetail.cardId=#{cardId} 
+	</select>
+	<select id="scmcostcarddetail.checkItemCostPrice" resultType="ScmCostCardDetail2" parameterType="Map"> 
+		SELECT a.orgUnitNo,a.itemId,a.itemName from (SELECT ScmCostCard.orgUnitNo,
+		ScmCostCardDetail.itemId,ScmCostCardDetail.itemName
+		FROM ScmCostCard,ScmCostCardDetail
+		WHERE ScmCostCard.id=ScmCostCardDetail.cardId
+		and ScmCostCard.flag=1
+		and ScmCostCard.orgUnitNo=#{orgUnitNo}
+		) a LEFT JOIN ScmItemCostPrice on a.itemId = ScmItemCostPrice.itemId
+		and a.orgUnitNo = ScmItemCostPrice.orgUnitNo
+		and date_format(ScmItemCostPrice.priceDate,'%Y-%m-%d') = date_format(#{accDate},'%Y-%m-%d')
+		where ScmItemCostPrice.price is null
+		group by a.itemId
+	</select>
+	<insert id="scmcostcarddetail.add" parameterType="ScmCostCardDetail"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmCostCardDetail (
+        cardId,
+        type,
+        itemId,
+        itemNo,
+        itemName,
+        cstUnit,
+        qty,
+        invUnit,
+        convrate,
+        price,
+        creator,
+        checker        )
+		VALUES (
+        #{cardId},
+        #{type},
+        #{itemId},
+        #{itemNo},
+        #{itemName},
+        #{cstUnit},
+        #{qty},
+        #{invUnit},
+        #{convrate},
+        #{price},
+        #{creator},
+        #{checker}        )
+	</insert>
+ 
+	<update id="scmcostcarddetail.update" parameterType="ScmCostCardDetail">
+		UPDATE ScmCostCardDetail set
+        cardId=#{cardId},
+        type=#{type},
+        itemId=#{itemId},
+        itemNo=#{itemNo},
+        itemName=#{itemName},
+        cstUnit=#{cstUnit},
+        qty=#{qty},
+        invUnit=#{invUnit},
+        convrate=#{convrate},
+        price=#{price},
+        creator=#{creator},
+        checker=#{checker}		 WHERE id = #{id}
+	</update>
+	
+	<update id="scmcostcarddetail.replaceItemByCardIds" parameterType="Map">
+		UPDATE ScmCostCardDetail set
+		itemId=#{replaceItemId},
+        itemNo=#{replaceItemNo},
+        itemName=#{replaceItemName},
+        cstUnit=#{replaceCstUnit},
+        invUnit=#{replaceinvUnit},
+        convrate=#{replaceConvrate},
+        price=#{replacePrice}
+        WHERE itemId=#{itemId}
+        AND cardId in (${cardIds})
+	</update>
+ 
+	<delete id="scmcostcarddetail.delete" parameterType="String">
+		DELETE FROM ScmCostCardDetail WHERE id IN (${value})
+	</delete> 
+
+</mapper>

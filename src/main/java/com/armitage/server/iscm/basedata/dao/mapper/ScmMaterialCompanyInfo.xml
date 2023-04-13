@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmmaterialcompanyinfo">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmmaterialcompanyinfo.findAll" resultType="ScmMaterialCompanyInfo" >
+	    SELECT * FROM ScmMaterialCompanyInfo WHERE  1=1  
+	</select>
+ 
+	<select id="scmmaterialcompanyinfo.findAllPage" resultType="ScmMaterialCompanyInfo" parameterType="Map"> 
+		SELECT * FROM ScmMaterialCompanyInfo WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmmaterialcompanyinfo.selectById" resultType="ScmMaterialCompanyInfo" parameterType="Long">
+		SELECT * FROM ScmMaterialCompanyInfo WHERE id = #{value}
+	</select>
+	<select id="scmmaterialcompanyinfo.selectByItemIdAndOrgUnitNo" resultType="ScmMaterialCompanyInfo" parameterType="Map">
+		SELECT * FROM ScmMaterialCompanyInfo 
+		WHERE 1=1 and itemId = #{itemId}
+			and orgUnitNo = #{orgUnitNo}
+	</select> 
+	<select id="scmmaterialcompanyinfo.selectByItemStatusPage" resultType="ScmMaterialCompanyInfo" parameterType="Map">
+		SELECT * FROM ScmMaterialCompanyInfo WHERE itemId = #{itemId} and status = #{status}
+	</select> 
+	<insert id="scmmaterialcompanyinfo.add" parameterType="ScmMaterialCompanyInfo"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmMaterialCompanyInfo (
+        guId,
+        itemId,
+        orgUnitNo,
+        kaClassId,
+        price,
+        needPricing,
+        vendorId,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        freezeOrgUnit,
+        freezeTime,
+        status,
+        controlUnitNo,
+        costing,
+        type,
+        cstUnitId        )
+		VALUES (
+        #{guId},
+        #{itemId},
+        #{orgUnitNo},
+        #{kaClassId},
+        #{price},
+        #{needPricing},
+        #{vendorId},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{freezeOrgUnit},
+        #{freezeTime},
+        #{status},
+        #{controlUnitNo},
+        #{costing},
+        #{type},
+        #{cstUnitId}         )
+	</insert>
+ 
+	<update id="scmmaterialcompanyinfo.update" parameterType="ScmMaterialCompanyInfo">
+		UPDATE ScmMaterialCompanyInfo set
+        guId=#{guId},
+        itemId=#{itemId},
+        orgUnitNo=#{orgUnitNo},
+        kaClassId=#{kaClassId},
+        price=#{price},
+        needPricing=#{needPricing},
+        vendorId=#{vendorId},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        freezeOrgUnit=#{freezeOrgUnit},
+        freezeTime=#{freezeTime},
+        status=#{status},
+        controlUnitNo=#{controlUnitNo},
+        costing=#{costing},
+        type=#{type},
+        cstUnitId=#{cstUnitId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmmaterialcompanyinfo.delete" parameterType="String">
+		DELETE FROM ScmMaterialCompanyInfo WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

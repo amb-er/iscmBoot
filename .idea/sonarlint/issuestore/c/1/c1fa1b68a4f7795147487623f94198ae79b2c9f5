@@ -1,0 +1,26 @@
+
+V
+java:S1161¨":Add the "@Override" annotation above this method signature(Ş¼÷ˆüÿÿÿÿ
+Q
+java:S1161·":Add the "@Override" annotation above this method signature(‡ı»Ë
+R	java:S125”"<This block of commented-out lines of code should be removed.(—Àò´
+f
+java:S1874¨"JDon't override a deprecated method or explicitly mark it as "@Deprecated".(Ş¼÷ˆüÿÿÿÿ
+W	java:S125£"<This block of commented-out lines of code should be removed.(ëú½·üÿÿÿÿ
+p
+java:S2293œ"YReplace the type specification in this constructor call with the diamond operator ("<>").(€¿Ïø
+W	java:S125¬"<This block of commented-out lines of code should be removed.(¨¯Ïìÿÿÿÿÿ
+l
+java:S4144È"UUpdate this method so that its implementation is not identical to "getId" on line 40.(Îè–¾
+`
+java:S1874"JDon't override a deprecated method or explicitly mark it as "@Deprecated".(Ö•]
+u
+java:S2293¹"YReplace the type specification in this constructor call with the diamond operator ("<>").(Š„„ùÿÿÿÿ
+Q	java:S125"<This block of commented-out lines of code should be removed.(¯¯0
+s
+java:S1488œ"\Immediately return this expression instead of assigning it to the temporary variable "list".(€¿Ïø
+P
+java:S1161":Add the "@Override" annotation above this method signature(Ö•]
+C	java:S108y")Either remove or fill this block of code.(ê‹á—ıÿÿÿÿ
+=
+java:S1168¥"&Return an empty array instead of null.(¥¹ï

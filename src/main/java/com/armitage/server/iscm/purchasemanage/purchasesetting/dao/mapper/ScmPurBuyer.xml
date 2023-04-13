@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurbuyer">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurbuyer.findAll" resultType="ScmPurBuyer2" >
+	    SELECT * FROM scmpurbuyer WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurbuyer.findAllPage" resultType="ScmPurBuyer2" parameterType="Map"> 
+		SELECT ScmPurBuyer.* FROM (Select * from ScmPurBuyer
+		    Where (purGroupId IN (Select id From ScmPurGroup Where orgUnitNo = #{orgUnitNo})
+			or exists(Select 1 from ScmPurBuyerOrg where orgUnitNo = #{orgUnitNo} and ScmPurBuyer.id = ScmPurBuyerOrg.buyerId))) ScmPurBuyer,ScmPurGroup
+			WHERE ScmPurBuyer.purGroupId=ScmPurGroup.id 
+		ORDER BY ScmPurBuyer.id ASC 
+	</select> 
+	<select id="scmpurbuyer.selectByParentId" resultType="ScmPurBuyer2" parameterType="Long">
+		SELECT * FROM scmpurbuyer WHERE 1=1 AND scmpurbuyer.purGroupId = #{value}
+	</select> 
+	<select id="scmpurbuyer.selectById" resultType="ScmPurBuyer2" parameterType="Long">
+		SELECT * FROM scmpurbuyer WHERE id = #{value}
+	</select> 
+	<select id="scmpurbuyer.findByOrgPage" resultType="ScmPurBuyer2" parameterType="Map"> 
+		SELECT * FROM ScmPurBuyer WHERE 1=1 and (purGroupId IN (Select id From ScmPurGroup Where orgUnitNo = #{orgUnitNo})
+			or exists(Select 1 from ScmPurBuyerOrg where orgUnitNo = #{orgUnitNo} and ScmPurBuyer.id = ScmPurBuyerOrg.buyerId)) and scmpurbuyer.status='Y'
+		ORDER BY id ASC 
+	</select> 
+	<select id="scmpurbuyer.selectByCode" resultType="ScmPurBuyer2" parameterType="Map"> 
+		SELECT * FROM ScmPurBuyer WHERE buyerCode=#{buyerCode} and (purGroupId IN (Select id From ScmPurGroup Where orgUnitNo = #{orgUnitNo})
+			or exists(Select 1 from ScmPurBuyerOrg where orgUnitNo = #{orgUnitNo} and ScmPurBuyer.id = ScmPurBuyerOrg.buyerId))
+		ORDER BY id ASC LIMIT 1
+	</select>
+	
+	<insert id="scmpurbuyer.add" parameterType="scmpurbuyer"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurbuyer (
+        empId,
+        buyerCode,
+        buyerName,
+        purGroupId,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        status,
+        controlUnitNo        )
+		VALUES (
+        #{empId},
+        #{buyerCode},
+        #{buyerName},
+        #{purGroupId},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{status},
+        #{controlUnitNo}        )
+	</insert>
+	
+ 	<update id="scmpurbuyer.updategroup" parameterType="scmpurgroup">
+		UPDATE scmpurgroup set
+        orgUnitNo=#{orgUnitNo},
+        purGroupNo=#{purGroupNo},
+        purGroupName=#{purGroupName},
+        groupTel=#{groupTel},
+        groupFax=#{groupFax},
+        description=#{description},
+        parentId=#{parentId},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        status=#{status},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<update id="scmpurbuyer.update" parameterType="scmpurbuyer">
+		UPDATE scmpurbuyer set
+        empId=#{empId},
+        buyerCode=#{buyerCode},
+        buyerName=#{buyerName},
+        purGroupId=#{purGroupId},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        status=#{status},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurbuyer.delete" parameterType="String">
+		DELETE FROM scmpurbuyer WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

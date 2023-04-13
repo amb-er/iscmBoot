@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fbmcookresinfo">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="fbmcookresinfo.findAll" resultType="FbmCookResInfo" >
+	    SELECT * FROM FbmCookResInfo WHERE  1=1  
+	</select>
+ 
+	<select id="fbmcookresinfo.findAllPage" resultType="FbmCookResInfo" parameterType="Map"> 
+		SELECT * FROM FbmCookResInfo WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="fbmcookresinfo.selectById" resultType="FbmCookResInfo" parameterType="Long">
+		SELECT * FROM FbmCookResInfo WHERE id = #{value}
+	</select> 
+	<select id="fbmcookresinfo.selectCookSalePrice" resultType="FbmCookResInfo2" parameterType="Map">
+		SELECT #{fbcOrgUnitNo} as orgUnitNo,Case When B.cookId is null Then C.cookId Else B.cookId end as cookId,
+		#{accDate} as accDate,Case When B.price is null Then C.price Else B.price end as salePrice
+		FROM FbmCook A
+		Left join FbmCookResInfo B ON A.id=B.cookId And B.orgUnitNo=#{orgUnitNo}
+		Left join FbmCookResInfo C ON A.id=C.cookId And C.orgUnitNo=#{controlUnitNo}
+		WHERE A.id in 
+		<foreach item="item" index="index" collection="cookList"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</select> 
+	<insert id="fbmcookresinfo.add" parameterType="FbmCookResInfo"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  FbmCookResInfo (
+        cookId,
+        orgUnitNo,
+        mnemonic,
+        price,
+        mode,
+        deptOrgUnitNo,
+        sort,
+        permit,
+        remarks,
+        iSyncModFlag        )
+		VALUES (
+        #{cookId},
+        #{orgUnitNo},
+        #{mnemonic},
+        #{price},
+        #{mode},
+        #{deptOrgUnitNo},
+        #{sort},
+        #{permit},
+        #{remarks},
+        #{iSyncModFlag}        )
+	</insert>
+ 
+	<update id="fbmcookresinfo.update" parameterType="FbmCookResInfo">
+		UPDATE FbmCookResInfo set
+        cookId=#{cookId},
+        orgUnitNo=#{orgUnitNo},
+        mnemonic=#{mnemonic},
+        price=#{price},
+        mode=#{mode},
+        deptOrgUnitNo=#{deptOrgUnitNo},
+        sort=#{sort},
+        permit=#{permit},
+        remarks=#{remarks},
+        iSyncModFlag=#{iSyncModFlag}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="fbmcookresinfo.delete" parameterType="String">
+		DELETE FROM FbmCookResInfo WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

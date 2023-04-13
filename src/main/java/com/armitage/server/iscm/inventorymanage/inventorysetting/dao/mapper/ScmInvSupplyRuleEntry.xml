@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvsupplyruleentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvsupplyruleentry.findAll" resultType="Scminvsupplyruleentry" >
+	    SELECT * FROM scminvsupplyruleentry WHERE  1=1  
+	</select>
+ 
+	<select id="scminvsupplyruleentry.findAllPage" resultType="Scminvsupplyruleentry" parameterType="Map"> 
+		SELECT * FROM scminvsupplyruleentry WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scminvsupplyruleentry.selectById" resultType="Scminvsupplyruleentry" parameterType="Long">
+		SELECT * FROM scminvsupplyruleentry WHERE id = #{value}
+	</select> 
+	<insert id="scminvsupplyruleentry.add" parameterType="Scminvsupplyruleentry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvsupplyruleentry (
+        ruleId,
+        lineId,
+        itemId        )
+		VALUES (
+        #{ruleId},
+        #{lineId},
+        #{itemId}        )
+	</insert>
+ 
+	<update id="scminvsupplyruleentry.update" parameterType="Scminvsupplyruleentry">
+		UPDATE scminvsupplyruleentry set
+        ruleId=#{ruleId},
+        lineId=#{lineId},
+        itemId=#{itemId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvsupplyruleentry.delete" parameterType="String">
+		DELETE FROM scminvsupplyruleentry WHERE id IN (${value})
+	</delete> 
+	
+	<select id="scminvsupplyruleentry.selectByRuleId" resultType="scminvsupplyruleentry2" parameterType="map"> 
+		SELECT ScmMaterial.*,
+				Case WHEN ScmMaterialPurchase.purUnit is null Then a.purUnit Else ScmMaterialPurchase.purUnit end as purUnitId
+		FROM (SELECT scminvsupplyruleentry.*,scmmaterial.itemNo as itemNo,ScmMaterial.spec,ScmMaterial.status,scmmaterial.pieUnitId,
+					scmmaterial.itemName as itemName,ScmMaterialGroup.classCode,ScmMaterialGroup.className
+					FROM scminvsupplyruleentry,scminvsupplyrule,ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+					WHERE scminvsupplyruleentry.ruleId=scminvsupplyrule.id and scminvsupplyruleentry.itemId=scmmaterial.id
+						And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+						And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+						And scminvsupplyruleentry.ruleId=#{id} ) ScmMaterial
+		LEFT JOIN ScmMaterialPurchase as a On ScmMaterial.id=a.itemId and a.orgUnitNo = #{controlUnitNo} And ScmMaterial.status='A'
+		LEFT JOIN ScmMaterialPurchase On ScmMaterial.id=ScmMaterialPurchase.itemId and ScmMaterialPurchase.orgUnitNo = #{orgUnitNo} And ScmMaterial.status='A'
+		ORDER BY ScmMaterial.lineId ASC
+	</select>
+	
+	<delete id="scminvsupplyruleentry.deleteByRuleIds" parameterType="String">
+		DELETE FROM scminvsupplyruleentry WHERE ruleId = #{ruleId}
+	</delete> 
+	
+	<select id="scminvsupplyruleentry.selectEntryIdsByRuleId" resultType="long" parameterType="String">
+		SELECT scminvsupplyruleentry.itemId FROM scminvsupplyruleentry WHERE ruleId = #{ruleId}
+	</select> 
+	
+</mapper>
+ 

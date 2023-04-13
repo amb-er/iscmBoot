@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmstandardratio">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmstandardratio.findAll" resultType="ScmStandardRatio2" >
+	    SELECT * FROM ScmStandardRatio WHERE  1=1  
+	</select>
+ 
+	<select id="scmstandardratio.findAllPage" resultType="ScmStandardRatio2" parameterType="Map"> 
+		SELECT ScmStandardRatio.*,ScmStandardRatioDetail.qty as woolQty,ScmStandardRatioDetail.netrate
+		FROM ScmStandardRatio,ScmMaterial,ScmStandardRatioDetail
+		WHERE ScmStandardRatio.itemId=ScmMaterial.id and ScmStandardRatio.id=ScmStandardRatioDetail.rateId ORDER BY id ASC 
+	</select> 
+	<select id="scmstandardratio.selectById" resultType="ScmStandardRatio2" parameterType="Long">
+		SELECT * FROM ScmStandardRatio WHERE id = #{value}
+	</select> 
+	<insert id="scmstandardratio.add" parameterType="ScmStandardRatio"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmStandardRatio (
+        orgUnitNo,
+        itemId,
+        invUnit,
+        qty,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{itemId},
+        #{invUnit},
+        #{qty},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmstandardratio.update" parameterType="ScmStandardRatio">
+		UPDATE ScmStandardRatio set
+        orgUnitNo=#{orgUnitNo},
+        itemId=#{itemId},
+        invUnit=#{invUnit},
+        qty=#{qty},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmstandardratio.delete" parameterType="String">
+		DELETE FROM ScmStandardRatio WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

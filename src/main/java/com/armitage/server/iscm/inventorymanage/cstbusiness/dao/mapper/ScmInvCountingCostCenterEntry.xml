@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvcountingcostcenterentry">
+ 
+    <!-- default parameterType="HashMap" -->
+    <select id="scminvcountingcostcenterentry.findAll" resultType="ScmInvCountingCostCenterEntry2" >
+        SELECT * FROM scminvcountingcostcenterentry WHERE  1=1  
+    </select>
+ 
+    <select id="scminvcountingcostcenterentry.findAllPage" resultType="ScmInvCountingCostCenterEntry2" parameterType="Map"> 
+        SELECT scminvcountingcostcenterentry.*,scmmaterial.itemNo as itemNo,ScmInvCountingTask.taskNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,ScmInvCountingTask.status,
+		A.unitName as unitName,ScmInvCountingTask.countingEndTime as postDate,ScmInvCountingCostCenter.orgUnitNo,
+		ScmMaterialGroup.className as groupName,ScmInvCountingCostCenter.bizDate,ScmInvCountingCostCenter.useOrgUnitNo,
+		ScmMaterialGroup.classCode as groupCode,ScmMaterialGroup.longNo as longNo,ScmMaterialGroup.id as groupId,ScmInvCountingTask.periodId
+		FROM ScmInvCountingCostCenterEntry
+		left join ScmMeasureUnit A on scminvcountingcostcenterentry.unit=A.id,
+		ScmInvCountingTask,ScmInvCountingCostCenter,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmInvCountingTask.taskId=ScmInvCountingCostCenter.taskId 
+		And ScmInvCountingCostCenter.tableId=ScmInvCountingCostCenterEntry.tableId
+		And ScmInvCountingCostCenterEntry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		ORDER BY scminvcountingcostcenterentry.id ASC
+    </select> 
+    <select id="scminvcountingcostcenterentry.selectById" resultType="ScmInvCountingCostCenterEntry2" parameterType="Long">
+        SELECT scminvcountingcostcenterentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		A.unitName as unitName,
+		(SELECT ScmMaterialGroup.className 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id 
+		and ScmMaterialGroupStandard.standardType='1' and ScmMaterial.id=scminvcountingcostcenterentry.itemId) as groupName
+		FROM scminvcountingcostcenterentry
+		left join scmmaterial on scminvcountingcostcenterentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scminvcountingcostcenterentry.unit=A.id 
+		WHERE scminvcountingcostcenterentry.id = #{value}
+    </select> 
+    <select id="scminvcountingcostcenterentry.selectByTableId" resultType="ScmInvCountingCostCenterEntry2" parameterType="Map"> 
+		SELECT scminvcountingcostcenterentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		A.unitName as unitName,B.unitName as pieUnitName,
+		scmbaseattachment.id as attachmentId,scmbaseattachment.fileName as attachmentName,
+		C.className as groupName
+		FROM scminvcountingcostcenterentry
+		left join scmmaterial on scminvcountingcostcenterentry.itemId=scmmaterial.id
+		LEFT JOIN (SELECT * FROM (SELECT * FROM scmbaseattachment where scmbaseattachment.billtype="ScmMaterial" ORDER BY createTime DESC) r GROUP BY r.billtype,r.billId)scmbaseattachment
+		on scminvcountingcostcenterentry.itemId=scmbaseattachment.billId and scmbaseattachment.billtype="ScmMaterial"
+		left join ScmMeasureUnit A on scminvcountingcostcenterentry.unit=A.id 
+		left join ScmMeasureUnit B on scminvcountingcostcenterentry.pieunit=B.id 
+		left join (SELECT ScmMaterial.id,ScmMaterialGroup.className as className 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		AND ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+        AND ScmMaterialGroupStandard.standardType='1') C on scminvcountingcostcenterentry.itemId=C.id
+		WHERE scminvcountingcostcenterentry.tableId=#{tableId} 
+		ORDER BY scminvcountingcostcenterentry.lineId ASC,scminvcountingcostcenterentry.id ASC
+	</select>
+	<select id="scminvcountingcostcenterentry.selectByTaskId" resultType="ScmInvCountingCostCenterEntry2" parameterType="Map"> 
+		SELECT scminvcountingcostcenterentry.*,scmmaterial.itemName as itemName,scminvcountingcostcenter.orgUnitNo as orgUnitNo,
+		scminvcountingcostcenter.useOrgUnitNo as useOrgUnitNo,scminvcountingcostcenter.bizDate
+		FROM scminvcountingcostcenterentry
+		left join scmmaterial on scminvcountingcostcenterentry.itemId=scmmaterial.id,scminvcountingcostcenter
+		WHERE scminvcountingcostcenterentry.tableId=scminvcountingcostcenter.tableId
+		and scminvcountingcostcenter.taskId=#{taskId}
+		ORDER BY scminvcountingcostcenterentry.lineId ASC
+	</select>
+	<select id="scminvcountingcostcenterentry.queryCountCostTaskDiff" resultType="ScmInvCountingCostCenterEntry2" parameterType="Map"> 
+		SELECT ScmInvCountingCostCenter.useOrgUnitNo,ScmInvCountingCostCenterEntry.itemId,ScmInvCountingCostCenterEntry.unit,ScmInvCountingCostCenterEntry.pieUnit,
+		<choose>
+			<when test='showSum!=null and showSum=="1"'>
+				'' as lot,
+			</when>
+			<otherwise>
+				ScmInvCountingCostCenterEntry.lot,
+			</otherwise>
+		</choose>
+		sum(differQty) as differQty,sum(differAmt) as differAmt,sum(differTaxAmt) as differTaxAmt,sum(differPieQty) as differPieQty
+		FROM ScmInvCountingTask,ScmInvCountingCostCenter,ScmInvCountingCostCenterEntry
+		WHERE ScmInvCountingCostCenter.taskId = #{taskId}
+		And ScmInvCountingTask.taskId=ScmInvCountingCostCenter.taskId
+		and ScmInvCountingCostCenter.tableId=ScmInvCountingCostCenterEntry.tableId
+		and ScmInvCountingCostCenterEntry.differQty != 0
+		<choose>
+			<when test='showSum!=null and showSum =="1"'>
+				GROUP BY ScmInvCountingCostCenter.useOrgUnitNo,ScmInvCountingCostCenterEntry.itemId,ScmInvCountingCostCenterEntry.unit,ScmInvCountingCostCenterEntry.pieUnit
+			</when>
+			<otherwise>
+				GROUP BY ScmInvCountingCostCenterEntry.id
+			</otherwise>
+		</choose>
+		ORDER BY ScmInvCountingCostCenter.useOrgUnitNo,ScmInvCountingCostCenterEntry.itemId
+	</select>
+	<select id="scminvcountingcostcenterentry.selectByTaskIdAndFinOrg" resultType="Integer" parameterType="Map">
+		Select count(*)
+		From scminvcountingcostcenter as A,scminvcountingcostcenterEntry as
+		B,ScmMaterial as C
+		Where A.TaskID = #{taskId} And
+		A.TableID = B.TableID And
+		B.DifferQty != 0 And
+		B.itemId = C.id 
+	</select>
+	<select id="scminvcountingcostcenterentry.selectFinConsume" resultType="ScmInvCountingCostCenterEntry2" parameterType="Map"> 
+		SELECT ScmInvCountingCostCenterEntry.id,ScmInvCountingCostCenter.useOrgUnitNo,ScmMaterialGroup.longNo,
+		ScmInvCountingCostCenterEntry.differAmt,ScmInvCountingCostCenterEntry.differTaxAmt
+		FROM ScmInvCountingTask,ScmInvCountingCostCenter,ScmInvCountingCostCenterEntry,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmInvCountingCostCenter.taskId=ScmInvCountingTask.taskId
+		and ScmInvCountingCostCenter.tableId=ScmInvCountingCostCenterEntry.tableId
+		And ScmInvCountingCostCenterEntry.itemId=ScmMaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		And ScmInvCountingCostCenter.orgUnitNo in (${costOrgUnitNos})
+		And LENGTH(ScmMaterialGroup.longNo) - LENGTH(REPLACE(ScmMaterialGroup.longNo,',','')) >= ${summaryLevel}
+		And ScmInvCountingTask.countingBegTime &gt;= #{begDate} and ScmInvCountingTask.countingEndTime &lt;= #{endDate}
+		and ScmInvCountingTask.costCenter = 1
+		and ScmInvCountingTask.status = 'O'
+		and ScmInvCountingCostCenterEntry.differQty != 0
+	</select>
+    <insert id="scminvcountingcostcenterentry.add" parameterType="ScmInvCountingCostCenterEntry"  keyProperty="id" useGeneratedKeys="true"> 
+        INSERT INTO  scminvcountingcostcenterentry (
+        tableId,
+        lineId,
+        itemId,
+        unit,
+        pieUnit,
+        lot,
+        origAccQty,
+        accountQty,
+        accountAmt,
+        price,
+        qty,
+        amt,
+        productAddQty,
+        productAddAmt,
+        taxRate,
+        taxPrice,
+        accountTaxAmt,
+        taxAmt,
+        productAddTaxAmt,
+        differQty,
+        differAmt,
+        differTaxAmt,
+        accountPieQty,
+        pieQty,
+        differPieQty,
+        expDate,
+        vendorId,
+        usrAdd,
+        stockId,
+        counted,
+        idle,
+        idleCauseId        )
+		VALUES (
+        #{tableId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{lot},
+        #{origAccQty},
+        #{accountQty},
+        #{accountAmt},
+        #{price},
+        #{qty},
+        #{amt},
+        #{productAddQty},
+        #{productAddAmt},
+        #{taxRate},
+        #{taxPrice},
+        #{accountTaxAmt},
+        #{taxAmt},
+        #{productAddTaxAmt},
+        #{differQty},
+        #{differAmt},
+        #{differTaxAmt},
+        #{accountPieQty},
+        #{pieQty},
+        #{differPieQty},
+        #{expDate},
+        #{vendorId},
+        #{usrAdd},
+        #{stockId},
+        #{counted},
+        #{idle},
+        #{idleCauseId}        )
+    </insert>
+    
+    <insert id="scminvcountingcostcenterentry.addByItemIdList" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		insert into
+		scminvcountingcostcenterentry(TableID,lineId,ItemId,Unit,Lot,AccountQty,Qty,Price,Amt
+		,DifferQty,DifferAmt,AccountAmt,origAccQty,counted,
+		PieUnit,AccountPieQty,PieQty,DifferPieQty,stockId,taxRate,taxPrice,taxAmt,accountTaxAmt,differTaxAmt,vendorId,idle,idleCauseId)
+		select t.TableID,lineId,t.ItemId,t.Unit,t.Lot,t.AccountQty,t.Qty,t.Price,t.Amt
+		,t.DifferQty,t.DifferAmt,t.AccountAmt,t.AccountQty as origAccQty,0 as counted,
+		t.PieUnit,t.AccountPieQty,t.PieQty,t.DifferPieQty,t.stockId,t.taxRate,t.taxPrice,t.taxAmt,t.accountTaxAmt,t.differTaxAmt,0,
+		Case WHEN q.id is null Then 0 Else q.idleStatus end as idle,q.idleCauseId
+		from
+		(
+		select a.TableID,0 as lineId,b.itemId,b.Unit,"" as lot,sum(b.Qty) as AccountQty,x.itemNo,
+		Case #{genAccQty} When 1 Then sum(b.Qty) Else 0 End as Qty,
+		(case Sum(b.Qty) when 0 then 0 else Sum(b.Amt)/Sum(b.Qty) end) as Price,
+		Case #{genAccQty} When 1 Then Sum(b.amt) Else 0 End as Amt,
+		0 as taxRate,
+		(case Sum(b.Qty) when 0 then 0 else Sum(b.taxAmt)/Sum(b.Qty) end) as taxPrice,
+		Case #{genAccQty} When 1 Then Sum(b.taxAmt) Else 0 End as taxAmt,
+		Case #{genAccQty} When 1 Then 0 Else -sum(b.Qty) End as DifferQty,
+		Case #{genAccQty} When 1 Then 0 Else -Sum(b.Amt) End as DifferAmt,
+		Sum(b.Amt) as AccountAmt,
+		b.PieUnit,b.pieqty as AccountPieQty,Case #{genAccQty} When 1 Then b.PieQty Else 0 End as PieQty,
+		Case #{genAccQty} When 1 Then 0 Else -b.PieQty End as DifferPieQty,y.ClassId,g.classCode,0 as stockId,
+		Case #{genAccQty} When 1 Then 0 Else -Sum(b.taxAmt) End as DifferTaxAmt,
+		Sum(b.taxAmt) as AccountTaxAmt,a.UseOrgUnitNo,a.OrgUnitNo
+		from scminvcountingcostcenter as a,scminvstock as b,ScmMaterial x,ScmMaterialGroupDetail y,ScmMaterialGroupStandard z, scmMaterialGroup g
+		where a.taskId=#{taskId} and a.OrgUnitNo = b.CostOrgUnitNo and        
+		a.UseOrgUnitNo = b.OrgUnitNo and        
+		b.costCenter = 1 and
+		b.ItemId in (${itemIdList}) and
+		b.ItemId = x.id and
+		x.id = y.itemid and
+		y.StandardID = z.id and
+		z.StandardType = '1' and 
+		y.classId = g.id
+		group by a.TableID,g.classCode,b.ItemId,b.Unit
+		) t LEFT JOIN scmidleitems q on q.orgUnitNo=t.OrgUnitNo and q.useOrgUnitNo=t.UseOrgUnitNo and q.ItemId=t.itemId and q.idleStatus=1
+		<if test="genTableForZero != null and genTableForZero == 0">
+			where (IFNULL(t.AccountQty,0)+IFNULL(t.AccountPieQty,0)) != 0
+		</if>
+		group by t.TableID,t.classCode,t.ItemId,t.Unit
+		order by t.TableID,t.classCode,t.itemNo
+	</insert>
+ 	<insert id="scminvcountingcostcenterentry.addAccount" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		insert into	scminvcountingcostcenterentry(TableID,lineId,ItemId,Unit,Lot,AccountQty,Qty,Price,Amt,DifferQty,DifferAmt,AccountAmt,
+			origAccQty,PieUnit,AccountPieQty,PieQty,DifferPieQty,stockId,taxRate,taxPrice,taxAmt,accountTaxAmt,differTaxAmt,vendorId,counted,idle,idleCauseId)
+		Select a.tableId,0 as lineId,a.itemId,a.unit,'' as lot,a.accountQty,0 as qty,a.price,0 as amt,-a.accountQty as differQty,
+			-a.accountAmt as differAmt,a.accountAmt,0 as origAccQty,a.pieunit,a.accountPieQty,0 as pieQty,-a.accountPieQty as differPieQty,
+			0 as stockId,0 as taxRate,a.taxPrice,0 as taxAmt,a.accountTaxAmt,-a.accountTaxAmt as differTaxAmt,0 as vendorId,0 as counted,
+			Case WHEN q.id is null Then 0 Else q.idleStatus end as idle,q.idleCauseId FROM
+		(Select a.tableId,a.orgUnitNo,a.useOrgUnitNo,b.itemId,b.unit,b.pieUnit,sum(b.qty) as accountQty,sum(b.amt) as accountAmt,
+			sum(b.taxAmt) as accountTaxAmt,sum(b.pieQty) as accountPieQty,(case Sum(b.Qty) when 0 then 0 else Sum(b.Amt)/Sum(b.Qty) end) as price, 
+				(case Sum(b.Qty) when 0 then 0 else Sum(b.taxAmt)/Sum(b.Qty) end) as taxPrice 
+						from scminvcountingcostcenter as a,scminvstock b 
+						WHERE a.orgUnitNo=b.costOrgUnitNo and a.useOrgUnitNo=b.orgUnitNo
+						And b.costCenter=1 and a.taskId=#{taskId}
+				GROUP BY a.tableId,a.orgUnitNo,a.useOrgUnitNo,b.itemId,b.unit,b.pieUnit) a
+		LEFT JOIN
+		(SELECT scminvcountingcostcenterentry.* FROM scminvcountingcostcenter,scminvcountingcostcenterentry
+		Where scminvcountingcostcenter.tableId=scminvcountingcostcenterentry.tableId and scminvcountingcostcenter.taskId=#{taskId}) b
+		on a.tableId=b.tableId and a.itemId=b.itemId and a.unit=b.unit
+		<if test="classId != null and classId != ''">
+		inner JOIN ScmMaterialGroupDetail on a.itemId=ScmMaterialGroupDetail.itemId and ScmMaterialGroupDetail.classId in(${classId})
+		</if>
+		LEFT JOIN scmidleitems q on q.orgUnitNo=a.OrgUnitNo and q.useOrgUnitNo=a.UseOrgUnitNo and q.ItemId=a.itemId and q.idleStatus=1
+		,scminvcountingcostcenter c
+		Where a.orgUnitNo=c.orgUnitNo and a.useOrgUnitNo= c.useOrgUnitNo and c.taskId=#{taskId} and a.accountQty &gt; 0 and b.itemId is null
+		<if test="itemIds != null and itemIds != ''">
+			and a.itemId in (${itemIds})
+		</if>
+	</insert>
+    <update id="scminvcountingcostcenterentry.refreshAccount" parameterType="Map">
+		UPDATE scminvcountingcostcenter T,scminvcountingcostcenterentry T1,
+		(Select a.taskId,a.tableId,a.orgUnitNo,a.useOrgUnitNo,b.itemId,sum(b.qty) as qty,sum(b.amt) as amt,sum(b.taxAmt) as taxAmt,sum(b.pieQty) as pieQty,
+		(case Sum(b.Qty) when 0 then 0 else Sum(b.Amt)/Sum(b.Qty) end) as price, (case Sum(b.Qty) when 0 then 0 else Sum(b.taxAmt)/Sum(b.Qty) end) as taxPrice 
+				from scminvcountingcostcenter as a,scminvstock b 
+				WHERE a.orgUnitNo=b.costOrgUnitNo and a.useOrgUnitNo=b.orgUnitNo
+				And b.costCenter=1 and a.taskId=#{taskId}
+		GROUP BY a.taskId,a.tableId,b.itemId,a.orgUnitNo,a.useOrgUnitNo) T2
+		Set T1.accountQty=IFNULL(T2.qty,0),T1.accountAmt=IFNULL(T2.amt,0),T1.accountPieQty=IFNULL(T2.pieQty,0),
+		T1.accountTaxAmt=IFNULL(T2.taxAmt,0),T1.differAmt=(T1.qty-IFNULL(T2.qty,0))*T2.price,T1.differPieQty=T1.pieQty-IFNULL(T2.pieQty,0),
+		T1.differQty=T1.qty-IFNULL(T2.qty,0),T1.differTaxAmt=(T1.qty-IFNULL(T2.qty,0))*T2.taxPrice,T1.usrAdd=0,T1.lot=null,T1.price=T2.price,T1.taxPrice=T2.taxPrice,
+		T1.amt=T1.qty*T2.price,T1.taxAmt=T1.qty*T2.taxPrice
+		Where T1.tableId=T2.tableId AND T1.itemId=T2.itemId And T2.orgUnitNo=T.orgUnitNo And T2.useOrgUnitNo=T.useOrgUnitNo
+		And T.tableId=T1.tableId And T.taskId=#{taskId} 
+		AND (T1.accountQty!=IFNULL(T2.qty,0) or T1.accountPieQty!=IFNULL(T2.pieQty,0) or T1.accountAmt!=IFNULL(T2.amt,0) or T1.accountTaxAmt!=IFNULL(T2.taxAmt,0))
+	</update>
+    <update id="scminvcountingcostcenterentry.update" parameterType="ScmInvCountingCostCenterEntry">
+       UPDATE scminvcountingcostcenterentry set
+        tableId=#{tableId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        lot=#{lot},
+        origAccQty=#{origAccQty},
+        accountQty=#{accountQty},
+        accountAmt=#{accountAmt},
+        price=#{price},
+        qty=#{qty},
+        amt=#{amt},
+        productAddQty=#{productAddQty},
+        productAddAmt=#{productAddAmt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        accountTaxAmt=#{accountTaxAmt},
+        taxAmt=#{taxAmt},
+        productAddTaxAmt=#{productAddTaxAmt},
+        differQty=#{differQty},
+        differAmt=#{differAmt},
+        differTaxAmt=#{differTaxAmt},
+        accountPieQty=#{accountPieQty},
+        pieQty=#{pieQty},
+        differPieQty=#{differPieQty},
+        expDate=#{expDate},
+        vendorId=#{vendorId},
+        usrAdd=#{usrAdd},
+        stockId=#{stockId},
+        counted=#{counted},
+        idle=#{idle},
+        idleCauseId=#{idleCauseId}		 WHERE id = #{id}
+    </update>
+ 
+    <delete id="scminvcountingcostcenterentry.delete" parameterType="String">
+        DELETE FROM scminvcountingcostcenterentry WHERE id IN (${value})
+    </delete> 
+    
+    <delete id="scminvcountingcostcenterentry.deleteByTableId" parameterType="Map">
+		DELETE FROM scminvcountingcostcenterentry WHERE tableId=#{tableId}
+	</delete>
+
+	<select id="scminvcountingcostcenterentry.checkAccount" resultType="Integer" parameterType="Map">
+		Select count(*) from
+		(Select	B.orgunitno,B.useOrgUnitNo,A.itemId,sum(A.AccountQty)	as AccountQty
+		From scminvcountingcostcenterEntry A,scminvcountingcostcenter B where A.tableId=B.tableid And B.taskid=#{taskId}
+		Group By B.orgunitno,B.useOrgUnitNo,A.itemId)	A,
+		(Select orgunitno,costOrgUnitNo,itemId,sum(Qty) as Qty From scminvstock Where
+		costCenter=1 Group By costOrgUnitNo,orgunitno,itemId) B
+		Where A.orgunitno = B.costOrgUnitNo And A.itemId=B.itemId And
+		A.useOrgUnitNo=B.orgunitno
+		And A.AccountQty!=B.Qty 
+	</select>
+	<select id="scminvcountingcostcenterentry.selectByIdleCauseId" resultType="ScmInvCountingCostCenterEntry2" parameterType="Map"> 
+		select * from scminvcountingcostcenterEntry where idleCauseId=${idleCauseId} LIMIT 1
+	</select>
+	<select id="scminvcountingcostcenterentry.selectCostConsumePage" resultType="ScmInvCountingCostCenterEntry2" parameterType="Map"> 
+        SELECT ScmInvCountingTask.finOrgUnitNo,ScmInvCountingCostCenter.orgUnitNo,ScmMaterialGroup.className as groupName,ScmMaterialGroup.classCode as groupCode,ScmMaterialGroup.longNo as longNo,
+		ScmMaterialGroup.id as groupId,sum(-ScmInvCountingCostCenterEntry.differAmt) as amt,sum(-ScmInvCountingCostCenterEntry.differTaxAmt) as taxAmt
+		FROM ScmInvCountingCostCenterEntry,ScmInvCountingTask,ScmInvCountingCostCenter,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmInvCountingTask.taskId=ScmInvCountingCostCenter.taskId 
+		And ScmInvCountingCostCenter.tableId=ScmInvCountingCostCenterEntry.tableId
+		And ScmInvCountingCostCenterEntry.itemId=ScmMaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id and ScmInvCountingTask.controlUnitNo=#{controlUnitNo}
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		GROUP BY ScmInvCountingTask.finOrgUnitNo,ScmInvCountingCostCenter.orgUnitNo,ScmMaterialGroup.id
+		ORDER BY ScmInvCountingTask.finOrgUnitNo,ScmInvCountingCostCenter.orgUnitNo,ScmMaterialGroup.classCode
+    </select> 
+</mapper>
+ 

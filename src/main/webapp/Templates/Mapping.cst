@@ -1,0 +1,64 @@
+<%@ CodeTemplate Language="C#" TargetLanguage="XML" Description="Generates a db<->class mapping file for use with NHibnate." %>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" Category="Context" Description="Table that the mapping file is based on" %>
+<%@ Property Name="fullClassName" Type="System.String"  Category="Object" Description="??" %>
+  
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Text.RegularExpressions" %> 
+<!-- #include file="common.inc" -->
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="<%=SourceTable.Name.ToLower()%>">
+     <%
+          ColumnSchema pkeyProp = SourceTable.PrimaryKey.MemberColumns[0];
+     %> 
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="<%=SourceTable.Name.ToLower()%>.findAll" resultType="<%=SourceTable.Name%>" >
+	    SELECT * FROM <%=SourceTable.Name%> WHERE  1=1  
+	</select>
+ 
+	<select id="<%=SourceTable.Name.ToLower()%>.findAllPage" resultType="<%=SourceTable.Name%>" parameterType="Map"> 
+		SELECT * FROM <%=SourceTable.Name%> WHERE  1=1 ORDER BY <%=CamelCase(pkeyProp.Name)%> ASC 
+	</select> 
+	<select id="<%=SourceTable.Name.ToLower()%>.selectById" resultType="<%=SourceTable.Name%>" parameterType="Long">
+		SELECT * FROM <%=SourceTable.Name%> WHERE <%=CamelCase(pkeyProp.Name)%> = #{value}
+	</select> 
+	<insert id="<%=SourceTable.Name.ToLower()%>.add" parameterType="<%=SourceTable.Name%>"  keyProperty="<%=CamelCase(pkeyProp.Name)%>" useGeneratedKeys="true"> 
+		INSERT INTO  <%=SourceTable.Name%> (
+        <%
+        int i = 1;
+        foreach(ColumnSchema prop in SourceTable.NonPrimaryKeyColumns){%>
+        <%=CamelCase(prop.Name)%><% if(i++<SourceTable.NonPrimaryKeyColumns.Count){%>,
+        <%}%>
+        <%}%>
+        )
+		VALUES (
+        <%
+        i = 1;
+        foreach(ColumnSchema prop in SourceTable.NonPrimaryKeyColumns){%>
+        #{<%=CamelCase(prop.Name)%>}<% if(i++<SourceTable.NonPrimaryKeyColumns.Count){%>,
+        <%}%>
+        <%}%>
+        )
+	</insert>
+ 
+	<update id="<%=SourceTable.Name.ToLower()%>.update" parameterType="<%=SourceTable.Name%>">
+		UPDATE <%=SourceTable.Name%> set
+         <%
+        i = 1;
+        foreach(ColumnSchema prop in SourceTable.NonPrimaryKeyColumns){%>
+        <%=CamelCase(prop.Name)%>=#{<%=CamelCase(prop.Name)%>}<% if(i++<SourceTable.NonPrimaryKeyColumns.Count){%>,
+        <%}%>
+        <%}%>  
+		 WHERE <%=CamelCase(pkeyProp.Name)%> = #{<%=CamelCase(pkeyProp.Name)%>}
+	</update>
+ 
+	<delete id="<%=SourceTable.Name.ToLower()%>.delete" parameterType="String">
+		DELETE FROM <%=SourceTable.Name%> WHERE <%=CamelCase(pkeyProp.Name)%> IN (${value})
+	</delete> 
+
+</mapper>
+ 

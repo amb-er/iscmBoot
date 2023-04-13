@@ -1,0 +1,571 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurrequireentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurrequireentry.findAll" resultType="ScmPurRequireEntry2" >
+	    SELECT * FROM scmpurrequireentry WHERE  1=1 
+	</select>
+ 	
+ 	<select id="scmpurrequireentry.findAllPage" resultType="ScmPurRequireEntry2" parameterType="Map"> 
+		SELECT scmpurrequireentry.*,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,Case scmpurrequireentry.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		ScmMeasureUnit.unitName as purUnitName,scmpurrequire.prNo,Scmpurrequire.receiveWareHouseId,Scmpurrequire.finOrgUnitNo,
+		ScmMaterialGroup.id as groupId,ScmMaterialUnitRelation.convrate,scmsupplier.vendorName,scmpurrequireentry.orderQty*scmpurrequireentry.qty/scmpurrequireentry.baseQty as purOrderQty,
+		ScmMeasureUnit.unitName as unitName,ScmMaterialGroup.className,scmpurrequireentry.qty as reqQty,
+		scmpurorderentry.receiveQty*scmpurrequireentry.qty/scmpurrequireentry.baseQty as receiveQty,scmpurorderentry.invQty*scmpurrequireentry.qty/scmpurrequireentry.baseQty as inQty,
+		Case When ScmSupplierUnified.orgUnitNo IS NULL Then Case When #{unifiedOrDirect}='U' Then 1 Else 0 end Else Case When #{unifiedOrDirect}='U' Then 0 Else 1 End End as unified,
+		Scmpurrequire.bizType,B.unitName as pieUnitName,Scmpurrequire.applyDate,
+		(SELECT scmpurrereuse.opinion from  scmpurrereuse where scmpurrequireentry.Id=scmpurrereuse.entryBillId and scmpurrereuse.flag=1 and scmpurrereuse.rowStatus="I" order BY id desc limit 1)as refuseReason
+		FROM scmpurrequireentry
+		left join scmpurorderentry on scmpurorderentry.prDtlid= scmpurrequireentry.id
+		left join ScmMeasureUnit on scmpurrequireentry.purUnit=ScmMeasureUnit.id
+		left join ScmMeasureUnit B on scmpurrequireentry.pieUnit=B.id
+		left join ScmMaterialUnitRelation on scmpurrequireentry.itemId=ScmMaterialUnitRelation.itemId And ScmMaterialUnitRelation.targetUnitId=scmpurrequireentry.purUnit
+		left join scmsupplier on scmsupplier.id=scmpurrequireentry.vendorId
+		Left Join ScmSupplierUnified ON scmPurRequireEntry.vendorId = ScmSupplierUnified.vendorId
+		And scmPurRequireEntry.recStorageOrgUnitNo = ScmSupplierUnified.orgUnitNo,
+		Scmpurrequire,scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+		WHERE scmpurrequireentry.prId=scmpurrequire.id and scmpurrequireentry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		<if test="orderQty!=null and orderQty!=''">
+			And scmpurrequireentry.orderQty=0
+		</if>
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id And ScmMaterialGroupStandard.standardNo='BaseStandard'
+		ORDER BY id DESC
+	</select> 
+	<select id="scmpurrequireentry.selectById" resultType="ScmPurRequireEntry2" parameterType="Long">
+		SELECT scmpurrequireentry.*,scmmaterial.itemNo as itemNo,Case scmpurrequireentry.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,scmpurrequire.prNo,B.unitName as pieUnitName,
+		ScmMeasureUnit.unitName as purUnitName,ScmMaterialUnitRelation.convrate as convrate,
+		scmbaseattachment.fileName as attachmentName,(select group_concat(scmauditdetailhistory.oper,'^',scmauditdetailhistory.opinion,'^',date_format(scmauditdetailhistory.operDate,'%Y-%m-%d %T'),'^',scmauditdetailhistory.remarks)
+		from scmauditdetailhistory
+		where scmauditdetailhistory.billId = scmpurrequireentry.prId
+		and scmauditdetailhistory.billType = 'PurRequire'
+		and scmauditdetailhistory.lineId = scmpurrequireentry.lineId
+		and scmauditdetailhistory.flag=1
+		and ifnull(scmauditdetailhistory.remarks,'')!=''
+		group by scmauditdetailhistory.billId,scmauditdetailhistory.lineId
+		order by scmauditdetailhistory.billId,scmauditdetailhistory.lineId,scmauditdetailhistory.operDate asc) rowAuditRemarks
+		FROM scmpurrequireentry
+		LEFT JOIN scmbaseattachment on scmpurrequireentry.attachmentId=scmbaseattachment.id
+		left join scmmaterial on scmpurrequireentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scmpurrequireentry.purUnit=ScmMeasureUnit.id
+		left join ScmMeasureUnit B on scmpurrequireentry.pieUnit=B.id
+		left join ScmMaterialUnitRelation on scmpurrequireentry.itemId=ScmMaterialUnitRelation.itemId AND scmpurrequireentry.purUnit=ScmMaterialUnitRelation.targetUnitId
+		,ScmPurRequire
+		WHERE scmpurrequireentry.prId=scmpurrequire.id and scmpurrequireentry.id = #{value}
+	</select> 
+	<select id="scmpurrequireentry.selectByPrId" resultType="ScmPurRequireEntry2" parameterType="Map"> 
+		SELECT scmpurrequireentry.*,scmmaterial.itemNo as itemNo,Case scmpurrequireentry.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,ScmMaterialGroup.classCode,scmpurrequire.prNo,
+		ScmMeasureUnit.unitName as purUnitName,ScmMaterialUnitRelation.convrate as convrate,B.unitName as pieUnitName,
+		scmbaseattachment.fileName as attachmentName,(select group_concat(scmauditdetailhistory.oper,'^',scmauditdetailhistory.opinion,'^',date_format(scmauditdetailhistory.operDate,'%Y-%m-%d %T'),'^',scmauditdetailhistory.remarks)
+		from scmauditdetailhistory
+		where scmauditdetailhistory.billId = scmpurrequireentry.prId
+		and scmauditdetailhistory.billType = 'PurRequire'
+		and scmauditdetailhistory.lineId = scmpurrequireentry.lineId
+		and scmauditdetailhistory.flag=1
+		and ifnull(scmauditdetailhistory.remarks,'')!=''
+		group by scmauditdetailhistory.billId,scmauditdetailhistory.lineId
+		order by scmauditdetailhistory.billId,scmauditdetailhistory.lineId,scmauditdetailhistory.operDate asc) rowAuditRemarks,
+		(SELECT scmpurrereuse.opinion FROM  scmpurrereuse where scmpurrequireentry.Id=scmpurrereuse.entryBillId and scmpurrereuse.flag=1 and scmpurrereuse.rowStatus="I" ORDER BY id desc LIMIT 1)as refuseReason
+		FROM scmpurrequireentry
+		LEFT JOIN scmbaseattachment on scmpurrequireentry.attachmentId=scmbaseattachment.id
+		left join ScmMeasureUnit on scmpurrequireentry.purUnit=ScmMeasureUnit.id
+		left join ScmMeasureUnit B on scmpurrequireentry.pieUnit=B.id
+		left join ScmMaterialUnitRelation on scmpurrequireentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurrequireentry.purUnit=ScmMaterialUnitRelation.targetUnitId,
+		ScmPurRequire,ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE scmpurrequireentry.prId=scmpurrequire.id and scmpurrequireentry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		And scmpurrequireentry.prId=#{prId}
+		ORDER BY scmpurrequireentry.lineId ASC
+	</select>
+	<select id="scmpurrequireentry.selectByPrIds" resultType="ScmPurRequireEntry2" parameterType="Map">
+		SELECT scmpurrequireentry.*,scmmaterial.itemNo as itemNo,Case scmpurrequireentry.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,ScmMaterialGroup.classCode,
+		ScmMeasureUnit.unitName as purUnitName,ScmMaterialUnitRelation.convrate as convrate,B.unitName as pieUnitName,
+		scmpurrequire.prNo
+		FROM scmpurrequireentry
+		left join ScmMeasureUnit on scmpurrequireentry.purUnit=ScmMeasureUnit.id
+		left join ScmMeasureUnit B on scmpurrequireentry.pieUnit=B.id
+		left join ScmMaterialUnitRelation on scmpurrequireentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurrequireentry.purUnit=ScmMaterialUnitRelation.targetUnitId,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard,scmpurrequire
+		WHERE scmpurrequireentry.itemId=scmmaterial.id
+		And scmpurrequire.id=scmpurrequireentry.prId
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		And scmpurrequireentry.prId in(${prIds})
+		<if test="buyerId !=null and buyerId !=''">
+			And scmpurrequireentry.buyerId=${buyerId}
+		</if>
+		<if test="itemId !=null and itemId !=''">
+			And scmpurrequireentry.itemId=${itemId}
+		</if>
+		<if test="vendorId !=null and vendorId !=''">
+			And scmpurrequireentry.vendorId=${vendorId}
+		</if>
+		<if test="prNo !=null and prNo !=''">
+			And scmpurrequire.prNo like'%${prNo}%'
+		</if>
+		<if test="rowStatus !=null and rowStatus !=''">
+			And scmpurrequireentry.rowStatus in (${rowStatus})
+		</if>
+		<if test="purRequireEntryAudit !=null and purRequireEntryAudit !=''">
+			And scmpurrequireentry.purRequireEntryAudit=${purRequireEntryAudit}
+		</if>
+		ORDER BY scmpurrequire.prNo DESC,scmmaterial.itemNo ASC
+	</select>
+	<select id="scmpurrequireentry.selectByPrId2" resultType="ScmPurRequireEntry2" parameterType="Map"> 
+		SELECT scmpurrequireentry.*,scmsupplier.vendorName,scmmaterial.itemNo as itemNo,Case scmpurrequireentry.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,ScmMaterialGroup.classCode,B.unitName as pieUnitName,
+		ScmMeasureUnit.unitName as purUnitName,ScmMaterialUnitRelation.convrate as convrate
+		FROM scmpurrequireentry
+		left join ScmMeasureUnit on scmpurrequireentry.purUnit=ScmMeasureUnit.id
+		left join ScmMeasureUnit B on scmpurrequireentry.pieUnit=B.id
+		left join scmsupplier on scmsupplier.id=scmpurrequireentry.vendorId
+		left join ScmMaterialUnitRelation on scmpurrequireentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurrequireentry.purUnit=ScmMaterialUnitRelation.targetUnitId,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE scmpurrequireentry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		And scmpurrequireentry.prId=#{prId}
+		And scmpurrequireentry.rowStatus in ('D','P')
+		ORDER BY scmpurrequireentry.lineId ASC
+	</select>
+	<insert id="scmpurrequireentry.add" parameterType="ScmPurRequireEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurrequireentry (
+        prId,
+        lineId,
+        orgUnitNo,
+        itemId,
+        purUnit,
+        baseUnit,
+        baseQty,
+        purOrgUnitNo,
+        recStorageOrgUnitNo,
+        entrusted,
+        msRecStorageOrgUnitNo,
+        buyerId,
+        purGroupId,
+        attachmentId,
+        vendorId,
+        directPurchase,
+        qty,
+        reqDate,
+        orderQty,
+        price,
+        amt,
+        sourceDtlId,
+        priceBillId,
+        priceBillNo,
+        refPriceStatus,
+        rowStatus,
+        wareHouseId,
+        checker,
+        checkDate,
+        fromSupplyInfo,
+        supplyCycle,
+        idle,
+        purRequireEntryAudit,
+        remarks,
+        recentPrice,
+        stockQty,
+        pieQty,
+        pieUnit        )
+		VALUES (
+        #{prId},
+        #{lineId},
+        #{orgUnitNo},
+        #{itemId},
+        #{purUnit},
+        #{baseUnit},
+        #{baseQty},
+        #{purOrgUnitNo},
+        #{recStorageOrgUnitNo},
+        #{entrusted},
+        #{msRecStorageOrgUnitNo},
+        #{buyerId},
+        #{purGroupId},
+        #{attachmentId},
+        #{vendorId},
+        #{directPurchase},
+        #{qty},
+        #{reqDate},
+        #{orderQty},
+        #{price},
+        #{amt},
+        #{sourceDtlId},
+        #{priceBillId},
+        #{priceBillNo},
+        #{refPriceStatus},
+        #{rowStatus},
+        #{wareHouseId},
+        #{checker},
+        #{checkDate},
+        #{fromSupplyInfo},
+        #{supplyCycle},
+        #{idle},
+        #{purRequireEntryAudit},
+        #{remarks},
+        #{recentPrice},
+        #{stockQty},
+        #{pieQty},
+        #{pieUnit}        )
+	</insert>
+ 
+	<update id="scmpurrequireentry.update" parameterType="ScmPurRequireEntry">
+		UPDATE scmpurrequireentry set
+        prId=#{prId},
+        lineId=#{lineId},
+        orgUnitNo=#{orgUnitNo},
+        itemId=#{itemId},
+        purUnit=#{purUnit},
+        baseUnit=#{baseUnit},
+        baseQty=#{baseQty},
+        purOrgUnitNo=#{purOrgUnitNo},
+        recStorageOrgUnitNo=#{recStorageOrgUnitNo},
+        entrusted=#{entrusted},
+        msRecStorageOrgUnitNo=#{msRecStorageOrgUnitNo},
+        buyerId=#{buyerId},
+        purGroupId=#{purGroupId},
+        attachmentId=#{attachmentId},
+        vendorId=#{vendorId},
+        directPurchase=#{directPurchase},
+        qty=#{qty},
+        reqDate=#{reqDate},
+        orderQty=#{orderQty},
+        price=#{price},
+        amt=#{amt},
+        sourceDtlId=#{sourceDtlId},
+        priceBillId=#{priceBillId},
+        priceBillNo=#{priceBillNo},
+        refPriceStatus=#{refPriceStatus},
+        rowStatus=#{rowStatus},
+        wareHouseId=#{wareHouseId},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        fromSupplyInfo=#{fromSupplyInfo},
+        supplyCycle=#{supplyCycle},
+        idle=#{idle},
+        purRequireEntryAudit=#{purRequireEntryAudit},
+        remarks=#{remarks},
+        recentPrice=#{recentPrice},
+        stockQty=#{stockQty},
+        pieUnit=#{pieUnit},
+        pieQty=#{pieQty}		 WHERE id = #{id}
+	</update>
+	
+	<update id="scmpurrequireentry.updateRowStatusByPrId" parameterType="map">
+		UPDATE scmpurrequireentry set
+        rowStatus=#{rowStatus},
+        checker=#{checker},
+        checkDate=#{checkDate}	 WHERE prId = #{prId}
+	</update>
+ 
+	<delete id="scmpurrequireentry.delete" parameterType="String">
+		DELETE FROM scmpurrequireentry WHERE id IN (${value})
+	</delete> 
+	
+	<delete id="scmpurrequireentry.deleteByPrId" parameterType="Map">
+		DELETE FROM scmpurrequireentry WHERE prId=#{prId}
+	</delete>
+	
+	<select id="scmpurrequireentry.selectByBuyerId" resultType="ScmPurRequireEntry2"  parameterType="Map">
+	    SELECT scmpurrequireentry.* 
+		FROM scmpurrequire,scmpurrequireentry
+		WHERE scmpurrequireentry.prId = scmpurrequire.id
+			AND scmpurrequire.controlUnitNo = #{controlUnitNo}
+			AND scmpurrequireentry.buyerId = #{buyerId}
+	</select>
+	
+	<update id="scmpurrequireentry.updateRowStatusByLineId" parameterType="map">
+		UPDATE scmpurrequireentry set
+	        rowStatus=#{rowStatus},
+	        checker=#{checker},
+	        checkDate=#{checkDate},
+	        purRequireEntryAudit=0	 
+        WHERE prId = #{prId} 
+        	AND lineId = #{lineId} 
+	</update>
+	
+	<select id="scmpurrequireentry.viewPurRequestStatus" resultType="ScmPurRequireEntry2" parameterType="Map">
+		select #{prNo} as prNo, scmpurrequireentry.itemid, scmmaterial.itemNo, scmmaterial.itemName,
+			scmpurorderTemp.poNo as purOrderNo, scmpurorderTemp.rowstatus as purOrderStatus,
+			scmpurreceiveTemp.pvNo as purReceiveNo, scmpurreceiveTemp.rowStatus as purReceiveStatus,
+			scminvpurinwarehsbillTemp.wrNo as invPurInwarehsNo, scminvpurinwarehsbillTemp.status as invPurInwarehsStatus
+		from scmpurrequireentry
+		left join scmmaterial on scmpurrequireentry.itemId = scmmaterial.id
+		left join 
+		(select scmpurrequireentry.id, scmpurorder.poNo, scmpurorderentry.rowstatus
+		from scmpurrequireentry, scmpurorder, scmpurorderentry
+		where scmpurrequireentry.id = scmpurorderentry.prDtlId
+			and scmpurorder.id = scmpurorderentry.poId
+			and scmpurrequireentry.prid = #{prId}
+		) scmpurorderTemp on scmpurrequireentry.id = scmpurorderTemp.id
+		left join (
+		select scmpurrequireentry.id, scmpurreceive.pvNo, scmpurreceiveentry.rowstatus
+		from scmpurrequireentry, scmpurorder, scmpurorderentry, scmpurreceive, scmpurreceiveentry
+		where scmpurrequireentry.id = scmpurorderentry.prDtlId
+			and scmpurorder.id = scmpurorderentry.poId
+			and scmpurorderentry.id = scmpurreceiveentry.poDtlId
+			and scmpurreceive.id = scmpurreceiveentry.pvId
+			and scmpurrequireentry.prid = #{prId}
+		) scmpurreceiveTemp on scmpurrequireentry.id = scmpurreceiveTemp.id
+		left join (
+		select scmpurrequireentry.id, scminvpurinwarehsbill.wrNo, scminvpurinwarehsbill.status
+		from scmpurrequireentry, scmpurorder, scmpurorderentry, scmpurreceive, scmpurreceiveentry,
+			scminvpurinwarehsbill, scminvpurinwarehsbillentry
+		where scmpurrequireentry.id = scmpurorderentry.prDtlId
+			and scmpurorder.id = scmpurorderentry.poId
+			and scmpurorderentry.id = scmpurreceiveentry.poDtlId
+			and scmpurreceive.id = scmpurreceiveentry.pvId
+			and scminvpurinwarehsbillentry.sourceBillDtlId = scmpurreceiveentry.id
+			and scminvpurinwarehsbill.wrid = scminvpurinwarehsbillentry.wrId
+			and scmpurrequireentry.prid = #{prId}
+		) scminvpurinwarehsbillTemp on scmpurrequireentry.id = scminvpurinwarehsbillTemp.id
+		where scmpurrequireentry.prId = #{prId}
+		order by scmpurrequireentry.lineId
+	</select> 
+	<select id="scmpurrequireentry.undoReleaseCheck"
+		resultType="ScmPurRequireEntry2" parameterType="Map">
+		SELECT * FROM (
+		SELECT
+		ScmPurRequire.id,ScmPurRequire.prNo,ScmPurRequireEntry.priceBillId,refPriceStatus,1
+		as bizType
+		FROM ScmPurRequireEntry,ScmPurRequire
+		where ScmPurRequireEntry.prId=ScmPurRequire.id
+		<choose>
+			<when test='billType !=null and billType!="1"'><!--0:定价单1：报价单 -->
+				and refPriceStatus='1'
+			</when>
+			<otherwise>
+				and refPriceStatus in ('2','3','4','5')
+			</otherwise>
+		</choose>
+		<if test="priceBillId !=null">
+			and priceBillId in (${priceBillId})
+		</if>
+		GROUP BY prNo
+		union
+		SELECT
+		ScmPurOrder.id,ScmPurOrder.poNo,ScmPurOrderEntry.priceBillId,refPriceStatus,2
+		as bizType
+		FROM ScmPurOrderEntry,ScmPurOrder
+		where
+		ScmPurOrderEntry.poId=ScmPurOrder.id
+		<choose>
+			<when test='billType !=null and billType!="1"'><!--0:定价单1：报价单 -->
+				and refPriceStatus='1'
+			</when>
+			<otherwise>
+				and refPriceStatus in ('2','3','4','5')
+			</otherwise>
+		</choose>
+		<if test="priceBillId !=null">
+			and priceBillId in (${priceBillId})
+		</if>
+		GROUP BY poNo
+		union
+		SELECT ScmPurReceive.id,ScmPurReceive.pvNo,ScmPurReceiveEntry.priceBillId,refPriceStatus,3 as bizType
+		FROM ScmPurReceiveEntry,ScmPurReceive
+		where ScmPurReceiveEntry.pvId=ScmPurReceive.id
+		<choose>
+			<when test='billType !=null and billType!="1"'><!--0:定价单1：报价单 -->
+				and refPriceStatus='1'
+			</when>
+			<otherwise>
+				and refPriceStatus in ('2','3','4','5')
+			</otherwise>
+		</choose>
+		<if test="priceBillId !=null">
+			and priceBillId in (${priceBillId})
+		</if>
+		GROUP BY pvNo
+		union
+		SELECT
+		ScmInvPurInWarehsBill.wrid,ScmInvPurInWarehsBill.wrNo,ScmInvPurInWarehsBillEntry.priceBillId,refPriceStatus
+		,4 as bizType
+		FROM ScmInvPurInWarehsBillEntry,ScmInvPurInWarehsBill
+		where ScmInvPurInWarehsBillEntry.wrId=ScmInvPurInWarehsBill.wrId
+		<choose>
+			<when test='billType !=null and billType!="1"'><!--1:定价单0：报价单 -->
+				and refPriceStatus='1'
+			</when>
+			<otherwise>
+				and refPriceStatus in ('2','3','4','5')
+			</otherwise>
+		</choose>
+		<if test="priceBillId !=null">
+			and ScmInvPurInWarehsBillEntry.priceBillId in (${priceBillId})
+		</if>
+		GROUP BY wrNo
+		union
+		SELECT
+		scmpursuppliersource.id,scmpursuppliersource.billno,scmpursuppliersourceentry.priceBillId,refPriceStatus
+		,5 as bizType
+		FROM scmpursuppliersourceentry,scmpursuppliersource
+		where scmpursuppliersourceentry.billid=scmpursuppliersource.id
+		<choose>
+			<when test='billType !=null and billType!="1"'><!--1:定价单0：报价单 -->
+				and refPriceStatus='1'
+			</when>
+			<otherwise>
+				and refPriceStatus in ('2','3','4','5')
+			</otherwise>
+		</choose>
+		<if test="priceBillId !=null">
+			and scmpursuppliersourceentry.priceBillId in (${priceBillId})
+		</if>
+		GROUP BY billno
+		)A
+	</select>
+	<update id="scmpurrequireentry.updateGrantedStatus" parameterType="ScmPurRequireEntry">
+		UPDATE scmpurrequireentry set
+        prId=#{prId},
+        lineId=#{lineId},
+        orgUnitNo=#{orgUnitNo},
+        itemId=#{itemId},
+        purUnit=#{purUnit},
+        baseUnit=#{baseUnit},
+        baseQty=#{baseQty},
+        purOrgUnitNo=#{purOrgUnitNo},
+        recStorageOrgUnitNo=#{recStorageOrgUnitNo},
+        entrusted=#{entrusted},
+        msRecStorageOrgUnitNo=#{msRecStorageOrgUnitNo},
+        buyerId=#{buyerId},
+        purGroupId=#{purGroupId},
+        vendorId=#{vendorId},
+        directPurchase=#{directPurchase},
+        qty=#{qty},
+        reqDate=#{reqDate},
+        orderQty=#{orderQty},
+        price=#{price},
+        amt=#{amt},
+        sourceDtlId=#{sourceDtlId},
+        priceBillId=#{priceBillId},
+        refPriceStatus=#{refPriceStatus},
+        rowStatus=#{rowStatus},
+        wareHouseId=#{wareHouseId},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        fromSupplyInfo=#{fromSupplyInfo},
+        purRequireEntryAudit=#{purRequireEntryAudit},
+        remarks=#{remarks},
+        recentPrice=#{recentPrice},
+        stockQty=#{stockQty}		 
+        WHERE id = #{id}
+        <choose>
+ 			<when test='rowStatus!=null and rowStatus=="E"'>
+ 				and rowStatus='A'
+ 			</when>
+ 			<when test='rowStatus!=null and rowStatus=="A"'>
+ 				and rowStatus in ('E', 'C')
+ 			</when>
+ 			<when test='rowStatus!=null and rowStatus=="C"'>
+ 				and rowStatus='A'
+ 			</when>
+ 			<otherwise>
+ 				and rowStatus=''
+ 			</otherwise>
+ 		</choose>
+	</update>
+	
+	<update id="scmpurrequireentry.updatePurRequestByPmId" parameterType="map">
+		UPDATE scmpurrequireentry, scmpurrequire
+		set scmpurrequireentry.price = #{price},
+			scmpurrequireentry.amt = qty * #{price},
+			scmpurrequireentry.vendorId = #{vendorId}
+		WHERE scmpurrequireentry.prId = scmpurrequire.id
+		AND scmpurrequireentry.refPriceStatus in ('6','7')
+		AND scmpurrequireentry.priceBillId = #{pmId}
+		AND scmpurrequire.prNo in (${prNos})
+		AND scmpurrequireentry.itemId = #{itemId}
+	</update>
+	
+	<update id="scmpurrequireentry.updatePurRequestPriceBillIdByPmId" parameterType="map">
+		UPDATE scmpurrequireentry, scmpurrequire
+		set scmpurrequireentry.refPriceStatus = '0',
+			scmpurrequireentry.priceBillId = 0,
+			scmpurrequireentry.vendorId = 0
+		WHERE scmpurrequireentry.prId = scmpurrequire.id
+		AND scmpurrequireentry.refPriceStatus in ('6','7')
+		AND scmpurrequireentry.priceBillId = #{pmId}
+		AND scmpurrequire.prNo in (${prNos})
+		AND scmpurrequireentry.itemId = #{itemId}
+	</update>
+	<select id="scmpurrequireentry.clearPurRequirePrice" resultType="ScmPurRequireEntry2" parameterType="Map">
+		SELECT
+		ScmPurRequireEntry.id,ScmPurRequire.prNo,ScmPurRequireEntry.priceBillId,refPriceStatus,1
+		as bizType,ScmPurRequire.status as rowStatus
+		FROM ScmPurRequireEntry,ScmPurRequire
+		where ScmPurRequireEntry.prId=ScmPurRequire.id
+		and refPriceStatus>'1'
+		and priceBillId in (${priceBillId})
+		union
+		SELECT
+		ScmPurOrderEntry.id,ScmPurOrder.poNo,ScmPurOrderEntry.priceBillId,refPriceStatus,2
+		as bizType,ScmPurOrder.status as rowStatus
+		FROM ScmPurOrderEntry,ScmPurOrder
+		where
+		ScmPurOrderEntry.poId=ScmPurOrder.id
+		and refPriceStatus>'1'
+		and priceBillId in (${priceBillId})
+		union
+		SELECT
+		ScmPurReceiveEntry.id,ScmPurReceive.pvNo,ScmPurReceiveEntry.priceBillId,refPriceStatus,3
+		as bizType,scmpurreceive.status as rowStatus
+		FROM ScmPurReceiveEntry,ScmPurReceive
+		where ScmPurReceiveEntry.pvId=ScmPurReceive.id
+		and refPriceStatus>'1'
+		and priceBillId in (${priceBillId})
+		union
+		SELECT
+		ScmInvPurInWarehsBillEntry.wrid,ScmInvPurInWarehsBill.wrNo,ScmInvPurInWarehsBillEntry.priceBillId,refPriceStatus
+		,4 as bizType,ScmInvPurInWarehsBill.status as rowStatus
+		FROM ScmInvPurInWarehsBillEntry,ScmInvPurInWarehsBill
+		where ScmInvPurInWarehsBillEntry.wrId=ScmInvPurInWarehsBill.wrId
+		and refPriceStatus>'1'
+		and ScmInvPurInWarehsBillEntry.priceBillId in (${priceBillId})
+	</select>
+	<select id="scmpurrequireentry.selectByPrIdCount" resultType="ScmPurRequireEntry2" parameterType="Map">
+		SELECT id,rowStatus FROM scmpurrequireentry WHERE prid=#{prId}
+	</select>
+	<select id="scmpurrequireentry.selectByPurOrgUnitNo" resultType="ScmPurRequireEntry2" parameterType="Map">
+		SELECT scmpurrequireentry.*,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,Case scmpurrequireentry.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		ScmMeasureUnit.unitName as purUnitName,scmpurrequire.prNo,Scmpurrequire.receiveWareHouseId,Scmpurrequire.finOrgUnitNo,
+		ScmMaterialGroup.id as groupId,ScmMaterialUnitRelation.convrate,scmsupplier.vendorName,
+		ScmMeasureUnit.unitName as unitName,ScmMaterialGroup.className,scmpurrequireentry.qty as reqQty,
+		Case When ScmSupplierUnified.orgUnitNo IS NULL Then Case When #{unifiedOrDirect}='U' Then 1 Else 0 end Else Case When #{unifiedOrDirect}='U' Then 0 Else 1 End End as unified,
+		Scmpurrequire.bizType
+		FROM scmpurrequireentry
+		left join ScmMeasureUnit on scmpurrequireentry.purUnit=ScmMeasureUnit.id
+		left join ScmMaterialUnitRelation on scmpurrequireentry.itemId=ScmMaterialUnitRelation.itemId And ScmMaterialUnitRelation.targetUnitId=scmpurrequireentry.purUnit
+		left join scmsupplier on scmsupplier.id=scmpurrequireentry.vendorId
+		Left Join ScmSupplierUnified ON scmPurRequireEntry.vendorId = ScmSupplierUnified.vendorId
+		And scmPurRequireEntry.recStorageOrgUnitNo = ScmSupplierUnified.orgUnitNo,
+		Scmpurrequire,scmmaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+		WHERE scmpurrequireentry.prId=scmpurrequire.id and scmpurrequireentry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		<if test="orderQty!=null and orderQty!=''">
+			And scmpurrequireentry.orderQty=0
+		</if>
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id And ScmMaterialGroupStandard.standardNo='BaseStandard'
+		AND ScmPurRequireEntry.purOrgUnitNo = #{purOrgUnitNo} 
+		AND ScmPurRequireEntry.rowStatus = 'E' 
+		ORDER BY scmpurrequireentry.orgUnitNo ASC,scmmaterial.itemNo ASC
+	</select>
+	<select id="scmpurrequireentry.selectAutoOrderListByPrId" resultType="ScmPurRequireEntry2" parameterType="Map">
+		SELECT *,scmpurrequire.bizType FROM ScmPurRequireEntry,scmpurrequire WHERE prId=#{prId} and ScmPurRequireEntry.prId=scmpurrequire.id and orderQty=0 and directPurchase=1 And rowStatus='A' order by lineId
+	</select>
+</mapper>

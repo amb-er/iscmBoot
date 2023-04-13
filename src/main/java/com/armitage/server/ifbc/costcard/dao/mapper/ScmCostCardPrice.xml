@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcostcardprice">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmcostcardprice.findAll" resultType="ScmCostCardPrice" >
+	    SELECT * FROM ScmCostCardPrice WHERE  1=1  
+	</select>
+ 
+	<select id="scmcostcardprice.findAllPage" resultType="ScmCostCardPrice" parameterType="Map"> 
+		SELECT * FROM ScmCostCardPrice WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmcostcardprice.selectById" resultType="ScmCostCardPrice" parameterType="Long">
+		SELECT * FROM ScmCostCardPrice WHERE id = #{value}
+	</select> 
+	<select id="scmcostcardprice.selectByScmCostCardPrice" resultType="ScmCostCardPrice" parameterType="Map"> 
+		SELECT * FROM ScmCostCardPrice 
+		WHERE orgUnitNo = #{orgUnitNo}
+		and dishId = #{dishId}
+		and date_format(accDate,'%Y-%m-%d') = date_format(#{accDate},'%Y-%m-%d')
+	</select> 
+	<insert id="scmcostcardprice.batchAddSalePrice" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmCostCardPrice (
+        orgUnitNo,
+        dishId,
+        dishSpecId,
+        accDate,
+        salePrice,
+        costPrice        )
+		VALUES 
+		<foreach item="scmCostCardPrice" index="index" collection="scmCostCardPriceList" separator=",">
+			(
+	        #{scmCostCardPrice.orgUnitNo},
+	        #{scmCostCardPrice.dishId},
+	        #{scmCostCardPrice.dishSpecId},
+	        #{scmCostCardPrice.accDate},
+	        #{scmCostCardPrice.salePrice},
+	        #{scmCostCardPrice.costPrice}        )
+     	</foreach >
+     	ON DUPLICATE KEY UPDATE salePrice=VALUES(salePrice)
+	</insert>
+	<insert id="scmcostcardprice.batchAddCostPrice" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmCostCardPrice (orgUnitNo,dishId,dishSpecId,accDate,salePrice,costPrice)
+		SELECT #{orgUnitNo} as orgUnitNo,A.dishId,A.dishSpecId,C.accDate,0 as salePrice,round(sum(A.qty*B.price),2) as costPrice
+		From ScmCostCardDetailHistory A,ScmItemCostPriceHistory B,ScmDateList C
+		WHERE A.itemId=B.itemId And (A.orgUnitNo=#{controlUnitNo} or A.orgUnitNo=#{orgUnitNo}) And A.beginDate &lt;= C.accDate And A.endDate &gt;=C.accDate
+		And C.accDate &gt;=#{begDate} And C.accDate &lt;=#{endDate}
+		And B.orgUnitNo=#{orgUnitNo} And B.accDate=C.accDate
+		GROUP BY A.dishId,A.dishSpecId,C.accDate
+		UNION
+		SELECT #{orgUnitNo} as orgUnitNo,A.dishId,D.dishSpecId,C.accDate as accDate,0 as salePrice,round(sum(A.qty*B.price*D.costRatio),2) as costPrice
+		From ScmCostCardDetailHistory A,ScmItemCostPriceHistory B,ScmDateList C,ScmDishCostRatio D
+		WHERE A.itemId=B.itemId And (A.orgUnitNo=#{controlUnitNo} or A.orgUnitNo=#{orgUnitNo}) And A.beginDate &lt;= C.accDate And A.endDate &gt;=C.accDate
+		And C.accDate &gt;=#{begDate} And C.accDate &lt;=#{endDate} AND A.cardId=D.cardId
+		And B.orgUnitNo=#{orgUnitNo} And B.accDate=C.accDate
+		GROUP BY A.dishId,D.dishSpecId,C.accDate
+    	ON DUPLICATE KEY UPDATE costPrice=VALUES(costPrice)
+	</insert>
+	<insert id="scmcostcardprice.addPeriodSalePrice" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmCostCardPrice (orgUnitNo,dishId,dishSpecId,accDate,salePrice,costPrice)
+		SELECT A.orgUnitNo,A.dishId,A.dishSpecId,B.accDate,A.salePrice,A.costPrice
+		FROM ScmCostCardPrice A,ScmDateList B 
+		WHERE A.orgUnitNo=#{orgUnitNo} and A.accDate=#{begDate} And B.accDate &gt;=#{begDate} and B.accDate &lt;=#{endDate}
+    	ON DUPLICATE KEY UPDATE salePrice=VALUES(salePrice)
+	</insert>
+	<insert id="scmcostcardprice.add" parameterType="ScmCostCardPrice"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmCostCardPrice (
+        orgUnitNo,
+        dishId,
+        dishSpecId,
+        accDate,
+        salePrice,
+        costPrice        )
+		VALUES (
+        #{orgUnitNo},
+        #{dishId},
+        #{dishSpecId},
+        #{accDate},
+        #{salePrice},
+        #{costPrice}        )
+	</insert>
+ 
+	<update id="scmcostcardprice.update" parameterType="ScmCostCardPrice">
+		UPDATE ScmCostCardPrice set
+        orgUnitNo=#{orgUnitNo},
+        dishId=#{dishId},
+        dishSpecId=#{dishSpecId},
+        accDate=#{accDate},
+        salePrice=#{salePrice},
+        costPrice=#{costPrice}		 WHERE id = #{id}
+	</update>
+	
+	<delete id="scmcostcardprice.delete" parameterType="String">
+		DELETE FROM ScmCostCardPrice WHERE id IN (${value})
+	</delete> 
+
+</mapper>

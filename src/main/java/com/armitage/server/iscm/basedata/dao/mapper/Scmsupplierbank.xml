@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsupplierbank">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsupplierbank.findAll" resultType="Scmsupplierbank" >
+	    SELECT * FROM scmsupplierbank WHERE  1=1  
+	</select>
+ 
+	<select id="scmsupplierbank.findAllPage" resultType="Scmsupplierbank" parameterType="Map"> 
+		SELECT * FROM scmsupplierbank WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmsupplierbank.selectById" resultType="Scmsupplierbank" parameterType="Long">
+		SELECT * FROM scmsupplierbank WHERE id = #{value}
+	</select> 
+	<select id="scmsupplierbank.selectByVendorIdAndOrgUnitNo" resultType="Scmsupplierbank" parameterType="Map"> 
+		SELECT * FROM scmsupplierbank WHERE vendorId=#{vendorId} AND orgUnitNo=#{orgUnitNo}
+	</select> 
+	<insert id="scmsupplierbank.add" parameterType="Scmsupplierbank"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmsupplierbank (
+        vendorId,
+        orgUnitNo,
+        bankName,
+        bankAccNo,
+        bankAddress        )
+		VALUES (
+        #{vendorId},
+        #{orgUnitNo},
+        #{bankName},
+        #{bankAccNo},
+        #{bankAddress}        )
+	</insert>
+ 
+	<update id="scmsupplierbank.update" parameterType="Scmsupplierbank">
+		UPDATE scmsupplierbank set
+        vendorId=#{vendorId},
+        orgUnitNo=#{orgUnitNo},
+        bankName=#{bankName},
+        bankAccNo=#{bankAccNo},
+        bankAddress=#{bankAddress}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsupplierbank.delete" parameterType="String">
+		DELETE FROM scmsupplierbank WHERE id IN (${value})
+	</delete> 
+	
+	<delete id="scmsupplierbank.deleteByVendorId" parameterType="Map">
+		DELETE FROM scmsupplierbank WHERE vendorId=#{vendorId}
+	</delete> 
+
+</mapper>
+ 

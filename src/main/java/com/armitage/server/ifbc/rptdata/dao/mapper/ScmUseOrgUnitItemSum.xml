@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmuseorgunititemsum">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmuseorgunititemsum.findAll" resultType="ScmUseOrgUnitItemSum" >
+	    SELECT * FROM ScmUseOrgUnitItemSum WHERE  1=1  
+	</select>
+ 
+	<select id="scmuseorgunititemsum.findAllPage" resultType="ScmUseOrgUnitItemSum" parameterType="Map"> 
+		SELECT * FROM ScmUseOrgUnitItemSum WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmuseorgunititemsum.selectById" resultType="ScmUseOrgUnitItemSum" parameterType="Long">
+		SELECT * FROM ScmUseOrgUnitItemSum WHERE id = #{value}
+	</select> 
+	<insert id="scmuseorgunititemsum.add" parameterType="ScmUseOrgUnitItemSum"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmUseOrgUnitItemSum (
+        ckeckPeriodId,
+        periodId,
+        orgUnitNo,
+        itemId,
+        costType,
+        unitId,
+        startQty,
+        startAmt,
+        wiQty,
+        wiAmt,
+        diQty,
+        diAmt,
+        miQty,
+        miAmt,
+        moQty,
+        moAmt,
+        ilQty,
+        ilAmt,
+        dsQty,
+        dsAmt,
+        dcQty,
+        dcAmt,
+        endQty,
+        endAmt        )
+		VALUES (
+        #{ckeckPeriodId},
+        #{periodId},
+        #{orgUnitNo},
+        #{itemId},
+        #{costType},
+        #{unitId},
+        #{startQty},
+        #{startAmt},
+        #{wiQty},
+        #{wiAmt},
+        #{diQty},
+        #{diAmt},
+        #{miQty},
+        #{miAmt},
+        #{moQty},
+        #{moAmt},
+        #{ilQty},
+        #{ilAmt},
+        #{dsQty},
+        #{dsAmt},
+        #{dcQty},
+        #{dcAmt},
+        #{endQty},
+        #{endAmt}        )
+	</insert>
+  	<insert id="scmuseorgunititemsum.batchAdd" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+ 		INSERT INTO  ScmUseOrgUnitItemSum (ckeckPeriodId,periodId,orgUnitNo,itemId,costType,unitId,startQty,startAmt,wiQty,wiAmt,
+ 			diQty,diAmt,miQty,miAmt,moQty,moAmt,ilQty,ilAmt,dsQty,dsAmt,dcQty,dcAmt,endQty,endAmt)
+		VALUES
+		<foreach item="scmUseOrgUnitItemSum" index="index" collection="scmUseOrgUnitItemSumList" separator=",">
+			(#{scmUseOrgUnitItemSum.ckeckPeriodId},
+			#{scmUseOrgUnitItemSum.periodId},
+	        #{scmUseOrgUnitItemSum.orgUnitNo},
+	        #{scmUseOrgUnitItemSum.itemId},
+	        #{scmUseOrgUnitItemSum.costType},
+	        #{scmUseOrgUnitItemSum.unitId},
+	        #{scmUseOrgUnitItemSum.startQty},
+	        #{scmUseOrgUnitItemSum.startAmt},
+	        #{scmUseOrgUnitItemSum.wiQty},
+	        #{scmUseOrgUnitItemSum.wiAmt},
+	        #{scmUseOrgUnitItemSum.diQty},
+	        #{scmUseOrgUnitItemSum.diAmt},
+	        #{scmUseOrgUnitItemSum.miQty},
+	        #{scmUseOrgUnitItemSum.miAmt},
+	        #{scmUseOrgUnitItemSum.moQty},
+	        #{scmUseOrgUnitItemSum.moAmt},
+	        #{scmUseOrgUnitItemSum.ilQty},
+	        #{scmUseOrgUnitItemSum.ilAmt},
+	        #{scmUseOrgUnitItemSum.dsQty},
+	        #{scmUseOrgUnitItemSum.dsAmt},
+	        #{scmUseOrgUnitItemSum.dcQty},
+	        #{scmUseOrgUnitItemSum.dcAmt},
+	        #{scmUseOrgUnitItemSum.endQty},
+	        #{scmUseOrgUnitItemSum.endAmt})
+       </foreach >
+	</insert>
+	<update id="scmuseorgunititemsum.update" parameterType="ScmUseOrgUnitItemSum">
+		UPDATE ScmUseOrgUnitItemSum set
+        ckeckPeriodId=#{ckeckPeriodId},
+        periodId=#{periodId},
+        orgUnitNo=#{orgUnitNo},
+        itemId=#{itemId},
+        costType=#{costType},
+        unitId=#{unitId},
+        startQty=#{startQty},
+        startAmt=#{startAmt},
+        wiQty=#{wiQty},
+        wiAmt=#{wiAmt},
+        diQty=#{diQty},
+        diAmt=#{diAmt},
+        miQty=#{miQty},
+        miAmt=#{miAmt},
+        moQty=#{moQty},
+        moAmt=#{moAmt},
+        ilQty=#{ilQty},
+        ilAmt=#{ilAmt},
+        dsQty=#{dsQty},
+        dsAmt=#{dsAmt},
+        dcQty=#{dcQty},
+        dcAmt=#{dcAmt},
+        endQty=#{endQty},
+        endAmt=#{endAmt}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmuseorgunititemsum.delete" parameterType="String">
+		DELETE FROM ScmUseOrgUnitItemSum WHERE id IN (${value})
+	</delete> 
+	<delete id="scmuseorgunititemsum.delRptData" parameterType="Map">
+		DELETE FROM ScmUseOrgUnitItemSum WHERE orgUnitNo =#{orgUnitNo} and ckeckPeriodId =#{periodId}
+	</delete> 
+
+</mapper>
+ 

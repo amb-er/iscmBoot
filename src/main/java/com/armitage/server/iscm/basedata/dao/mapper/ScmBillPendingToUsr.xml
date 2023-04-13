@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmbillpendingtousr">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmbillpendingtousr.findAll" resultType="ScmBillPendingToUsr" >
+	    SELECT * FROM ScmBillPendingToUsr WHERE  1=1  
+	</select>
+ 
+	<select id="scmbillpendingtousr.findAllPage" resultType="ScmBillPendingToUsr" parameterType="Map"> 
+		SELECT * FROM ScmBillPendingToUsr WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmbillpendingtousr.selectById" resultType="ScmBillPendingToUsr" parameterType="Long">
+		SELECT * FROM ScmBillPendingToUsr WHERE id = #{value}
+	</select> 
+	<select id="scmbillpendingtousr.selectByPendingId" resultType="ScmBillPendingToUsr" parameterType="Map">
+		SELECT * FROM ScmBillPendingToUsr WHERE pendingId = #{pendingId}
+	</select> 
+	<update id="scmbillpendingtousr.updateProcessed" parameterType="Map">
+		UPDATE ScmBillPendingToUsr set processed=1 WHERE pendingId=#{pendingId}
+	</update>
+	<update id="scmbillpendingtousr.updateUsrProcessed" parameterType="Map">
+		UPDATE ScmBillPendingToUsr set processed=1 WHERE pendingId=#{pendingId} and usrCode=#{usrCode}
+	</update>
+	<update id="scmbillpendingtousr.cancelProcessed" parameterType="Map">
+		UPDATE ScmBillPendingToUsr set processed=0 WHERE pendingId=#{pendingId}
+	</update>
+	<update id="scmbillpendingtousr.cancelUsrProcessed" parameterType="Map">
+		UPDATE ScmBillPendingToUsr set processed=0 WHERE pendingId=#{pendingId} and usrCode=#{usrCode}
+	</update>
+	<insert id="scmbillpendingtousr.add" parameterType="ScmBillPendingToUsr"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmBillPendingToUsr (
+        pendingId,
+        usrCode,
+        processed        )
+		VALUES (
+        #{pendingId},
+        #{usrCode},
+        #{processed}        )
+	</insert>
+ 
+	<update id="scmbillpendingtousr.update" parameterType="ScmBillPendingToUsr">
+		UPDATE ScmBillPendingToUsr set
+        pendingId=#{pendingId},
+        usrCode=#{usrCode},
+        processed=#{processed}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmbillpendingtousr.delete" parameterType="String">
+		DELETE FROM ScmBillPendingToUsr WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

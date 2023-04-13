@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmaccountingcycle">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmaccountingcycle.findAll" resultType="ScmAccountingCycle" >
+	    SELECT * FROM ScmAccountingCycle WHERE  1=1  
+	</select>
+ 
+	<select id="scmaccountingcycle.findAllPage" resultType="ScmAccountingCycle" parameterType="Map"> 
+		SELECT ScmAccountingCycle.* FROM ScmAccountingCycle,ScmAccountingCycleType 
+		WHERE ScmAccountingCycle.typeId = ScmAccountingCycleType.id And ScmAccountingCycle.controlUnitNo=#{controlUnitNo} 
+		ORDER BY ScmAccountingCycle.id ASC 
+	</select> 
+	<select id="scmaccountingcycle.selectById" resultType="ScmAccountingCycle" parameterType="Long">
+		SELECT * FROM ScmAccountingCycle WHERE id = #{value}
+	</select> 
+	<select id="scmaccountingcycle.selectByBegAndEndId" resultType="ScmAccountingCycle" parameterType="Map">
+		SELECT * FROM ScmAccountingCycle WHERE typeId = #{typeId} and id &gt;=#{begPeriodId} and id &lt;=#{endPeriodId}
+		ORDER BY id
+	</select> 
+	<select id="scmaccountingcycle.selectByAccountYear" resultType="ScmAccountingCycle" parameterType="Map">
+		SELECT * FROM ScmAccountingCycle WHERE typeId = #{typeId} and accountYear =#{accountYear}
+		ORDER BY id
+	</select> 
+	<select id="scmaccountingcycle.selectByTypeIdPage" resultType="ScmAccountingCycle" parameterType="Map">
+		SELECT * FROM ScmAccountingCycle WHERE typeId = #{typeId} and controlUnitNo =#{controlUnitNo}
+		ORDER BY id
+	</select> 
+	<select id="scmaccountingcycle.selectByOrgUnitPage" resultType="ScmAccountingCycle" parameterType="Map">
+		SELECT ScmAccountingCycle.* FROM ScmAccountingCycle,ScmAccountingCycleTypeToOrg 
+		WHERE ScmAccountingCycle.typeId=ScmAccountingCycleTypeToOrg.typeId and ScmAccountingCycleTypeToOrg.orgUnitNo=#{orgUnitNo}
+		ORDER BY ScmAccountingCycle.id
+	</select> 
+	<insert id="scmaccountingcycle.add" parameterType="ScmAccountingCycle"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmAccountingCycle (
+        typeId,
+        accountYear,
+        periodId,
+        periodCode,
+        startDate,
+        endDate,
+        controlUnitNo        )
+		VALUES (
+        #{typeId},
+        #{accountYear},
+        #{periodId},
+        #{periodCode},
+        #{startDate},
+        #{endDate},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmaccountingcycle.update" parameterType="ScmAccountingCycle">
+		UPDATE ScmAccountingCycle set
+        typeId=#{typeId},
+        accountYear=#{accountYear},
+        periodId={periodId},
+        periodCode=#{periodCode},
+        startDate=#{startDate},
+        endDate=#{endDate},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmaccountingcycle.delete" parameterType="String">
+		DELETE FROM ScmAccountingCycle WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,2881 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvreport">
+
+    <select id="scminvreport.selectRealtimeStock" resultType="ScmInvRealtimeStock" parameterType="Map">
+        Select scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,scminvstock.lot,scminvstock.unit,scminvstock.qty,
+			scminvstock.taxRate,scminvstock.amt,scminvstock.taxAmt,scminvstock.pieUnit,scminvstock.pieQty,
+			scminvstock.vendorId,scminvstock.orgUnitNo,scminvstock.wareHouseId,scminvstock.invDate
+			from scminvstock,scmmaterial,scmmaterialgroupdetail,scmmaterialgroupstandard
+			Where scminvstock.qty &gt; 0 And scminvstock.costCenter=0 and scminvstock.itemId=scmmaterial.id And scmmaterial.id=scmmaterialgroupdetail.itemId
+			And scmmaterialgroupdetail.standardId=scmmaterialgroupstandard.id AND scmmaterialgroupstandard.standardType='1'
+			<if test="wareHouseId != null and wareHouseId !=0 ">
+			    and scminvstock.wareHouseId = #{wareHouseId}
+			</if> 
+			<if test="invOrgUnitNo != null and invOrgUnitNo !='' ">
+			    and scminvstock.orgUnitNo in ${invOrgUnitNo}
+			</if>
+			<if test="materialClassIds != null and materialClassIds !='' ">
+            	and scmmaterialgroupdetail.classId in ${materialClassIds}
+			</if>
+			<if test="materialId != null and materialId !=0 ">
+			    and scminvstock.itemId = #{materialId}
+			</if> 
+			<if test="vendorId != null and vendorId !=0 ">
+			    and scminvstock.vendorId = #{vendorId}
+			</if>
+        order by scmmaterial.itemNo,scminvstock.lot
+    </select>
+    <select id="scminvreport.selectGlobalInventory" resultType="ScmInvGlobalStock" parameterType="Map">
+		select a.finOrgUnitNo, a.costOrgUnitNo, a.costCenter, a.orgUnitNo, a.wareHouseId, a.unit,
+		SUM(a.qty) as qty, SUM(a.amt) as amt,SUM(a.taxAmt) as taxAmt, '2' as level
+		from scminvstock a, scmmaterialgroup b, scmmaterial c, scmmaterialgroupdetail d,scmmaterialgroupstandard
+		where a.itemId = c.id 
+		and c.id = d.itemId
+		and b.id = d.classId
+		And d.standardId=scmmaterialgroupstandard.id AND scmmaterialgroupstandard.standardType='1'
+		and a.qty &gt; 0
+        <if test='flag != null and flag =="2"'>
+            and a.costCenter = 1
+        </if>		
+        <if test='flag != null and flag =="0"'>
+            and a.costCenter = 0
+        </if>		
+		<if test="materialId != null and materialId !=0 ">
+             and a.itemId = #{materialId} 
+		</if>
+		<if test="materialClassIds != null and materialClassIds !='' ">
+            and b.id in ${materialClassIds} 
+		</if>
+		<if test="finOrgUnitNo != null and finOrgUnitNo !='' ">
+            and a.finOrgUnitNo in ${finOrgUnitNo} 
+		</if>		
+		group by a.finOrgUnitNo, a.costOrgUnitNo, a.costCenter, a.orgUnitNo, a.wareHouseId, a.unit
+		order by a.finOrgUnitNo, a.costOrgUnitNo, a.costCenter, a.orgUnitNo, a.wareHouseId, a.unit              
+    </select>
+
+	<select id="scminvreport.selectImmediateInvSum" resultType="ScmInvRealtimeStockSum" parameterType="Map">
+	 SELECT orgUnitNo,wareHouseId,itemNo,itemName,spec,unit,pieUnit,classCode,className,sum(qty) as qty,sum(pieQty) as pieQty,sum(amt) as amt,sum(taxAmt) as taxAmt,
+		sum(addInQty) as addInQty,sum(addInPieQty) as addInPieQty,sum(addInAmt) as addInAmt,sum(addInTaxAmt) as addInTaxAmt,
+		sum(outQty) as outQty,sum(outPieQty) as outPieQty,sum(outAmt) as outAmt,sum(outTaxAmt) as outTaxAmt,sum(qty)+sum(addInQty)-sum(outQty) as allStockQty,
+		sum(pieQty)+sum(addInPieQty)-sum(outPieQty) as allStockPieQty,sum(amt)+sum(addInAmt)-sum(outAmt) as allStockAmt,
+		sum(taxAmt)+sum(addInTaxAmt)-sum(outTaxAmt) as allStockTaxAmt FROM
+		(SELECT A.orgUnitNo,A.wareHouseId,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,
+			SUM(B.Qty) As addInQty,SUM(pieQty) AS addInPieQty,SUM(B.Amt) AS addInAmt,
+			SUM(B.taxAmt) AS addInTaxAmt,0 AS outQty,0 AS outPieQty,0 AS outAmt ,0 AS outTaxAmt              
+  		FROM ScmInvInitBill A,ScmInvInitBillEntry B,ScmMaterialGroupStandard C,            
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z      
+  		WHERE A.initId = B.initId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+  		AND x.id  = y.classId And y.itemId=z.id And A.status !='E'
+			<if test="invOrgUnitNo != null and invOrgUnitNo !=''">
+  			And A.orgUnitNo in (${invOrgUnitNo}) 
+  		</if> 
+			<if test="wareHouseId != null and wareHouseId !=0 ">
+				And A.wareHouseId = #{wareHouseId}
+			</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialId != null and materialId !=0 ">
+				And Z.id = #{materialId}
+			</if> 
+   		GROUP BY A.orgUnitNo,A.wareHouseId,z.itemNo,B.unit,B.pieUnit,x.classCode  
+  	UNION                
+  	SELECT B.orgUnitNo,B.wareHouseId,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,
+			SUM(CASE WHEN A.bizType IN ('1','2','3') THEN B.Qty ELSE - B.qty END),
+			SUM(CASE WHEN A.bizType IN ('1','2','3') THEN B.pieQty ELSE -B.pieQty END),
+  		SUM(CASE WHEN A.bizType IN ('1','2','3') THEN B.amt ELSE -B.amt END),
+  		SUM(CASE WHEN A.bizType IN ('1','2','3') THEN B.taxAmt ELSE -B.taxAmt END),0,0,0,0             
+  		FROM ScmInvPurInwarehsBill A,ScmInvPurInwarehsBillEntry B,ScmMaterialGroupStandard C,              
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z               
+  		WHERE A.WRID = B.WRID And sysBill='0' And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+  		AND x.id  = y.classId	AND y.itemId = z.id And A.status !='E'
+  		<if test="invOrgUnitNo != null and invOrgUnitNo !=''">
+  			And B.orgUnitNo in (${invOrgUnitNo}) 
+  		</if> 
+			<if test="wareHouseId != null and wareHouseId !=0 ">
+				And B.wareHouseId = #{wareHouseId}
+			</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialId != null and materialId !=0 ">
+				And Z.id = #{materialId}
+			</if> 
+			GROUP BY B.orgUnitNo,B.wareHouseID,z.itemNo,B.unit,B.pieUnit,x.classCode    
+		UNION                
+  		SELECT B.orgUnitNo,B.wareHouseId,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,
+			SUM(B.qty),SUM(pieQty),SUM(B.amt),SUM(B.taxAmt),0,0,0,0              
+  		FROM ScmInvMoveInwarehsBill A,ScmInvMoveInwarehsBillEntry B,ScmMaterialGroupStandard C,             
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z             
+			WHERE A.wrId = B.wrId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+  		AND x.id  = y.classId AND y.itemId = z.id  And A.status !='E'
+			<if test="invOrgUnitNo != null and invOrgUnitNo !=''">
+  			And B.orgUnitNo in (${invOrgUnitNo}) 
+  		</if> 
+			<if test="wareHouseId != null and wareHouseId !=0 ">
+				And B.wareHouseId = #{wareHouseId}
+			</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialId != null and materialId !=0 ">
+				And Z.id = #{materialId}
+			</if> 
+		GROUP BY B.orgUnitNo,B.wareHouseId,z.itemNo,B.unit,B.pieUnit,x.classCode   
+  	UNION                
+  	SELECT B.orgUnitNo,B.wareHouseId,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,
+			SUM(B.qty),SUM(pieQty),SUM(B.amt),SUM(B.taxAmt),0,0,0,0               
+  		FROM ScmInvOtherInWarehsBill AS A,ScmInvOtherInWarehsBillEntry B,ScmMaterialGroupStandard C,            
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z         
+  		WHERE A.wrId = B.wrId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+  		AND x.id  = y.classId AND y.itemid = z.id And A.status !='E'
+  		<if test="invOrgUnitNo != null and invOrgUnitNo !=''">
+  			And B.orgUnitNo in (${invOrgUnitNo}) 
+  		</if> 
+			<if test="wareHouseId != null and wareHouseId !=0 ">
+				And B.wareHouseId = #{wareHouseId}
+			</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialId != null and materialId !=0 ">
+				And Z.id = #{materialId}
+			</if> 
+			GROUP BY B.orgUnitNo,B.wareHouseId,z.itemNo,B.unit,B.pieUnit,x.classCode  
+		UNION                
+  	SELECT B.orgUnitNo,B.wareHouseId,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,0,0,0,0,
+			SUM(CASE WHEN A.bizType IN ('1','2','3') THEN B.qty ELSE - B.qty END),
+  		SUM(CASE WHEN A.bizType IN ('1','2','3') THEN B.pieQty ELSE -B.pieQty END),SUM(CASE WHEN A.bizType IN ('1','2','3') THEN B.taxAmt*(1-B.taxRate) ELSE -B.taxAmt*(1-B.taxRate) END),
+  		SUM(CASE WHEN A.bizType IN ('1','2','3') THEN B.taxAmt ELSE -B.taxAmt END)           
+  		FROM ScmInvSaleIssueBill A,ScmInvSaleIssueBillEntry B,ScmMaterialGroupStandard C,                 
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z             
+  		WHERE A.otId = B.otId AND A.sysBill = '0' And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+  		AND x.id  = y.classId AND y.itemId = z.id And A.status !='E' and B.wareHouseId &gt;0
+  		<if test="invOrgUnitNo != null and invOrgUnitNo !=''">
+  			And B.orgUnitNo in (${invOrgUnitNo}) 
+  		</if> 
+			<if test="wareHouseId != null and wareHouseId !=0 ">
+				And B.wareHouseId = #{wareHouseId}
+			</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialId != null and materialId !=0 ">
+				And Z.id = #{materialId}
+			</if> 
+			GROUP BY B.orgUnitNo,B.WareHouseId,z.itemNo,B.unit,B.pieUnit,x.classCode  
+  	UNION                
+  	SELECT A.orgUnitNo,A.wareHouseId,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,0,0,0,0,
+			SUM(CASE WHEN A.bizType = '1' THEN B.qty ELSE -B.qty END),
+  		SUM(CASE WHEN A.bizType = '1' THEN B.pieQty ELSE -B.pieQty END),SUM(CASE WHEN A.bizType = '1' THEN B.amt ELSE -B.amt END),
+  		SUM(CASE WHEN A.bizType = '1' THEN B.taxAmt ELSE -B.taxAmt END)
+  		FROM ScmInvMaterialReqBill A,ScmInvMaterialReqBillEntry B,ScmMaterialGroupStandard C,
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z         
+  		WHERE A.otId = B.otId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+  		AND x.id  = y.classId AND y.itemid = z.id And A.status !='E'
+  		<if test="invOrgUnitNo != null and invOrgUnitNo !=''">
+  			And A.orgUnitNo in (${invOrgUnitNo}) 
+  		</if> 
+			<if test="wareHouseId != null and wareHouseId !=0 ">
+				And A.wareHouseId = #{wareHouseId}
+			</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialId != null and materialId !=0 ">
+				And Z.id = #{materialId}
+			</if> 
+			GROUP BY A.orgUnitNo,A.wareHouseID,z.itemNo,B.unit,B.pieUnit,x.classCode  
+		UNION                
+  	SELECT B.orgUnitNo,B.wareHouseID,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,0,0,0,0,
+			SUM(B.qty),SUM(pieQty),SUM(B.amt),SUM(B.TaxAmt)           
+  		FROM ScmInvMoveIssueBill A,ScmInvMoveIssueBillEntry B,ScmMaterialGroupStandard C,
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z               
+  		WHERE A.otId = B.otId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+	  	And x.id  = y.classId And y.itemId = z.id And A.status !='E'
+			<if test="invOrgUnitNo != null and invOrgUnitNo !=''">
+  			And B.orgUnitNo in (${invOrgUnitNo}) 
+  		</if> 
+			<if test="wareHouseId != null and wareHouseId !=0 ">
+				And B.wareHouseId = #{wareHouseId}
+			</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialId != null and materialId !=0 ">
+				And Z.id = #{materialId}
+			</if> 
+	  	GROUP BY B.orgUnitNo,B.wareHouseID,z.itemNo,B.unit,B.pieUnit,x.classCode    
+  	UNION                
+		SELECT B.orgUnitNo,B.wareHouseId,z.itemNo,z.itemName,z.spec,B.unit,B.pieUnit,x.classCode,x.className,0 as qty,0 as pieQty,0 as amt,0 as taxAmt,0,0,0,0,
+			SUM(B.qty),SUM(pieQty),SUM(B.amt),SUM(B.TaxAmt)
+			FROM ScmInvOtherIssueBill A,ScmInvOtherIssueBillEntry B,ScmMaterialGroupStandard C,
+  		ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z               
+  		WHERE A.otId = B.otId And B.itemId =z.id And C.standardType='1' And C.id= x.standardId
+			AND x.id  = y.classId AND y.itemid = z.id And A.status !='E'  
+			<if test="invOrgUnitNo != null and invOrgUnitNo !=''">
+  			And B.orgUnitNo in (${invOrgUnitNo}) 
+  		</if> 
+			<if test="wareHouseId != null and wareHouseId !=0 ">
+				And B.wareHouseId = #{wareHouseId}
+			</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialId != null and materialId !=0 ">
+				And Z.id = #{materialId}
+			</if> 
+			GROUP BY B.orgUnitNo,B.wareHouseId,z.itemNo,B.unit,B.pieUnit,x.classCode
+		UNION
+		SELECT A.orgUnitNo,A.wareHouseId,z.itemNo,z.itemName,z.spec,A.unit,A.pieUnit,x.classCode,x.className,sum(A.qty) as qty,sum(A.pieQty) as pieQty,sum(A.amt)as amt,sum(A.taxAmt) as taxAmt,0,0,0,0,0,0,0,0
+			FROM scminvstock A,ScmMaterialGroupStandard C, ScmMaterialGroup AS x,ScmMaterialGroupDetail AS y,ScmMaterial AS z      
+			Where A.costCenter=0 And A.itemId =z.id And C.standardType='1' And C.id= x.standardId
+			AND x.id  = y.classId And y.itemId=z.id
+			<if test="invOrgUnitNo != null and invOrgUnitNo !=''">
+  			And A.orgUnitNo in (${invOrgUnitNo}) 
+  		</if> 
+			<if test="wareHouseId != null and wareHouseId !=0 ">
+				And A.wareHouseId = #{wareHouseId}
+			</if>  
+			<if test="materialClassIds != null and materialClassIds !='' ">
+        And x.id in (${materialClassIds})
+			</if>
+			<if test="materialId != null and materialId !=0 ">
+				And Z.id = #{materialId}
+			</if> 
+			GROUP BY A.orgUnitNo,A.wareHouseId,z.itemNo,A.unit,A.pieUnit,x.classCode) AS T
+		GROUP BY orgUnitNo,wareHouseId,itemNo,unit,pieUnit,classCode,className
+	 </select>
+
+	<select id="scminvreport.selectScmInOutSummary" resultType="ScmMaterial2" parameterType="Map"> 
+        select 
+            temp.classCode, temp.className, temp.classCode, temp.className, temp.itemId, temp.itemNo, temp.itemName,
+            temp.spec, temp.unitId, temp.unitName, temp.invOrgUnitNo, temp.wareHouseId, temp.lot,
+            SUM(IFNULL(temp.initQty,0)) as initQty, case when SUM(IFNULL(temp.initQty,0)) != 0 then SUM(IFNULL(temp.initAmt,0))/SUM(IFNULL(temp.initQty,0)) else 0 end as initPrice,
+            SUM(IFNULL(temp.initAmt,0)) as initAmt,
+            SUM(IFNULL(temp.inQty,0)) as inQty, case when SUM(IFNULL(temp.inQty,0)) != 0 then SUM(IFNULL(temp.inAmt,0))/SUM(IFNULL(temp.inQty,0)) else 0 end as inPrice,
+            SUM(IFNULL(temp.inAmt,0)) as inAmt,
+            SUM(IFNULL(temp.moveQty,0)) as moveQty, case when SUM(IFNULL(temp.moveQty,0)) != 0 then SUM(IFNULL(temp.moveAmt,0))/SUM(IFNULL(temp.moveQty,0)) else 0 end as movePrice,
+            SUM(IFNULL(temp.moveAmt,0)) as moveAmt,
+            SUM(IFNULL(temp.outQty,0)) as outQty, case when SUM(IFNULL(temp.outQty,0)) != 0 then SUM(IFNULL(temp.outAmt,0))/SUM(IFNULL(temp.outQty,0)) else 0 end as outPrice,
+            SUM(IFNULL(temp.outAmt,0)) as outAmt,
+            SUM(IFNULL(temp.reqQty,0)) as reqQty, case when SUM(IFNULL(temp.reqQty,0)) != 0 then SUM(IFNULL(temp.reqAmt,0))/SUM(IFNULL(temp.reqQty,0)) else 0 end as reqPrice,
+            SUM(IFNULL(temp.reqAmt,0)) as reqAmt,
+            SUM(IFNULL(temp.prolossQty,0)) as prolossQty, case when SUM(IFNULL(temp.prolossQty,0)) != 0 then SUM(IFNULL(temp.prolossAmt,0))/SUM(IFNULL(temp.prolossQty,0)) else 0 end as prolossPrice,
+            SUM(IFNULL(temp.prolossAmt,0)) as prolossAmt,
+            SUM(IFNULL(temp.badQty,0)) as badQty, case when SUM(IFNULL(temp.badQty,0)) != 0 then SUM(IFNULL(temp.badAmt,0))/SUM(IFNULL(temp.badQty,0)) else 0 end as badPrice,
+            SUM(IFNULL(temp.badAmt,0)) as badAmt,
+            SUM(IFNULL(temp.initQty,0)) + SUM(IFNULL(temp.inQty,0)) + SUM(IFNULL(temp.moveQty,0)) - SUM(IFNULL(temp.outQty,0)) - SUM(IFNULL(temp.reqQty,0))
+            + SUM(IFNULL(temp.prolossQty,0)) - SUM(IFNULL(temp.badQty,0)) as endQty,
+            case when (SUM(IFNULL(temp.initQty,0)) + SUM(IFNULL(temp.inQty,0)) + SUM(IFNULL(temp.moveQty,0)) - SUM(IFNULL(temp.outQty,0)) - SUM(IFNULL(temp.reqQty,0))
+            + SUM(IFNULL(temp.prolossQty,0)) - SUM(IFNULL(temp.badQty,0))) &lt;= 0 then 0 else 
+            (SUM(IFNULL(temp.initAmt,0)) + SUM(IFNULL(temp.inAmt,0)) + SUM(IFNULL(temp.moveAmt,0)) - SUM(IFNULL(temp.outAmt,0)) 
+            - SUM(IFNULL(temp.reqAmt,0)) + SUM(IFNULL(temp.prolossAmt,0)) + SUM(IFNULL(temp.badAmt,0)))/
+            (SUM(IFNULL(temp.initQty,0)) + SUM(IFNULL(temp.inQty,0)) + SUM(IFNULL(temp.moveQty,0)) - SUM(IFNULL(temp.outQty,0)) - SUM(IFNULL(temp.reqQty,0))
+            + SUM(IFNULL(temp.prolossQty,0)) - SUM(IFNULL(temp.badQty,0))) end as endPrice,
+            SUM(IFNULL(temp.initAmt,0)) + SUM(IFNULL(temp.inAmt,0)) + SUM(IFNULL(temp.moveAmt,0)) - SUM(IFNULL(temp.outAmt,0)) 
+            - SUM(IFNULL(temp.reqAmt,0)) + SUM(IFNULL(temp.prolossAmt,0)) + SUM(IFNULL(temp.badAmt,0)) as endAmt
+        from 
+            (select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            c.wareHouseId, c.whName, 
+            b.lot, b.startQty as initQty, 0 as initPrice, b.startAmt as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, 
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e,ScmMaterialGroupStandard
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+	        </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if> 
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a, 
+            scminvbal as b, 
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+             <if test="orgUnitNo != null and orgUnitNo !='' ">
+                 and a.orgUnitNo in ${orgUnitNo}
+             </if> 
+            ) as c
+            where a.invOrgUnitNo = b.orgUnitNo and 
+            b.orgUnitNo = c.invOrgUnitNo and 
+            b.wareHouseId = c.wareHouseId and 
+            a.itemId = b.itemId 
+            <if test="dates != null and dates !='' ">
+                and b.accountYear = YEAR(#{dates}) 
+                and b.accountPeriod = MONTH(#{dates})
+            </if> 
+        union 
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, SUM(d.qty) as initQty, 0 as initPrice, SUM(d.taxAmt) as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, 
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e,ScmMaterialGroupStandard
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if> 
+            ) as b, 
+            scminvpurinwarehsbill as c, scminvpurinwarehsbillentry as d
+            where 
+            <if test="initDates != null and initDates !='' ">
+                c.bizDate &gt;= #{initDates} and
+            </if>
+            <if test="dates != null and dates !='' ">
+                c.bizDate &lt;= #{dates} and
+            </if> 
+            c.wrId = d.wrId and 
+            c.bizType in ('1','2','3','4','5') and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.sysBill = 0 and 
+            d.orgUnitNo = a.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union 
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, -SUM(d.qty) as initQty, 0 as initPrice, -SUM(d.taxAmt) as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b,ScmMaterialGroupStandard,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and 
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvpurinwarehsbill as c, scminvpurinwarehsbillentry as d
+            where 
+            <if test="initDates != null and initDates !='' ">
+                c.bizDate &gt;= #{initDates} and
+            </if>
+            <if test="initDatee != null and initDatee !='' ">
+                c.bizDate &lt;= #{initDatee} and
+            </if>
+            c.wrId = d.wrId and 
+            c.bizType in ('6','7','8','8','10') and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.sysBill = 0 and 
+            d.orgUnitNo = a.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, SUM(d.qty) as initQty, 0 as initPrice, SUM(d.taxAmt) as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and 
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvmoveinwarehsbill as c, scminvmoveinwarehsbillentry as d
+            where 
+            <if test="initDates != null and initDates !='' ">
+                c.bizDate &gt;= #{initDates} and
+            </if>
+            <if test="initDatee != null and initDatee !='' ">
+                c.bizDate &lt;= #{initDatee} and
+            </if>
+            c.wrId = d.wrId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, SUM(d.qty) as initQty, 0 as initPrice, SUM(d.taxAmt) as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvotherinwarehsbill as c, scminvotherinwarehsbillentry as d
+            where 
+            <if test="initDates != null and initDates !='' ">
+                c.bizDate &gt;= #{initDates} and
+            </if>
+            <if test="initDatee != null and initDatee !='' ">
+                c.bizDate &lt;= #{initDatee} and
+            </if>
+            c.wrId = d.wrId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, -SUM(d.qty) as initQty, 0 as initPrice, -SUM(d.taxAmt) as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvsaleissuebill as c, scminvsaleissuebillentry as d
+            where 
+            <if test="initDates != null and initDates !='' ">
+                c.bizDate &gt;= #{initDates} and
+            </if>
+            <if test="initDatee != null and initDatee !='' ">
+                c.bizDate &lt;= #{initDatee} and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.sysBill = 0 
+            and c.bizType in ('1','2','3','4','5')
+            and d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, SUM(d.qty) as initQty, 0 as initPrice, SUM(d.taxAmt) as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvsaleissuebill as c, scminvsaleissuebillentry as d
+            where 
+            <if test="initDates != null and initDates !='' ">
+                c.bizDate &gt;= #{initDates} and
+            </if>
+            <if test="initDatee != null and initDatee !='' ">
+                c.bizDate &lt;= #{initDatee} and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.sysBill = 0 
+            and c.bizType in ('6','7','8','9','10')
+            and d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, -SUM(d.qty) as initQty, 0 as initPrice, -SUM(d.taxAmt) as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvmaterialreqbill c, scminvmaterialreqbillentry as d 
+            where 
+            <if test="initDates != null and initDates !='' ">
+                c.bizDate &gt;= #{initDates} and
+            </if>
+            <if test="initDatee != null and initDatee !='' ">
+                c.bizDate &lt;= #{initDatee} and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.bizType = '1' 
+            and c.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            c.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, SUM(d.qty) as initQty, 0 as initPrice, SUM(d.taxAmt) as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvmaterialreqbill c, scminvmaterialreqbillentry as d 
+            where 
+            <if test="initDates != null and initDates !='' ">
+                c.bizDate &gt;= #{initDates} and
+            </if>
+            <if test="initDatee != null and initDatee !='' ">
+                c.bizDate &lt;= #{initDatee} and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.bizType = '2' 
+            and c.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            c.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, -SUM(d.qty) as initQty, 0 as initPrice, -SUM(d.taxAmt) as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvmoveissuebill as c, scminvmoveissuebillentry as d
+            where 
+            <if test="initDates != null and initDates !='' ">
+                c.bizDate &gt;= #{initDates} and
+            </if>
+            <if test="initDatee != null and initDatee !='' ">
+                c.bizDate &lt;= #{initDatee} and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, -SUM(d.qty) as initQty, 0 as initPrice, -SUM(d.taxAmt) as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvotherissuebill as c, scminvotherissuebillentry as d
+            where 
+            <if test="initDates != null and initDates !='' ">
+                c.bizDate &gt;= #{initDates} and
+            </if>
+            <if test="initDatee != null and initDatee !='' ">
+                c.bizDate &lt;= #{initDatee} and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            SUM(d.qty) as inQty, 0 as inPrice, SUM(d.taxAmt) as inAmt,
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvpurinwarehsbill as c, scminvpurinwarehsbillentry as d
+            where 
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.wrId = d.wrId and 
+            c.bizType in ('1','3','4','5') and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.sysBill = 0 and 
+            d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId 
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            -SUM(d.qty) as inQty, 0 as inPrice, -SUM(d.taxAmt) as inAmt,
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt  
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvpurinwarehsbill as c, scminvpurinwarehsbillentry as d
+            where 
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.wrId = d.wrId and 
+            c.bizType in ('6','8','8','10') and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.sysBill = 0 and 
+            d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId 
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            SUM(d.qty) as inQty, 0 as inPrice, SUM(d.taxAmt) as inAmt,
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvotherinwarehsbill as c, scminvotherinwarehsbillentry as d
+            where 
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.wrId = d.wrId and 
+            c.bizType in ('2','3','4') and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            SUM(d.qty) as moveQty, 0 as movePrice, SUM(d.taxAmt) as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvmoveinwarehsbill as c, scminvmoveinwarehsbillentry as d
+            where 
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.wrId = d.wrId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot 
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            -SUM(d.qty) as moveQty, 0 as movePrice, -SUM(d.taxAmt) as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt  
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvmoveissuebill as c, scminvmoveissuebillentry as d
+            where 
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            SUM(d.qty) as outQty, 0 as outPrice, SUM(d.taxAmt) as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvsaleissuebill as c, scminvsaleissuebillentry as d
+            where 
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.sysBill = 0 
+            and c.bizType in ('1','3','4','5')
+            and d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            -SUM(d.qty) as outQty, 0 as outPrice, -SUM(d.taxAmt) as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvsaleissuebill as c, scminvsaleissuebillentry as d
+            where 
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.sysBill = 0 
+            and c.bizType in ('6','8','9','10')
+            and d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            SUM(d.qty) as outQty, 0 as outPrice, SUM(d.taxAmt) as outAmt,
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvotherissuebill as c, scminvotherissuebillentry as d
+            where
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.bizType in ('3','4','5')
+            and d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt, 
+            SUM(d.qty) as reqQty, 0 as reqPrice, SUM(d.taxAmt) as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt 
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvmaterialreqbill c, scminvmaterialreqbillentry as d 
+            where 
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.bizType = '1' 
+            and c.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            c.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt, 
+            -SUM(d.qty) as reqQty, 0 as reqPrice, -SUM(d.taxAmt) as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt  
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvmaterialreqbill c, scminvmaterialreqbillentry as d 
+            where 
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.bizType = '2' 
+            and c.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            c.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt, 
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            SUM(d.qty) as prolossQty, 0 as prolossPrice, SUM(d.taxAmt) as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt
+            from
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y'  
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvotherinwarehsbill as c, scminvotherinwarehsbillentry as d
+            where 
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.wrId = d.wrId and 
+            c.bizType = '1' and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt, 
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            SUM(d.qty) as prolossQty, 0 as prolossPrice, -SUM(d.taxAmt) as prolossAmt,
+            0 as badQty, 0 as badPrice, 0 as badAmt
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y' 
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvotherissuebill as c, scminvotherissuebillentry as d
+            where 
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.bizType = '1'
+            and d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot
+        union
+            select 
+            a.classCode, a.className, a.itemId, a.itemNo, a.itemName,
+            a.spec, a.unitId, a.unitName, a.invOrgUnitNo, 
+            b.wareHouseId, b.whName,
+            d.lot, 0 as initQty, 0 as initPrice, 0 as initAmt,
+            0 as inQty, 0 as inPrice, 0 as inAmt, 
+            0 as moveQty, 0 as movePrice, 0 as moveAmt,
+            0 as outQty, 0 as outPrice, 0 as outAmt, 
+            0 as reqQty, 0 as reqPrice, 0 as reqAmt,
+            0 as prolossQty, 0 as prolossPrice, 0 as prolossAmt,
+            SUM(d.qty) as badQty, 0 as badPrice, SUM(d.taxAmt) as badAmt
+            from 
+            (select b.classCode, b.className, d.id as itemId, d.itemNo, d.itemName, d.spec,
+            e.unitName, a.unitId, a.orgUnitNo as invOrgUnitNo from 
+            scmmaterialinventory as a, scmmaterialgroup as b, ScmMaterialGroupStandard ,
+            scmmaterialgroupdetail as c, scmmaterial as d, scmmeasureunit e
+            where
+            <if test="materialClassId != null and materialClassId !=0 ">
+                (b.id = #{materialClassId} or b.parentId = #{materialClassId} ) and
+            </if>
+            b.standardId = c.standardId and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' and
+            b.id = c.classId and 
+            c.itemId = d.id and 
+            d.id = a.itemId and 
+            <if test="materialId != null and materialId !=0 ">
+                d.id = #{materialId} and
+            </if>
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                a.orgUnitNo in ${orgUnitNo} and
+            </if>
+            a.unitId = e.id) as a,
+            (select DISTINCT a.orgUnitNo as invOrgUnitNo, a.wareHouseId, b.whName
+            from scminvaccreditwh a, scminvwarehouse b
+            where a.orgUnitNo = b.orgUnitNo and 
+            a.wareHouseId = b.id and
+            <if test="wareHouseId != null and wareHouseId !=0 ">
+                a.wareHouseId = #{wareHouseId} and
+            </if> 
+            a.status = 'Y' 
+            <if test="orgUnitNo != null and orgUnitNo !='' ">
+                and a.orgUnitNo in ${orgUnitNo}
+            </if>
+            ) as b,
+            scminvotherissuebill as c, scminvotherissuebillentry as d
+            where 
+            <if test="dates != null and dates !='' ">
+                c.bizDate &gt;= #{dates} and
+            </if>
+            <if test="datee != null and datee !='' ">
+                c.bizDate &lt; DATE_ADD(#{datee},INTERVAL 1 DAY) and
+            </if>
+            c.otId = d.otId and 
+            <if test='noPost != null and noPost =="0" '>
+                c.status = 'E' and 
+            </if>
+            c.bizType = '2'
+            and d.orgUnitNo = a.invOrgUnitNo and 
+            a.invOrgUnitNo = b.invOrgUnitNo and 
+            d.wareHouseId = b.wareHouseId and 
+            d.itemId = a.itemId
+            group by a.classCode, a.className, a.itemId, a.itemNo, a.itemName, a.spec,
+            a.unitId, a.unitName, a.invOrgUnitNo, b.wareHouseId, b.whName, d.lot) temp
+        where IFNULL(temp.initQty,0)+IFNULL(temp.inQty,0)+IFNULL(temp.moveQty,0)+IFNULL(temp.outQty,0)
+            +IFNULL(temp.reqQty,0)+IFNULL(temp.prolossQty,0)+IFNULL(temp.badQty,0) != 0
+        group by temp.classCode, temp.className, temp.itemId, temp.itemNo, temp.itemName, temp.spec,
+        temp.unitId, temp.unitName, temp.invOrgUnitNo
+        <if test='whcheck != null and whcheck =="1" '>
+            , temp.wareHouseId, 
+        </if>
+        <if test='lotcheck != null and lotcheck =="1" '>
+            temp.lot 
+        </if>
+    </select>
+    
+    <select id="scminvreport.selectScmInvItemWrSum" resultType="ScmInvItemWrSum" parameterType="Map">
+		select B.itemId, C.itemNo, C.itemName, C.Spec, E.className,
+			A.vendorId, G.vendorName, B.unit, H.unitName, B.orgUnitNo, B.wareHouseId,B.useOrgUnitNo, B.taxRate as addInTaxRate,
+		    SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end) as addInQty,
+		    SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) as addInAmt,
+		    SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end) as addInTaxAmt
+		from ScmInvPurInWarehsBill as A, ScmInvPurInWarehsBillEntry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,
+		scmsupplier G, scmMeasureUnit H
+		Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+		And A.vendorId = G.id And B.unit = H.id
+	    <if test="orgUnitNo != null and orgUnitNo !='' ">
+            and B.orgUnitNo in (${orgUnitNo})
+        </if> 
+	    <if test="begDate != null and begDate !='' ">
+            and A.bizDate &gt;= #{begDate}
+         </if>
+	    <if test="endDate != null and endDate !='' ">
+            and A.bizDate &lt;= #{endDate}
+         </if>
+	    <if test="materialClassIds != null and materialClassIds !='' ">
+           And E.id in (${materialClassIds})
+        </if>
+        <if test="materialIds != null and materialIds !='' ">
+           And B.itemId in (${materialIds})
+        </if>
+        <if test="vendorIds != null and vendorIds !='' ">
+            And A.vendorId in (${vendorIds})
+        </if>
+         <if test='noPost != null and noPost =="0" '>
+             And A.status = 'E'
+         </if> 
+         <if test='stockType != null and stockType =="0"'>
+         	And B.wareHouseId &gt; 0
+         </if>
+    	<if test="wareHouseId != null and wareHouseId !=0 ">
+            And B.wareHouseId = #{wareHouseId}
+         </if> 
+        <if test='stockType != null and stockType =="1"'>
+         	And IFNULL(B.useOrgUnitNo,'')!=''
+        </if>
+	    <if test="useOrgUnitNo != null and useOrgUnitNo !='' ">
+            And B.useOrgUnitNo = #{useOrgUnitNo}
+        </if> 
+	    <if test="taxRate != null and taxRate !='' ">
+            And B.taxRate = #{taxRate}
+        </if> 
+		group by B.itemId, A.vendorId, B.unit, B.orgUnitNo,B.taxRate,B.wareHouseId,B.useOrgUnitNo
+		<if test='type != null and type =="V"'>
+			Order By A.vendorId,C.itemNo
+		</if>
+		<if test='type != null and type =="M"'>
+			Order By C.itemNo,A.vendorId
+		</if>
+    </select>   
+    
+    <select id="scminvreport.selectScmInvItemSaleSum" resultType="ScmInvItemSaleSum" parameterType="Map">
+		Select A.itemId,A.unit,A.orgUnitNo,A.saleTaxRate,B.custId,
+		Sum(Case When B.bizType in('1','2','3') Then A.saleQty Else 0 End) as saleQty,
+		Sum(Case When B.bizType in('1','2','3') Then A.saleTaxAmt  Else 0 End) as saleTaxAmt,
+		Sum(Case When B.bizType in('1','2','3') Then 0 Else A.saleQty End) as returnQty,
+		Sum(Case When B.bizType in('1','2','3') Then 0 Else A.saleTaxAmt End) as returnTaxAmt
+		 from ScmInvSaleissuebillentry A,ScmInvSaleissuebill B,ScmMaterial C,
+			ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F
+		WHERE A.otId = B.otId And A.itemId = C.id And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+		<if test="beginDate !=null and beginDate !=''">
+			AND B.bizDate &gt;= #{beginDate}  
+		</if>
+		<if test="endDate !=null and endDate !=''">
+			And B.BizDate &lt;= #{endDate}
+		</if>
+		<if test="orgUnitNos !=null and orgUnitNos !=''">
+			AND A.orgUnitNo in (${orgUnitNos})
+		</if>
+		<if test="custIds !=null and custIds !=''">
+			AND B.custId in (${custIds})
+		</if>
+		<if test="whOrDept != null and whOrDept !='' ">
+		    AND (A.wareHouseId in(${whOrDept}) or A.outOrgUnitNo in(${whOrDept}))
+		</if>
+		<if test="saleTaxRate !=null and saleTaxRate !=''">
+			AND A.saleTaxRate=#{saleTaxRate}
+		</if>
+		<choose>
+			<when test="status!=null and status==1">
+				AND B.status not in('N')
+			</when>
+			<otherwise>
+				AND B.status='E'
+			</otherwise>
+		</choose>
+		<if test="materialName !=null and materialName !=''">
+			AND A.itemId=#{materialName}
+		</if>
+		<if test="materialClassName !=null and materialClassName !=''">
+			AND E.id in(${materialClassName})
+		</if>
+		Group By A.itemId,A.unit,A.orgUnitNo,A.saleTaxRate,B.custId
+		ORDER BY B.custId,C.itemNo ASC    
+	</select>
+	<select id="scminvreport.selectScmInvInWarehsItemClass" resultType="ScmInvInWarehsItemClass" parameterType="Map">
+		select G.classCode, G.className, A.vendorId, 
+			0 as totalAmt,
+			0 as taxtotalAmt,
+			0 as TaxTotalAmount,
+			sum(case when A.biztype &lt; '6' then B.Amt else - B.Amt end) as Amt,  
+   			sum(case when A.biztype &lt; '6' then B.TaxAmt else - B.TaxAmt end) as taxAmt,
+   			sum(case when A.biztype &lt; '6' then B.TaxAmt - B.Amt else - B.TaxAmt + B.Amt end) as TaxAmount
+		from ScmInvPurInWarehsBill as A, ScmInvPurInWarehsBillEntry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G
+		Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+	    <if test="orgUnitNo != null and orgUnitNo !='' ">
+            and B.orgUnitNo = #{orgUnitNo}
+        </if> 
+	    <if test="begDate != null and begDate !='' ">
+            and A.bizDate &gt;= #{begDate}
+         </if>
+	    <if test="endDate != null and endDate !='' ">
+            and A.bizDate &lt;= #{endDate}
+         </if>
+	    <if test="materialClassId != null and materialClassId !=0 ">
+           And E.id = #{materialClassId}
+        </if>
+        <if test="vendorId != null and vendorId !=0 ">
+            And A.vendorId = #{vendorId}
+        </if>
+         <if test='noPost != null and noPost =="0" '>
+             And A.status = 'E'
+         </if> 
+         <if test='stockType != null and stockType =="0"'>
+         	And B.wareHouseId &gt; 0
+         </if>
+    	<if test="wareHouseId != null and wareHouseId !=0 ">
+            And B.wareHouseId = #{wareHouseId}
+         </if> 
+        <if test='stockType != null and stockType =="1"'>
+         	And IFNULL(B.useOrgUnitNo,'')!=''
+        </if>
+	    <if test="useOrgUnitNo != null and useOrgUnitNo !='' ">
+            And B.useOrgUnitNo = #{useOrgUnitNo}
+        </if> 
+        <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose>
+        <if test="standardName != null and standardName !='' ">
+            And D.standardId = #{standardName}
+        </if> 
+		group by G.classCode, G.className, A.vendorId
+		Order By A.vendorId
+    </select> 
+    
+    <select id="scminvreport.selectNewScmInvInWarehsItemClass" resultType="ScmInvInWarehsItemClass2" parameterType="Map">
+		select G.classCode, G.className, A.vendorId, H.vendorName,
+			0 as totalAmt,
+			0 as taxtotalAmt,
+			0 as TaxTotalAmount,
+			sum(case when A.bizType in ('1','3') then B.Amt else - B.Amt end) as amt,  
+   			sum(case when A.bizType in ('1','3') then B.TaxAmt else - B.TaxAmt end) as taxAmt,
+   			sum(case when A.bizType in ('1','3') then B.TaxAmt - B.Amt else - B.TaxAmt + B.Amt end) as taxAmount
+		from ScmInvPurInWarehsBill as A, ScmInvPurInWarehsBillEntry as B,ScmMaterial C,scmsupplier H,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G
+		Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+		And A.vendorId = H.id
+	    <if test="orgUnitNo != null and orgUnitNo !='' ">
+            and B.orgUnitNo = #{orgUnitNo}
+        </if> 
+	    <if test="begDate != null and begDate !='' ">
+            and A.bizDate &gt;= #{begDate}
+         </if>
+	    <if test="endDate != null and endDate !='' ">
+            and A.bizDate &lt;= #{endDate}
+         </if>
+	    <if test="materialClassId != null and materialClassId !='' ">
+           And E.id in (${materialClassId})
+        </if>
+        <if test="vendorId != null and vendorId !='' ">
+            And A.vendorId in (${vendorId})
+        </if>
+         <if test='noPost != null and noPost =="0" '>
+             And A.status = 'E'
+         </if> 
+         <if test='stockType != null and stockType =="0"'>
+         	And B.wareHouseId &gt; 0
+         </if>
+         <if test="whOrDept != null and whOrDept !='' ">
+	        And (B.wareHouseId in (${whOrDept}) or  B.useOrgUnitNo in (${whOrDept}))
+		</if>
+        <if test='stockType != null and stockType =="1"'>
+         	And IFNULL(B.useOrgUnitNo,'')!=''
+        </if>
+        <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose>
+        <if test="standardName != null and standardName !='' ">
+            And D.standardId = #{standardName}
+        </if> 
+		group by G.classCode, G.className, A.vendorId
+		Order By A.vendorId
+    </select>
+	
+	<select id="scminvreport.selectScmInvItemWrDetails" resultType="ScmInvItemWrDetails" parameterType="Map">
+        select B.itemId, C.itemNo, C.itemName, C.Spec, E.className,B.remarks,
+        	A.wrNo, A.buyerId, A.vendorId, G.vendorName, B.unit, H.unitName, B.orgUnitNo, B.wareHouseId,B.useOrgUnitNo,B.taxRate as addInTaxRate,
+            SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end) as addInQty,
+            SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) as addInAmt,
+            SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end) as addInTaxAmt,
+            SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end) -
+            SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) as addInTaxAmount
+        from ScmInvPurInWarehsBill as A, ScmInvPurInWarehsBillEntry as B,ScmMaterial C,
+        ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,
+        scmsupplier G, scmMeasureUnit H
+        Where A.wrId=B.wrId And B.itemId=C.id   And C.id=D.itemId And F.standardType='1'
+        And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+        And A.vendorId = G.id And B.unit = H.id
+        <if test="orgUnitNo != null and orgUnitNo !='' ">
+            and B.orgUnitNo in (${orgUnitNo})
+        </if> 
+        <if test="begDate != null and begDate !='' ">
+            and A.bizDate &gt;= #{begDate}
+         </if>
+        <if test="endDate != null and endDate !='' ">
+            and A.bizDate &lt;= #{endDate}
+         </if>
+        <if test="materialClassIds != null and materialClassIds !='' ">
+           And E.id in (${materialClassIds})
+        </if>
+        <if test="materialIds != null and materialIds !='' ">
+           And B.itemId in (${materialIds})
+        </if>
+        <if test="vendorIds != null and vendorIds !='' ">
+            And A.vendorId in (${vendorIds})
+        </if>
+         <if test='noPost != null and noPost =="0" '>
+             And A.status = 'E'
+         </if> 
+         <if test='stockType != null and stockType =="0"'>
+            And B.wareHouseId &gt; 0
+         </if>
+        <if test="wareHouseId != null and wareHouseId !=0 ">
+            And B.wareHouseId = #{wareHouseId}
+         </if> 
+        <if test='stockType != null and stockType =="1"'>
+            And IFNULL(B.useOrgUnitNo,'')!=''
+        </if>
+        <if test="useOrgUnitNo != null and useOrgUnitNo !='' ">
+            And B.useOrgUnitNo = #{useOrgUnitNo}
+        </if> 
+        <if test="taxRate != null and taxRate !='' ">
+            And B.taxRate = #{taxRate}
+        </if> 
+        group by B.itemId, A.wrNo, A.buyerId, A.vendorId, B.unit, B.orgUnitNo, B.wareHouseId,B.useOrgUnitNo,B.taxRate
+        <if test='type != null and type =="V"'>
+            Order By A.vendorId,C.itemNo,B.wareHouseId,B.useOrgUnitNo
+        </if>
+        <if test='type != null and type =="M"'>
+            Order By C.itemNo,A.vendorId,B.wareHouseId,B.useOrgUnitNo
+        </if>
+    </select> 
+    
+    <select id="scminvreport.selectScmInvConsignSumSup" resultType="ScmInvItemWrSum" parameterType="Map">
+		select B.itemId, A.vendorId, B.unit, B.orgUnitNo, B.wareHouseId, B.taxRate as addInTaxRate,
+        SUM(case when A.bizType = '5' then B.qty when A.bizType = '6' then -B.qty end ) as addInQty, 
+        SUM(case when A.bizType = '5' then B.amt when A.bizType = '6' then -B.amt end ) as addInAmt,
+        SUM(case when A.bizType = '5' then B.taxAmt when A.bizType = '6' then -B.taxAmt end ) as addInTaxAmt
+		from scminvotherinwarehsbill as A, scminvotherinwarehsbillentry as B, scmmaterial C,
+		scmmaterialgroupdetail D, scmmaterialgroup E, scmmaterialgroupstandard F
+		where A.wrId = B.wrId and B.itemId = C.id and C.id = D.itemId and F.standardType = '1'
+		and D.classId = E.id and D.standardId = E.standardId and D.standardId = F.Id
+        <if test="orgUnitNo != null and orgUnitNo !='' ">
+            and B.orgUnitNo in (${orgUnitNo})
+        </if> 
+        <if test="begDate != null and begDate !='' ">
+            and A.bizDate &gt;= #{begDate}
+         </if>
+        <if test="endDate != null and endDate !='' ">
+            and A.bizDate &lt;= #{endDate}
+         </if>
+        <if test="materialClassIds != null and materialClassIds !='' ">
+           And E.id in (${materialClassIds})
+        </if>
+        <if test="materialIds != null and materialIds !='' ">
+           And B.itemId in (${materialIds})
+        </if>
+        <if test="vendorIds != null and vendorIds !='' ">
+            And A.vendorId in (${vendorIds})
+        </if>
+         <if test='noPost != null and noPost =="0" '>
+             And A.status = 'E'
+         </if> 
+        <if test="wareHouseId != null and wareHouseId !=0 ">
+            And B.wareHouseId = #{wareHouseId}
+         </if> 
+        <if test="taxRate != null and taxRate !='' ">
+            And B.taxRate = #{taxRate}
+        </if> 
+        group by B.itemId, A.vendorId, B.unit, B.orgUnitNo, B.wareHouseId, B.taxRate
+        <if test='type != null and type =="V"'>
+            Order By A.vendorId, C.itemNo, B.wareHouseId
+        </if>
+        <if test='type != null and type =="M"'>
+            Order By C.itemNo, A.vendorId, B.wareHouseId
+        </if>
+    </select>     
+    
+    <select id="scminvreport.selectScmInvStorageAgePrimnessAnalysis" resultType="ScmInvStorageAgePrimnessAnalysis" parameterType="Map">
+    	SELECT T1.itemId, T1.itemNo, T1.itemName, T1.spec, T1.lot,
+			T1.OrgUnitNo, T1.wareHouseId, T1.unit, T1.qty AS stockQty,
+			T1.taxAmt AS stockAmt,
+			datediff(now(), (CASE ifnull(lastoutdate,'') WHEN '' THEN lastintdate ELSE lastoutdate END)) AS primnessDays,
+			datediff(now(), lastintdate) AS storageAge,
+			T1.qty AS primnessQty
+		FROM 
+			(SELECT itemId, scmmaterial.itemNo, scmmaterial.itemName, scmmaterial.spec, lot,
+				OrgUnitNo, finOrgUnitNo, wareHouseId, unit,  sum(qty) as qty, 
+				sum(taxAmt) as taxAmt, min(invDate) AS lastintdate  
+			FROM scminvstock ,scmmaterial	
+			WHERE finOrgUnitNo in (${finOrgUnitNo}) 
+				AND costCenter=0 
+				AND scminvstock.itemId=scmmaterial.id
+				<if test="invOrgUnitNo != null and invOrgUnitNo !='' ">
+            		AND scminvstock.OrgUnitNo in (${invOrgUnitNo})
+                                AND scminvstock.qty &gt; 0
+        		</if> 
+        		<if test="wareHouseId != null and wareHouseId !=0 ">
+					AND scminvstock.wareHouseId = #{wareHouseId}
+				</if> 
+				<if test="materialId != null and materialId !=0 ">
+                	AND itemId = #{materialId} 
+            	</if>
+            	<if test="lot != null and lot !='' ">
+                	AND lot = #{lot} 
+            	</if>
+			group by itemId, scmmaterial.itemNo, scmmaterial.itemName, scmmaterial.spec, lot,
+				OrgUnitNo, finOrgUnitNo, wareHouseId, unit) T1
+			LEFT JOIN (
+			SELECT itemId,lot,finOrgUnitNo,wareHouseId,MAX(lastoutdate) AS lastoutdate 
+			FROM (         
+				SELECT b.itemId,b.lot,b.finOrgUnitNo,b.wareHouseId,max(a.bizdate) AS lastoutdate 
+				FROM scminvpurinwarehsbill a,scminvpurinwarehsbillentry b,scminvstock c 
+				WHERE a.wrid=b.wrId 
+					AND b.itemId=c.itemId 
+					AND b.lot=c.lot 
+					AND a.finOrgUnitNo=c.finOrgUnitNo
+					AND a.status='E'
+					AND b.wareHouseId=c.wareHouseId AND c.qty &gt; 0
+					<if test="wareHouseId != null and wareHouseId !=0 ">
+						And b.wareHouseId = #{wareHouseId}
+					</if> 
+					<if test="materialId != null and materialId !=0 ">
+                		AND b.itemId = #{materialId} 
+            		</if>
+            		<if test="lot != null and lot !='' ">
+                		AND b.lot = #{lot} 
+            		</if>
+					AND a.bizType &gt; 5
+					AND c.finOrgUnitNo in (${finOrgUnitNo})
+					AND c.costCenter=0
+				GROUP BY b.finOrgUnitNo,b.wareHouseId,b.itemId,b.lot  
+				UNION
+				SELECT b.itemId,b.lot,b.OrgUnitNo,b.wareHouseId,max(a.bizdate) AS lastoutdate 
+				FROM scminvsaleissuebill a,scminvsaleissuebillentry b,scminvstock c 
+				WHERE a.otId=b.otId 
+					AND b.itemId=c.itemId 
+					AND b.lot=c.lot 
+					AND a.finOrgUnitNo=c.finOrgUnitNo
+					AND a.status='E'
+					AND b.wareHouseId=c.wareHouseId 
+					AND c.qty &gt; 0
+					<if test="wareHouseId != null and wareHouseId !=0 ">
+						And b.wareHouseId = #{wareHouseId}
+					</if>
+					<if test="materialId != null and materialId !=0 ">
+                		AND b.itemId = #{materialId} 
+            		</if>
+            		<if test="lot != null and lot !='' ">
+                		AND b.lot = #{lot} 
+            		</if>
+					AND a.bizType &lt; 6
+					AND c.finOrgUnitNo in (${finOrgUnitNo})
+					AND c.costCenter=0
+				GROUP BY b.OrgUnitNo,b.wareHouseId,b.itemId,b.lot 
+				UNION
+				SELECT b.itemId,b.lot,a.finOrgUnitNo,a.wareHouseId,max(a.bizdate) AS lastoutdate 
+				FROM ScmInvMaterialReqBill a,scminvmaterialreqbillentry b,scminvstock c 
+				WHERE a.otId=b.otId 
+					AND b.itemId=c.itemId 
+					AND b.lot=c.lot 
+					AND a.finOrgUnitNo=c.finOrgUnitNo
+					AND a.status='E'
+					AND a.wareHouseId=c.wareHouseId 
+					AND c.qty &gt; 0
+					<if test="wareHouseId != null and wareHouseId !=0 ">
+						AND a.wareHouseId = #{wareHouseId}
+					</if>
+					<if test="materialId != null and materialId !=0 ">
+                		AND b.itemId = #{materialId} 
+            		</if>
+            		<if test="lot != null and lot !='' ">
+                		AND b.lot = #{lot} 
+            		</if>
+					AND a.bizType =1
+					AND c.finOrgUnitNo in (${finOrgUnitNo})
+					AND c.costCenter=0
+				GROUP BY a.finOrgUnitNo,a.wareHouseId,b.itemId,b.lot
+				UNION
+				SELECT b.itemId,b.lot,a.finOrgUnitNo,a.wareHouseId,max(a.bizdate) AS lastoutdate 
+				FROM ScmInvMoveIssueBill a,scminvmoveissuebillentry b,scminvstock c 
+				WHERE a.otId=b.otId 
+					AND b.itemId=c.itemId 
+					AND b.lot=c.lot 
+					AND a.finOrgUnitNo=c.finOrgUnitNo
+					AND a.status='E'
+					AND a.wareHouseId=c.wareHouseId  
+					AND c.qty &gt; 0
+					<if test="wareHouseId != null and wareHouseId !=0 ">
+						AND a.wareHouseId = #{wareHouseId}
+					</if>
+					<if test="materialId != null and materialId !=0 ">
+                		AND b.itemId = #{materialId} 
+            		</if>
+            		<if test="lot != null and lot !='' ">
+                		AND b.lot = #{lot} 
+            		</if>
+					AND c.finOrgUnitNo in (${finOrgUnitNo})
+					AND c.costCenter=0
+				GROUP BY a.finOrgUnitNo,a.wareHouseId,b.itemId,b.lot
+				UNION
+				SELECT b.itemId,b.lot,a.finOrgUnitNo,a.wareHouseId,max(a.bizdate) AS lastoutdate 
+				FROM ScmInvOtherIssueBill a,scminvotherissuebillentry b,scminvstock c 
+				WHERE a.otId=b.otId 
+					AND b.itemId=c.itemId 
+					AND b.lot=c.lot 
+					AND a.finOrgUnitNo=c.finOrgUnitNo
+					AND a.status='E'
+					AND a.wareHouseId=c.wareHouseId 
+					AND c.qty &gt; 0 
+					<if test="wareHouseId != null and wareHouseId !=0 ">
+						AND a.wareHouseId = #{wareHouseId}
+					</if>
+					<if test="materialId != null and materialId !=0 ">
+                		AND b.itemId = #{materialId} 
+            		</if>
+            		<if test="lot != null and lot !='' ">
+                		AND b.lot = #{lot} 
+            		</if>
+					AND c.finOrgUnitNo in (${finOrgUnitNo})
+					AND c.costCenter=0
+				GROUP BY a.finOrgUnitNo,a.wareHouseId,b.itemId,b.lot)T2
+			GROUP BY itemId,lot,finOrgUnitNo,wareHouseId) T3
+		ON T1.itemId=T3.itemId 
+			AND T1.lot=T3.lot 
+			AND T1.finOrgUnitNo=T3.finOrgUnitNo 
+			AND T1.wareHouseId=T3.wareHouseId
+		WHERE 1 = 1
+			<if test="primnessDays != null and primnessDays !='' ">
+				AND datediff(now(), (CASE ifnull(lastoutdate,'') WHEN '' THEN lastintdate ELSE lastoutdate END)) &gt;= #{primnessDays}
+			</if>	
+			<if test="storageAge != null and storageAge !='' ">
+				AND datediff(now(), lastintdate) &gt;= #{storageAge}
+			</if>
+		ORDER BY T1.itemId
+    </select>  
+    
+    <select id="scminvreport.selectScmInvDepositorySumSup" resultType="ScmInvDepositorySumSup" parameterType="Map">
+		select IFNULL(B.reqFinOrgUnitNo, '') as reqFinOrgUnitNo, E.className, B.itemId, A.vendorId, B.unit, B.orgUnitNo, 
+				B.wareHouseId, 
+				B.taxRate as addInTaxRate,
+        SUM(case when A.bizType = '7' then B.qty end ) as outQty, 
+        SUM(case when A.bizType = '7' then B.amt end ) as outAmt,
+        SUM(case when A.bizType = '7' then B.taxAmt end ) as outTaxAmt
+		from scmInvOtherIssueBill as A, scmInvOtherIssueBillEntry as B, scmmaterial C,
+		scmmaterialgroupdetail D, scmmaterialgroup E, scmmaterialgroupstandard F
+		where A.otId = B.otId and B.itemId = C.id and C.id = D.itemId and F.standardType = '1'
+		and D.classId = E.id and D.standardId = E.standardId and D.standardId = F.Id
+			and A.bizType = '7'
+        <if test="orgUnitNo != null and orgUnitNo !='' ">
+            and B.orgUnitNo in (${orgUnitNo})
+        </if> 
+        <if test="begDate != null and begDate !='' ">
+            and A.bizDate &gt;= #{begDate}
+         </if>
+        <if test="endDate != null and endDate !='' ">
+            and A.bizDate &lt;= #{endDate}
+         </if>
+        <if test="materialClassIds != null and materialClassIds !='' ">
+           And E.id in (${materialClassIds})
+        </if>
+        <if test="materialIds != null and materialIds !='' ">
+           And B.itemId in (${materialIds})
+        </if>
+        <if test="vendorIds != null and vendorIds !='' ">
+            And A.vendorId in (${vendorIds})
+        </if>
+         <if test='noPost != null and noPost =="0" '>
+             And A.status = 'E'
+         </if> 
+        <if test="wareHouseId != null and wareHouseId !=0 ">
+            And B.wareHouseId = #{wareHouseId}
+         </if> 
+        <if test="reqFinOrgUnitNo != null and reqFinOrgUnitNo !='' ">
+            And B.reqFinOrgUnitNo in (${reqFinOrgUnitNo})
+        </if> 
+        group by B.reqFinOrgUnitNo,B.itemId, A.vendorId, B.unit, B.orgUnitNo, B.wareHouseId, B.taxRate
+        <if test='type != null and type =="V"'>
+            Order By B.reqFinOrgUnitNo,A.vendorId, C.itemNo, B.wareHouseId
+        </if>
+        <if test='type != null and type =="M"'>
+            Order By B.reqFinOrgUnitNo,C.itemNo, A.vendorId, B.wareHouseId
+        </if>
+    </select>   
+    
+    <select id="scminvreport.selectScmInvStorageAgeAnalysis" resultType="ScmInvStorageAgeAnalysis" parameterType="Map">
+        SELECT scmmaterialgroup.className,scminvstock.itemId, scmmaterial.itemNo, scmmaterial.itemName, scmmaterial.spec, lot,
+	    	scminvstock.orgUnitNo, finOrgUnitNo, wareHouseId, ScmInvWareHouse.whName as wareHouseName, unit, A.unitName, sum(qty) as qty, 
+	    	sum(taxAmt) as taxAmt, min(invDate) AS lastintdate,datediff(now(), min(invDate)) AS storageAge 
+	    FROM scminvstock 
+	    left join ScmMeasureUnit A on scminvstock.unit=A.id 
+	    left join ScmInvWareHouse on scminvstock.wareHouseId=ScmInvWareHouse.id,scmmaterial
+		join scmmaterialgroupdetail on scmmaterial.id=scmmaterialgroupdetail.itemId
+		join scmmaterialgroup on scmmaterialgroup.id=scmmaterialgroupdetail.classid
+		left join ScmMaterialGroupStandard on scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+      	WHERE costCenter=0 
+	  		AND scminvstock.itemId=scmmaterial.id
+	  		and ScmMaterialGroupStandard.standardType='1'
+     		<if test="invOrgUnitNo != null and invOrgUnitNo !='' ">
+       			AND scminvstock.OrgUnitNo in (${invOrgUnitNo})
+       			AND scminvstock.qty &gt; 0
+       		</if> 
+        	<if test="wareHouseId != null and wareHouseId !='' and wareHouseId != '0'.toString() ">
+        		AND scminvstock.wareHouseId in (${wareHouseId}) 
+        	</if> 
+        	<if test="materialIds != null and materialIds != '' and materialIds != '0'.toString() ">
+         		AND scminvstock.itemId  in (${materialIds}) 
+        	</if>
+        	<if test="materialClassIds != null and materialClassIds !='' ">
+            	and scmmaterialgroupdetail.classId in (${materialClassIds})
+        	</if>			
+		group by scmmaterialgroup.className,scminvstock.itemId, scmmaterial.itemNo, scmmaterial.itemName, scmmaterial.spec, lot,
+			scminvstock.OrgUnitNo, finOrgUnitNo, wareHouseId, unit
+		ORDER BY invDate desc, scminvstock.OrgUnitNo, finOrgUnitNo, wareHouseId,scmmaterialgroup.className,scminvstock.itemId, lot
+ 	</select> 
+ 	
+    <select id="scminvreport.selectScmInvInWareMonthAnalysis" resultType="ScmInvInWareMonthAnalysis" parameterType="Map">
+        SELECT LEFT(bill.bizDate, 7) as intervaltype 
+		, sup.vendorName as vendorName,sup.vendorNo as vendorNo
+		, mal.Id as itemId, mal.itemName as itemName,mal.itemNo as itemNo	
+		, mg.id as classId,scmmeasureunit.unitName
+		, mg.className
+		,sum(( case  when  bill.bizType in ('6','7','8')  THEN  -abs(entry.qty) else entry.qty end ))as qty  
+		,  AVG(entry.price) as price
+		, sum(( case  when  bill.bizType in ('6','7','8')  THEN  -abs(entry.amt) else entry.amt end ))as amt  
+		, AVG(entry.taxprice) as taxPrice
+		, sum(( case  when  bill.bizType in ('6','7','8')  THEN  -abs(entry.taxamt) else entry.taxamt end ))as taxAmt 
+		,brand.code as brandCode ,brand.name as brandName,brand.Id as brandId
+		FROM ScmInvPurInWarehsBillEntry entry
+		LEFT JOIN scmmeasureunit on scmmeasureunit.id = entry.unit
+		LEFT JOIN ScmInvPurInWarehsBill bill ON entry.wrId = bill.wrId
+		LEFT JOIN ScmSupplier sup ON sup.id = bill.vendorId
+		LEFT JOIN ScmMaterial  mal ON entry.ItemId = mal.Id
+		LEFT JOIN ScmMaterialGroupDetail mgd ON mgd.ItemId = mal.Id
+		left join ScmMaterialGroup mg on mgd.classId = mg.id
+		left join ScmMaterialGroupStandard on mgd.standardId = ScmMaterialGroupStandard.id
+		left join scmbrandinfo brand on mal.brandId = brand.id
+		where 1=1
+			and ScmMaterialGroupStandard.standardType='1'
+		<if test="invOrgUnitNo != null and invOrgUnitNo !='' ">
+			AND bill.orgUnitNo in (${invOrgUnitNo})
+		</if> 
+		<if test="begDate != null and begDate !='' ">
+			and bill.bizDate &gt;= #{begDate}
+		</if>
+		<if test="endDate != null and endDate !='' ">
+			and bill.bizDate &lt;= #{endDate}
+		</if>
+		<if test="materialIds != null and materialIds != '' and materialIds != '0'.toString() ">
+			and entry.itemId  in (${materialIds}) 
+		</if>
+		<if test="materialClassIds != null and materialClassIds !='' ">
+			and mgd.classId in (${materialClassIds})
+		</if>
+		<if test='noPost != null and noPost =="0" '>
+			And bill.status = 'E'
+		</if>       
+		<if test="brand != null and brand !='' ">
+			and mal.brandId in (${brand})
+		</if>         
+		GROUP BY LEFT(bill.bizDate, 7), bill.vendorId, sup.vendorName, sup.vendorNo,
+		entry.ItemId, mal.itemName,mal.itemNo,mg.id,mg.className,scmmeasureunit.unitName
+		ORDER BY sup.Id,mg.id,mal.itemNo,bill.bizDate
+ 	</select> 
+ 	
+	<select id="scminvreport.selectScmInvSaleMonthAnalysis" resultType="ScmInvInWareMonthAnalysis" parameterType="Map">
+     	SELECT LEFT(bill.bizDate, 7) as intervaltype , bill.bizType,bill.custId
+		, mal.Id as ItemId, mal.itemName as itemName,mal.itemNo as itemNo	
+		, mg.id as classId
+		, mg.className,scmmeasureunit.unitName
+		,sum(( case  when  bill.bizType ='8'  THEN  -abs(entry.qty) else entry.qty end ))as qty  
+		,  AVG(entry.saleTaxPrice) as Price        
+		, sum(( case  when  bill.bizType = '8' THEN  -abs(entry.saleTaxAmt) else entry.saleTaxAmt end ))as amt  
+		,brand.code as brandCode ,brand.name as brandName,ifnull(brand.Id,0) as brandId
+		FROM scminvsaleissuebillentry entry
+		LEFT JOIN scmmeasureunit on scmmeasureunit.id = entry.unit
+		LEFT JOIN ScmInvSaleIssueBill bill ON entry.otId = bill.otId
+		LEFT JOIN ScmMaterial  mal ON entry.ItemId = mal.Id
+		LEFT JOIN ScmMaterialGroupDetail mgd ON mgd.ItemId = mal.Id
+		left join ScmMaterialGroup mg on mgd.classId = mg.id
+		left join ScmMaterialGroupStandard on mgd.standardId = ScmMaterialGroupStandard.id
+		left join scmbrandinfo brand on mal.brandId = brand.id
+		where 1=1
+		and ScmMaterialGroupStandard.standardType='1'
+		<if test="invOrgUnitNo != null and invOrgUnitNo !='' ">
+			AND bill.orgUnitNo in (${invOrgUnitNo})
+		</if> 
+		<if test="begDate != null and begDate !='' ">
+			and bill.bizDate &gt;= #{begDate}
+		</if>
+		<if test="endDate != null and endDate !='' ">
+			and bill.bizDate &lt;= #{endDate}
+		</if>
+		<if test="materialIds != null and materialIds != '' and materialIds != '0'.toString() ">
+			and entry.itemId  in (${materialIds}) 
+		</if>
+		<if test="materialClassIds != null and materialClassIds !='' ">
+			and mgd.classId in (${materialClassIds})
+		</if>
+		<if test="custIds != null and custIds !='' ">
+			And bill.custId in (${custIds})
+		</if>
+		<if test='noPost != null and noPost =="0" '>
+			And bill.status = 'E'
+		</if>    
+		<if test="brand != null and brand !='' ">
+			and mal.brandId in (${brand})
+		</if>                	             									
+		GROUP BY LEFT(bill.bizDate, 7),bill.custId,
+		entry.ItemId, mal.itemName,mal.itemNo,mg.id,mg.className,scmmeasureunit.unitName
+		ORDER BY mg.id,mal.itemNo,bill.bizDate
+ 	</select> 
+ 	
+ 	<select id="scminvreport.selectScmInvInWarehsItemSum" resultType="ScmInvInWarehsItemSum" parameterType="Map">
+		SELECT bill.biztype,bill.orgUnitNo,unit.unitName,supgr.className as merchantType,sup.vendorName AS merchantName, bill.wrNo as no, mal.itemName, mal.itemNo, bill.buyerId as staffId
+		, bill.orgUnitNo as invOrgUnitNo, mal.spec, unit.unitName AS unit, mg.className,mg.classCode as classCode 
+		, entry.price,  entry.taxPrice, 
+		( case when bill.biztype in ('6','8') then -abs(entry.qty) else entry.qty  end) as qty,
+		( case when bill.biztype in ('6','8') then -abs(entry.amt) else entry.amt  end) as amt,
+		( case when bill.biztype in ('6','8') then -abs(entry.taxAmt) else entry.taxAmt  end) as taxAmt
+		,brand.code as brandCode ,brand.name as brandName,ifnull(brand.Id,0) as brandId
+		FROM ScmInvPurInWarehsBillEntry entry
+		inner JOIN ScmInvPurInWarehsBill bill ON entry.wrId = bill.wrId
+		LEFT JOIN ScmSupplier sup ON sup.id = bill.vendorId
+		LEFT JOIN scmsuppliergroupdetail supdg on supdg.vendorid=sup.id
+		LEFT JOIN scmsuppliergroup supgr on supgr.id = supdg.classid
+		LEFT JOIN ScmMaterial mal ON entry.ItemId = mal.Id
+		LEFT JOIN ScmMaterialGroupDetail mgd ON mgd.ItemId = mal.Id
+		LEFT JOIN ScmMaterialGroup mg ON mgd.classId = mg.id
+		left join ScmMaterialGroupStandard on mgd.standardId = ScmMaterialGroupStandard.id
+		LEFT JOIN ScmMaterialInventory  mia On (mal.id=mia.itemId and mia.orgUnitNo=bill.orgUnitNo  )
+		LEFT JOIN ScmMaterialInventory  mib On (mal.id=mib.itemId and mib.controlUnitNo=bill.controlUnitNo )
+		LEFT JOIN ScmMeasureUnit unit on IFNULL(mia.unitId,mib.unitId)=unit.Id
+		LEFT JOIN scmbrandinfo brand on mal.brandId = brand.id
+		WHERE 1=1
+		and ScmMaterialGroupStandard.standardType='1'
+		<if test="begDate != null and begDate !='' ">
+			and bill.bizDate &gt;= #{begDate}
+		</if>
+		<if test="endDate != null and endDate !='' ">
+			and bill.bizDate &lt;= #{endDate}
+		</if>
+		<if test="wareHouseId != null and wareHouseId !='' ">
+			and entry.wareHouseId = #{wareHouseId}
+		</if>
+		<if test="useOrgUnitNo != null and useOrgUnitNo !='' ">
+			and entry.useOrgUnitNo = #{useOrgUnitNo}
+		</if>
+		<if test="orgUnitNo != null and orgUnitNo !='' ">
+			and bill.orgUnitNo in (${orgUnitNo})
+		</if>
+		<if test="materialClassIds != null and materialClassIds !='' ">
+			And mg.id in (${materialClassIds})
+		</if>
+		<if test="materialIds != null and materialIds !='' ">
+			And entry.itemId in (${materialIds})
+		</if>
+		<if test="vendorIds != null and vendorIds !='' ">
+			And bill.vendorId in (${vendorIds})
+		</if>
+		<choose>
+			<when test='noPost != null and noPost =="0" '>
+ 				And bill.status = 'E'
+ 			</when>
+ 			<otherwise>
+ 				and bill.status != 'N'
+ 			</otherwise>
+ 		</choose>
+		<if test='stockType != null and stockType =="0"'>
+			And entry.wareHouseId &gt; 0
+		</if>
+		<if test='stockType != null and stockType =="1"'>
+			And IFNULL(entry.useOrgUnitNo,'')!=''
+		</if>
+		<if test="whOrDept != null and whOrDept !='' ">
+			And (entry.wareHouseId in (${whOrDept}) or  entry.useOrgUnitNo in (${whOrDept}) )
+		</if> 
+		<if test="taxRate != null and taxRate !='' ">
+			And entry.taxRate in (${taxRate})
+		</if>
+		<if test="brand != null and brand !='' ">
+			and mal.brandId in (${brand})
+		</if>
+		GROUP BY entry.id
+ 	</select> 
+ 	
+ 	
+ 	 <select id="scminvreport.selectScmInvSaleItemSum" resultType="ScmInvInWarehsItemSum" parameterType="Map">
+		SELECT bill.custId as merchantId,bill.orgUnitNo,bill.otNo as no, bill.salesId AS staffId, entry.qty, entry.price, entry.amt
+		, entry.taxPrice, entry.taxAmt,entry.saleQty,entry.saleTaxPrice,entry.saleTaxAmt, mal.itemName, mal.itemNo, mal.spec
+		, unit.unitName AS unit, mg.className, mg.classCode AS classCode
+		,brand.code as brandCode ,brand.name as brandName,IFNULL(brand.Id,0)as brandId
+		FROM ScmInvSaleIssueBillEntry entry
+		INNER JOIN ScmInvSaleIssueBill bill ON entry.otId = bill.otId
+		LEFT JOIN ScmMaterial mal ON entry.ItemId = mal.Id
+		LEFT JOIN ScmMaterialGroupDetail mgd ON mgd.ItemId = mal.Id
+		LEFT JOIN ScmMaterialGroup mg ON mgd.classId = mg.id
+		left join ScmMaterialGroupStandard on mgd.standardId = ScmMaterialGroupStandard.id
+		LEFT JOIN ScmMaterialInventory mia ON mal.id = mia.itemId AND mia.orgUnitNo = bill.orgUnitNo
+		LEFT JOIN ScmMaterialInventory mib ON mal.id = mib.itemId AND mib.controlUnitNo = bill.controlUnitNo
+		LEFT JOIN ScmMeasureUnit unit ON IFNULL(mia.unitId, mib.unitId) = unit.Id
+		left join scmbrandinfo brand on mal.brandId = brand.id
+		where ScmMaterialGroupStandard.standardType='1'
+			<if test="begDate != null and begDate !='' ">
+				and bill.bizDate &gt;= #{begDate}
+			</if>
+			<if test="endDate != null and endDate !='' ">
+				and bill.bizDate &lt;= #{endDate}
+			</if>
+			<if test="orgUnitNo != null and orgUnitNo !='' ">
+				and bill.orgUnitNo in (${orgUnitNo}) 
+			</if>
+			<if test="materialClassIds != null and materialClassIds !='' ">
+				And mg.id in (${materialClassIds})
+			</if>
+			<if test="materialIds != null and materialIds !='' ">
+				And entry.itemId in (${materialIds})
+			</if>
+			<if test='noPost != null and noPost =="0" '>
+				And bill.status = 'E'
+			</if> 
+			<if test='stockType != null and stockType =="0"'>
+				And entry.wareHouseId &gt; 0
+			</if>
+	        <if test="custIds != null and custIds !='' ">
+	             and bill.custId  in (${custIds})
+	        </if>
+			<if test='stockType != null and stockType =="1"'>
+				And IFNULL(entry.outOrgUnitNo,'')!=''
+			</if>
+			<if test="whOrDept != null and whOrDept !='' ">
+				And (entry.wareHouseId in (${whOrDept}) or  entry.outOrgUnitNo in (${whOrDept}) )
+			</if> 
+			<if test="lot != null and lot !='' ">
+				And entry.lot = #{lot}
+			</if>
+			<if test="sales != null and sales !='' ">
+				and bill.salesId in (${sales})
+			</if>
+			<if test="brand != null and brand !='' ">
+				and mal.brandId in (${brand})
+			</if>
+		GROUP BY entry.id       
+ 	</select>
+ 	
+ 	
+ 	 	
+ 	<select id="scminvreport.selectScmInvSaleBusinessSale" resultType="ScmInvSaleBusiness" parameterType="Map">
+			SELECT  bill.custId,bill.bizDate as date,
+			sum(( case  when  bill.bizType = '8' THEN  -abs(entry.taxAmt) else entry.taxAmt end )) as saleAmt,
+			sum(( case  when  bill.bizType = '8' THEN  -abs(entry.saleTaxAmt) else entry.saleTaxAmt end )) as saleTaxAmt
+			,brand.code as brandCode ,brand.name as brandName,brand.Id as brandId
+			FROM ScmInvSaleIssueBillEntry entry
+			INNER JOIN  ScmInvSaleIssueBill bill on entry.otId=bill.otId
+			LEFT JOIN ScmMaterial mal ON entry.ItemId = mal.Id
+			LEFT JOIN ScmMaterialGroupDetail mgd ON mgd.ItemId = mal.Id
+			LEFT JOIN ScmMaterialGroup mg ON mgd.classId = mg.id
+			left join ScmMaterialGroupStandard on mgd.standardId = ScmMaterialGroupStandard.id
+            LEFT JOIN scmbrandinfo brand on mal.brandId = brand.id
+            where ScmMaterialGroupStandard.standardType='1'
+		    <if test="invOrgUnitNo != null and invOrgUnitNo !='' ">
+		         and bill.orgUnitNo in (${invOrgUnitNo})
+	     	</if>
+	     	
+			<if test="begDate != null and begDate !='' ">
+                 and bill.bizDate &gt;= #{begDate}
+		    </if>
+	        <if test="endDate != null and endDate !='' ">
+	             and bill.bizDate &lt;= #{endDate}
+	        </if>
+	        <if test="custIds != null and custIds !='' ">
+	             and bill.custId  in (${custIds})
+	        </if>
+   	        <if test="salesIds != null and salesIds !='' ">
+	             and bill.salesId  in (${salesIds})
+	        </if>
+		    <if test="materialClassIds != null and materialClassIds !='' ">
+		         And mg.id in (${materialClassIds})
+	        </if>
+	        <if test="materialIds != null and materialIds !='' ">
+	             And entry.itemId in (${materialIds})
+	        </if>
+	        <if test="brand != null and brand !='' ">
+				and mal.brandId in (${brand})
+			</if>
+			GROUP BY bill.bizDate,bill.custId		               
+ 	</select>
+ 	
+ 	<select id="scminvreport.selectScmInvSaleBusinessPurchase" resultType="ScmInvSaleBusiness" parameterType="Map">
+	        SELECT bill.vendorId,bill.bizDate as date,
+			sum( case  when  bill.bizType in ('8','6') THEN  -abs(entry.amt) else entry.amt end )  as purAmt,
+			sum( case  when  bill.bizType in ('8','6') THEN  -abs(entry.taxAmt) else entry.taxAmt end ) as purTaxAmt
+			,supgr.className as vendorType
+			,brand.code as brandCode ,brand.name as brandName,brand.Id as brandId
+			FROM ScmInvPurInWarehsBillEntry Entry 
+			INNER JOIN ScmInvPurInWarehsBill bill on Entry.wrId = bill.wrId
+			LEFT JOIN ScmMaterial mal ON entry.ItemId = mal.Id
+			LEFT JOIN ScmMaterialGroupDetail mgd ON mgd.ItemId = mal.Id
+			LEFT JOIN ScmMaterialGroup mg ON mgd.classId = mg.id
+			left join ScmMaterialGroupStandard on mgd.standardId = ScmMaterialGroupStandard.id
+			LEFT JOIN ScmSupplier sup ON sup.id = bill.vendorId
+			LEFT JOIN scmsuppliergroupdetail supdg on supdg.vendorid=sup.id
+			LEFT JOIN scmsuppliergroup supgr on supgr.id = supdg.classid
+			LEFT JOIN scmbrandinfo brand on mal.brandId = brand.id
+            where	ScmMaterialGroupStandard.standardType='1'		
+		    <if test="invOrgUnitNo != null and invOrgUnitNo !='' ">
+		         and bill.orgUnitNo in (${invOrgUnitNo})
+	     	</if>
+			<if test="begDate != null and begDate !='' ">
+                 and bill.bizDate &gt;= #{begDate}
+		    </if>
+	        <if test="endDate != null and endDate !='' ">
+	             and bill.bizDate &lt;= #{endDate}
+	        </if>
+		    <if test="materialClassIds != null and materialClassIds !='' ">
+		         And mg.id in (${materialClassIds})
+	        </if>
+	        <if test="materialIds != null and materialIds !='' ">
+	             And entry.itemId in (${materialIds})
+	        </if>
+	        <if test="vendorTypeIds != null and vendorTypeIds !='' ">
+                 and supgr.id in (${vendorTypeIds})
+		    </if>	
+		    <if test="brand != null and brand !='' ">
+				and mal.brandId in (${brand})
+			</if>
+			GROUP BY bill.bizDate,bill.vendorId       
+ 	</select>
+ 	
+ 	
+ 	
+ 	<!-- 查询条件 (orgUnitNo，库存组织，必填)(物资类别列表，materialIds)(物资分类) 查询数据:物资ID-->
+ 	<select id="scminvreport.selectScmInvPurSalePrice_Sale" resultType="ScmInvPurSalePrice" parameterType="Map">
+				SELECT  entry.itemId,mal.itemName,mal.itemNo,entry.saleTaxPrice,entry.unit as saleUnitId,
+				relation.Convrate as saleConvrate ,	un.UnitName as saleUnitName,mal.spec
+				,mg.className as itemClassName,mg.classCode as itemClassNo
+				FROM ScmInvSalePriceEntry entry
+				LEFT JOIN ScmInvSalePrice bill on bill.pmid= entry.pmid
+				LEFT JOIN ScmMaterialUnitRelation relation on relation.itemid=entry.itemid 
+				                                           and entry.unit = relation.targetUnitId
+				LEFT JOIN ScmMaterial mal ON entry.ItemId = mal.Id
+				LEFT JOIN ScmMaterialGroupDetail mgd ON mgd.ItemId = mal.Id
+				LEFT JOIN ScmMaterialGroup mg ON mgd.classId = mg.id
+				left join ScmMaterialGroupStandard on mgd.standardId = ScmMaterialGroupStandard.id
+				LEFT JOIN ScmMeasureUnit un on entry.unit = un.id
+				where  entry.id in 
+				( 
+				SELECT max(id) 
+				from ScmInvSalePriceEntry b LEFT JOIN ScmInvSalePrice a on b.pmid=a.pmid
+				WHERE  b.rowStatus ='E'  and a.orgUnitNo =  #{orgUnitNo}
+				GROUP BY b.ItemId,a.orgUnitNo
+				)
+				 and bill.orgUnitNo =  #{orgUnitNo}
+				 and entry.rowStatus ='E' 
+				 and ScmMaterialGroupStandard.standardType='1'
+			  <if test="materialIds != null and materialIds !='' "><!-- 物资 -->
+	             And entry.itemId in (${materialIds})
+	          </if>
+	          <if test="materialClassIds != null and materialClassIds !='' "><!-- 物资类别 -->
+		         And mg.id in (${materialClassIds})
+	          </if>
+	           <if test="businessDate != null and businessDate !='' ">
+                 and bill.begDate &lt;= #{businessDate}
+		      </if>
+	          <if test="businessDate != null and businessDate !='' ">
+	             and bill.endDate &gt;= #{businessDate}
+	         </if>
+	              
+    </select>
+ 	
+ 	<!-- 先查询定价单，再union 报价单，报价单加 NOT EXISTS对定价单的数据做过滤  -->
+ 	<select id="scminvreport.selectScmInvPurSalePrice_Pur" resultType="ScmInvPurSalePrice" parameterType="Map">
+			    SELECT entry.itemId,entry.price as putTaxPrice,entry.purUnit as purUnitId 
+				,relation.convrate as purConvrate,un.unitName as purUnitName
+				FROM  ScmPurPriceEntry entry
+				LEFT JOIN ScmPurPrice bill on entry.pmId=bill.id
+				LEFT JOIN ScmMaterialUnitRelation relation on relation.itemid=entry.itemid 
+			                                          and entry.purunit = relation.targetUnitId
+				LEFT JOIN ScmMeasureUnit un on entry.purunit = un.id
+				WHERE 
+				entry.id  in (
+				SELECT  max(B.ID)
+				FROM ScmPurPriceEntry b 
+				LEFT JOIN ScmPurPrice a on b.pmid=a.id
+				WHERE b.rowStatus='E'
+				     and a.orgUnitNo=#{orgUnitNo}
+			  <if test="materialIds != null and materialIds !='' ">
+	             And b.itemId in (${materialIds})
+	          </if>
+				GROUP BY b.ItemId,a.orgUnitNo
+				)
+				 And entry.rowStatus='E'
+				 And bill.orgUnitNo=#{orgUnitNo}
+			  <if test="materialIds != null and materialIds !='' "><!-- 物资 -->
+	             And entry.itemId in (${materialIds})
+	          </if>
+	             <if test="businessDate != null and businessDate !='' ">
+                 and bill.begDate &lt;= #{businessDate}
+		      </if>
+	          <if test="businessDate != null and businessDate !='' ">
+	             and bill.endDate &gt;= #{businessDate}
+	         </if>
+				
+           union all
+
+			    SELECT b.itemId, price as putTaxPrice,b.purUnit as purUnitId,
+				relation.convrate as purConvrate,un.unitName as purUnitName
+				FROM ScmPurQuotationEntry  b
+								LEFT JOIN  ScmPurQuotation  a on b.pqid = a.id
+		        LEFT JOIN ScmMaterialUnitRelation relation on relation.itemid=b.itemid 
+                                         and b.purUnit = relation.targetUnitId
+			    LEFT JOIN ScmMeasureUnit un on b.purUnit = un.id
+				where 
+				NOT EXISTS(SELECT  bb.id
+				FROM ScmPurPriceEntry bb 
+				LEFT JOIN ScmPurPrice aa on bb.pmid=aa.id
+				WHERE   bb.itemid = b.itemid and
+				bb.rowStatus='E'   and aa.orgUnitNo=#{orgUnitNo} 
+				GROUP BY bb.ItemId,aa.orgUnitNo)
+				and  b.id in 
+				(
+				SELECT  max(bbbb.ID)
+				FROM ScmPurQuotationEntry bbbb 
+				LEFT JOIN ScmPurQuotation aaaa on bbbb.pqid=aaaa.id
+				WHERE bbbb.rowStatus='E'
+						 and aaaa.orgUnitNo=#{orgUnitNo}
+						 <if test="materialIds != null and materialIds !='' "><!-- 物资 -->
+	                     And bbbb.itemId in (${materialIds})
+	                    </if>
+				GROUP BY bbbb.ItemId
+				)
+				And b.rowStatus='E'
+				And a.orgUnitNo=#{orgUnitNo}
+			  <if test="materialIds != null and materialIds !='' "><!-- 物资 -->
+	             And b.itemId in (${materialIds})
+	          </if>
+              <if test="businessDate != null and businessDate !='' ">
+                 and a.begDate &lt;= #{businessDate}
+		      </if>
+	          <if test="businessDate != null and businessDate !='' ">
+	             and a.endDate &gt;= #{businessDate}
+	         </if>
+    </select>
+    
+    <!-- 供应商物资比价 -->
+    <select id="scminvreport.selectScmVendorItemContras" resultType="ScmVendorItemContrast" parameterType="Map">
+        SELECT mg.classCode,mg.className,mal.itemNo,mal.itemName,unit.unitName 
+		,vendor.vendorname
+		,sum(entry.amt)/sum(entry.qty) as price 
+		,sum(entry.taxamt)/sum(entry.qty) as taxPrice
+		FROM  
+		scminvpurinwarehsbillentry entry 
+		LEFT JOIN scminvpurinwarehsbill bill on bill.wrId=entry.wrId
+		LEFT JOIN ScmMaterial mal on entry.itemId=mal.id
+		LEFT JOIN ScmMaterialGroupDetail mgd ON mgd.ItemId = mal.Id
+		LEFT JOIN ScmMaterialGroup mg on mgd.classId = mg.id
+		left join ScmMaterialGroupStandard on mgd.standardId = ScmMaterialGroupStandard.id
+		LEFT JOIN ScmSupplier vendor on bill.vendorId = vendor.id
+		LEFT JOIN ScmMeasureUnit unit on entry.unit=unit.id
+		
+		WHERE 1=1 and bill.biztype NOT in ('6','8') AND bill.status != 'N'
+		and ScmMaterialGroupStandard.standardType='1'
+		<if test='noPost != null and noPost =="0" '>
+			and bill.status = 'E'
+		</if>
+		<if test="purOrgUnitNo != null and purOrgUnitNo !='' ">
+			and bill.purOrgUnitNo in (${purOrgUnitNo})
+		</if>
+		<if test="orgunitno != null and orgunitno !='' ">
+			and bill.orgunitno in (#{orgunitno})
+		</if>
+		<if test="begDate != null and begDate !='' ">
+			and bill.bizDate &gt;= #{begDate}
+		</if>
+		<if test="begDate != null and begDate !='' ">
+			and bill.bizDate &lt;= #{endDate}
+		</if>
+		<if test="materialName != null and materialName !='' ">
+			and entry.itemid in (${materialName})
+		</if>
+		<if test="materialClassName != null and materialClassName !='' ">
+			AND mg.id in (${materialClassName})
+		</if>
+		<if test="vendor != null and vendor !='' ">
+			AND vendor.id in (${vendor})
+		</if>
+		<if test='stockType != null and stockType =="0"'>
+			And entry.wareHouseId &gt; 0
+		</if>
+		<if test='stockType != null and stockType =="1"'>
+			And IFNULL(entry.useOrgUnitNo,'')!=''
+		</if>
+		<if test="whOrDept != null and whOrDept !='' ">
+			And (entry.wareHouseId in (${whOrDept}) or  entry.useOrgUnitNo in (${whOrDept}) )
+		</if> 
+		GROUP BY entry.itemid,bill.orgunitno,bill.vendorId,entry.unit
+		ORDER BY mg.id,entry.itemid,bill.vendorId,bill.orgunitno,entry.unit
+ 	</select>
+ 	
+ 	   <!-- 供应商综合情况表 -->
+    <select id="scminvreport.selectScmPurVendorInfo" resultType="ScmPurVendorInfo" parameterType="Map">
+	 	SELECT  vendor.vendorNo as vendorCode,VendorName,
+	    IFNULL(sum(a.puramt),0) AS puramt,IFNULL(sum(a.purTaxAmt),0) as purTaxAmt,IFNULL(sum(a.receiveAmt),0) as receiveAmt
+		,IFNULL(sum(a.receiveTaxAmt),0) as receiveTaxAmt
+		FROM (
+		
+		SELECT 
+		bill.vendorid,sum(entry.amt)as purAmt,sum(entry.taxamt)as purTaxAmt,0 as receiveAmt,0 as receiveTaxAmt
+		
+		FROM scmpurorderentry entry
+		LEFT JOIN  scmpurorder bill on entry.poid=bill.id
+		WHERE 1=1
+		<if test="begDate != null and begDate !='' ">
+		and bill.orderDate &gt;=#{begDate}
+		</if>
+		<if test="endDate != null and endDate !='' ">
+		and bill.orderDate &lt;=#{endDate}
+		</if>
+		<if test="vendor != null and vendor !='' ">
+		and bill.vendorid in (${vendor})
+		</if>
+		and orgunitno in(${orgunitno})
+		GROUP BY bill.vendorid
+		
+		  union all
+			
+		SELECT bill2.vendorid,0 as purAmt,0 as purTaxAmt,sum(entry2.amt)as receiveAmt,sum(entry2.taxamt)as receiveTaxAmt
+		 FROM scmpurreceiveentry entry2 
+		LEFT JOIN scmpurreceive bill2 on entry2.pvid=bill2.id
+		WHERE 1=1
+		<if test="begDate != null and begDate !='' ">
+		and bill2.receiveDate &gt;=#{begDate}
+		</if>
+		<if test="endDate != null and endDate !='' ">
+		and bill2.receiveDate &lt;=#{endDate}
+		</if>
+		<if test="vendor != null and vendor !='' ">
+		and bill2.vendorid in (${vendor})
+		</if>
+		and bill2.purOrgUnitNo in(${orgunitno})		
+		GROUP BY bill2.vendorid
+		) as a 
+		LEFT JOIN ScmSupplier vendor on a.vendorId = vendor.id
+		GROUP BY a.vendorId
+ 	</select>
+ 	
+</mapper>

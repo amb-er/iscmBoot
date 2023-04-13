@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsupplierqualifieinfobillentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsupplierqualifieinfobillentry.findAll" resultType="ScmSupplierQualifieInfoBillEntry2" >
+	    SELECT * FROM ScmSupplierQualifieInfoBillEntry WHERE  1=1  
+	</select>
+ 
+	<select id="scmsupplierqualifieinfobillentry.findAllPage" resultType="ScmSupplierQualifieInfoBillEntry2" parameterType="Map"> 
+		SELECT * FROM ScmSupplierQualifieInfoBillEntry WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmsupplierqualifieinfobillentry.selectById" resultType="ScmSupplierQualifieInfoBillEntry2" parameterType="Long">
+		SELECT * FROM ScmSupplierQualifieInfoBillEntry WHERE id = #{value}
+	</select> 
+	<select id="scmsupplierqualifieinfobillentry.selectByBillId" resultType="ScmSupplierQualifieInfoBillEntry2" parameterType="Map">
+		SELECT * FROM ScmSupplierQualifieInfoBillEntry WHERE billId = #{billId}
+	</select> 
+	<insert id="scmsupplierqualifieinfobillentry.add" parameterType="ScmSupplierQualifieInfoBillEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmSupplierQualifieInfoBillEntry (
+        billId,
+        lineId,
+        typeId,
+        required,
+        qualifyAudit,
+        sourceBillDtlId,
+        checker,
+        checkDate,
+        rowStatus,
+        remarks        )
+		VALUES (
+        #{billId},
+        #{lineId},
+        #{typeId},
+        #{required},
+        #{qualifyAudit},
+        #{sourceBillDtlId},
+        #{checker},
+        #{checkDate},
+        #{rowStatus},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scmsupplierqualifieinfobillentry.update" parameterType="ScmSupplierQualifieInfoBillEntry">
+		UPDATE ScmSupplierQualifieInfoBillEntry set
+        billId=#{billId},
+        lineId=#{lineId},
+        typeId=#{typeId},
+        required=#{required},
+        qualifyAudit=#{qualifyAudit},
+        sourceBillDtlId=#{sourceBillDtlId},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        rowStatus=#{rowStatus},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsupplierqualifieinfobillentry.delete" parameterType="String">
+		DELETE FROM ScmSupplierQualifieInfoBillEntry WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpursupplyrecorg">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpursupplyrecorg.findAll" resultType="ScmPurSupplyRecOrg2" >
+	    SELECT * FROM ScmPurSupplyRecOrg WHERE  1=1  
+	</select>
+ 
+	<select id="scmpursupplyrecorg.findAllPage" resultType="ScmPurSupplyRecOrg2" parameterType="Map"> 
+		SELECT * FROM ScmPurSupplyRecOrg WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpursupplyrecorg.selectById" resultType="ScmPurSupplyRecOrg2" parameterType="Long">
+		SELECT * FROM ScmPurSupplyRecOrg WHERE id = #{value}
+	</select> 
+	<select id="scmpursupplyrecorg.selectBySupplyInfoId" resultType="ScmPurSupplyRecOrg2" parameterType="Map">
+		SELECT * FROM ScmPurSupplyRecOrg WHERE supplyId = #{supplyId}
+	</select> 
+	<insert id="scmpursupplyrecorg.addBySupplierSource" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurSupplyRecOrg (supplyId,receiveOrgUnitNo)
+		SELECT ScmPurSupplyInfo.id,ScmPurSupplierSourceRecOrg.receiveOrgUnitNo
+		FROM ScmPurSupplierSource,ScmPurSupplierSourceEntry,ScmPurSupplyInfo,ScmPurSupplierSourceRecOrg 
+		WHERE ScmPurSupplierSource.id = ScmPurSupplierSourceEntry.billId And ScmPurSupplierSource.id=ScmPurSupplierSourceRecOrg.billId
+		And ScmPurSupplyInfo.sourceDtlId=ScmPurSupplierSourceEntry.id And ScmPurSupplyInfo.sourceType='S'
+		And ScmPurSupplierSource.id=#{billId}
+		ON DUPLICATE KEY UPDATE supplyId=ScmPurSupplyInfo.id
+	</insert>
+	<insert id="scmpursupplyrecorg.add" parameterType="ScmPurSupplyRecOrg"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurSupplyRecOrg (
+        supplyId,
+        receiveOrgUnitNo        )
+		VALUES (
+        #{supplyId},
+        #{receiveOrgUnitNo}        )
+	</insert>
+ 
+	<update id="scmpursupplyrecorg.update" parameterType="ScmPurSupplyRecOrg">
+		UPDATE ScmPurSupplyRecOrg set
+        supplyId=#{supplyId},
+        receiveOrgUnitNo=#{receiveOrgUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpursupplyrecorg.delete" parameterType="String">
+		DELETE FROM ScmPurSupplyRecOrg WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,398 @@
+
+i
+java:S3776…"RRefactor this method to reduce its Cognitive Complexity from 17 to the 15 allowed.(Ü„Äµ
+“
+java:S1130…"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(îÅÌ¢
+n
+java:S2737Ê"WAdd logic to this catch clause or eliminate it and rethrow the exception automatically.(ö™û
+E
+java:S3740Ù"/Provide the parametrized type for this generic.(Ì¹'
+G
+java:S1481…"+Remove this unused "taxAmt" local variable.(·ØÛûÿÿÿÿ
+k
+java:S1192ö	"ODefine a constant instead of duplicating this literal "controlUnitNo=" 6 times.(å¾Æ±ûÿÿÿÿ
+t	java:S135ñ"YReduce the total number of break and continue statements in this loop to use at most one.(ã§‹üüÿÿÿÿ
+v
+java:S1149ç	"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(Éõ
+˜
+java:S1130Ğ"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ÄñØÃşÿÿÿÿ
+B
+java:S1168¬"+Return an empty collection instead of null.(¥¹ï
+k
+java:S1192â	"ODefine a constant instead of duplicating this literal "SCM_SelectType" 4 times.(À®Ğşÿÿÿÿ
+˜
+java:S1130Ù"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(³ºü¦ıÿÿÿÿ
+p
+java:S2293à"YReplace the type specification in this constructor call with the diamond operator ("<>").(ƒ©¨
+j
+java:S3776£	"SRefactor this method to reduce its Cognitive Complexity from 133 to the 15 allowed.(×¿à¯
+F
+java:S1066Æ"/Merge this if statement with the enclosing one.(«¬é˜
+t
+java:S1192ó	"XDefine a constant instead of duplicating this literal "ScmMaterial.itemNo in (" 3 times.(Ó…Å“üÿÿÿÿ
+n
+java:S2737ú"WAdd logic to this catch clause or eliminate it and rethrow the exception automatically.(ö™û
+€
+java:S1488æ"iImmediately return this expression instead of assigning it to the temporary variable "processInstanceId".(ğÆ“¤
+f
+java:S1854ï"JRemove this useless assignment to local variable "scmPurRequireEntryList".(ßÖ›§şÿÿÿÿ
+i
+java:S3776÷"RRefactor this method to reduce its Cognitive Complexity from 58 to the 15 allowed.(º¢À€
+F
+java:S3740ó"/Provide the parametrized type for this generic.(³é‘
+“
+java:S1130ˆ"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(šÔŸÍ
+<
+java:S2129“" Remove this "String" constructor(şóåŒùÿÿÿÿ
+v
+java:S1149Ù"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(İÿëŠ
+n
+java:S2737¡"WAdd logic to this catch clause or eliminate it and rethrow the exception automatically.(ö™û
+n
+java:S2737†"WAdd logic to this catch clause or eliminate it and rethrow the exception automatically.(ö™û
+˜
+java:S1130Ü"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(±¼êûüÿÿÿÿ
+u
+java:S2293"YReplace the type specification in this constructor call with the diamond operator ("<>").(æëïÿÿÿÿÿ
+“
+java:S1130É"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ÿ®°°
+¦
+java:S1192û"Define a constant instead of duplicating this literal "iscm.purchasemanage.purchasebusiness.ScmPurRequireBizImpl.error.itemnorexists" 3 times.(ï…•ï
+{
+java:S1149Û"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(£¸ôıÿÿÿÿ
+R	java:S125"<This block of commented-out lines of code should be removed.(‚„ÏÒ
+F
+java:S3740ç"/Provide the parametrized type for this generic.(³é‘
+{
+java:S1149š"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(“±â ÿÿÿÿÿ
+G
+java:S1481ª"+Remove this unused "taxAmt" local variable.(·ØÛûÿÿÿÿ
+i
+java:S3776ˆ"RRefactor this method to reduce its Cognitive Complexity from 56 to the 15 allowed.(šÔŸÍ
+˜
+java:S1130Ø"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(»³Úûÿÿÿÿ
+v
+java:S1149À"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(Éõ
+’
+java:S1130Ë"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(´­ëc
+˜
+java:S1130Ñ"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ÄñØÃşÿÿÿÿ
+U
+java:S1155">Use isEmpty() to check whether the collection is empty or not.(•ñ¥À
+W	java:S125£"<This block of commented-out lines of code should be removed.(éØ»Úûÿÿÿÿ
+“
+java:S1130ñ"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(¸†Òà
+“
+java:S1130á"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ô„™ö
+“
+java:S1130‹	"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(å“à¤
+i
+java:S3776ê"RRefactor this method to reduce its Cognitive Complexity from 29 to the 15 allowed.(ğäÇ
+=
+java:S1481—"&Remove this unused "i" local variable.(˜Éı™
+n
+java:S2737Æ"WAdd logic to this catch clause or eliminate it and rethrow the exception automatically.(ö™û
+n
+java:S2737Ş"WAdd logic to this catch clause or eliminate it and rethrow the exception automatically.(ö™û
+H
+java:S1481û",Remove this unused "pageNum" local variable.(Ÿìç™ùÿÿÿÿ
+“
+java:S1130î"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(æœ¡¸
+v
+java:S1149¾"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(â÷¼¬
+X
+java:S1854™"<Remove this useless assignment to local variable "cacheMap".(†ªøúÿÿÿÿ
+’
+java:S1130°"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(Ü¥?
+V
+java:S1854·"?Remove this useless assignment to local variable "getPriceWay".(ÙÒ‡Ï
+w
+java:S3252®"[Use static access with "com.armitage.server.system.model.OrgBaseUnit" for "FN_ORGUNITNAME".(ò¤²¿øÿÿÿÿ
+v
+java:S1149´"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(£œ¬»
+“
+java:S1130"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(§´õì
+i
+java:S1858¢"R"notRawMaterails" is already a string, there's no need to call "toString()" on it.(ÿ¨ÿ©
+n
+java:S3776—"RRefactor this method to reduce its Cognitive Complexity from 63 to the 15 allowed.(ñ¨ôãûÿÿÿÿ
+“
+java:S1130…"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(Ü„Äµ
+F
+java:S1066í"/Merge this if statement with the enclosing one.(Ñ±Î
+a
+java:S1854î"ERemove this useless assignment to local variable "scmPurRequireList".(ôêùùúÿÿÿÿ
+K
+java:S1066Á"/Merge this if statement with the enclosing one.(ÑŞï·øÿÿÿÿ
+“
+java:S1130"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ĞÕ¼¼
+P
+java:S2130ğ"9Use "Integer.parseInt" for this string-to-int conversion.(„Ÿ ñ
+F
+java:S3740ç"/Provide the parametrized type for this generic.(³é‘
+O	java:S106Ÿ"9Replace this use of System.out or System.err by a logger.(ô£„¶
+K
+java:S3740Ë"/Provide the parametrized type for this generic.(£¼ä”úÿÿÿÿ
+n
+java:S1192á"RDefine a constant instead of duplicating this literal "SCM_EditReqVendor" 5 times.(à—™ªÿÿÿÿÿ
+i
+java:S3776ö"RRefactor this method to reduce its Cognitive Complexity from 36 to the 15 allowed.(´—óà
+F
+java:S3740ô	"/Provide the parametrized type for this generic.(³é‘
+F
+java:S1066ø"/Merge this if statement with the enclosing one.(Ò§ü¶
+e
+java:S2259¥"NA "NullPointerException" could be thrown; "scmMaterialPrice" is nullable here.(ÆãØ›
+o
+java:S3776ñ
+"SRefactor this method to reduce its Cognitive Complexity from 445 to the 15 allowed.(ÀÓôôúÿÿÿÿ
+v
+java:S1149ò"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(£Ô—¾
+i
+java:S3776©"RRefactor this method to reduce its Cognitive Complexity from 35 to the 15 allowed.(ò¯Ëå
+V
+java:S1854…":Remove this useless assignment to local variable "taxAmt".(·ØÛûÿÿÿÿ
+‹
+java:S1192€	"tDefine a constant instead of duplicating this literal "iscm.purchasemanage.pricemanage.find.ordernotexists" 7 times.(¥èğĞ
+i
+java:S3776°"SRefactor this method to reduce its Cognitive Complexity from 128 to the 15 allowed.(Ü¥?
+K
+java:S3740¬"/Provide the parametrized type for this generic.(£¼ä”úÿÿÿÿ
+K
+java:S1066ı
+"/Merge this if statement with the enclosing one.(×ìÃûÿÿÿÿ
+“
+java:S1130¨"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ÒÖÌ—
+v
+java:S1149ã"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(â÷¼¬
+V
+java:S1854ª":Remove this useless assignment to local variable "taxAmt".(·ØÛûÿÿÿÿ
+P
+java:S2130Š"9Use "Integer.parseInt" for this string-to-int conversion.(„Ÿ ñ
+“
+java:S1130÷"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(º¢À€
+’
+java:S1130Ø"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(êÚ×S
+n
+java:S2737ê
+"WAdd logic to this catch clause or eliminate it and rethrow the exception automatically.(ö™û
+“
+java:S1130«"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(“¡œ¦
+u
+java:S2293ô"YReplace the type specification in this constructor call with the diamond operator ("<>").(æëïÿÿÿÿÿ
+u
+java:S2293™"YReplace the type specification in this constructor call with the diamond operator ("<>").(†ªøúÿÿÿÿ
+v
+java:S1149‹"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(ıÆğ³
+n
+java:S3776"RRefactor this method to reduce its Cognitive Complexity from 61 to the 15 allowed.(ÎÜ£¦ÿÿÿÿÿ
+r
+java:S3252­"[Use static access with "com.armitage.server.system.model.OrgBaseUnit" for "FN_ORGUNITNAME".(ôÎ¢°
+˜
+java:S1130Ï"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(¤¬©„ÿÿÿÿÿ
+˜
+java:S1130Ó"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ŞÕ½úÿÿÿÿ
+F
+java:S1066ë"/Merge this if statement with the enclosing one.(«¬é˜
+i
+java:S1858ä"R"notRawMaterails" is already a string, there's no need to call "toString()" on it.(ÿ¨ÿ©
+I
+java:S1481™"-Remove this unused "cacheMap" local variable.(†ªøúÿÿÿÿ
+h
+java:S1192ñ"LDefine a constant instead of duplicating this literal "PurRequire" 10 times.(»€ìƒıÿÿÿÿ
+F
+java:S3740ó"/Provide the parametrized type for this generic.(³é‘
+F
+java:S1066‡
+"/Merge this if statement with the enclosing one.(Ò§ü¶
+p
+java:S2293…"YReplace the type specification in this constructor call with the diamond operator ("<>").(ˆİ©ç
+i
+java:S3776…"RRefactor this method to reduce its Cognitive Complexity from 48 to the 15 allowed.(îÅÌ¢
+m
+java:S1192ù"QDefine a constant instead of duplicating this literal "SCM_AmtPrecision" 4 times.(ß£çØùÿÿÿÿ
+u
+java:S2293í"YReplace the type specification in this constructor call with the diamond operator ("<>").(æëïÿÿÿÿÿ
+F
+java:S1066·"/Merge this if statement with the enclosing one.(Ò§ü¶
+“
+java:S1130£	"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(×¿à¯
+F
+java:S1066å"/Merge this if statement with the enclosing one.(²à“ö
+n
+java:S2737Ë"WAdd logic to this catch clause or eliminate it and rethrow the exception automatically.(ö™û
+n
+java:S3776Ï"RRefactor this method to reduce its Cognitive Complexity from 16 to the 15 allowed.(¤¬©„ÿÿÿÿÿ
+^
+java:S1192è"GDefine a constant instead of duplicating this literal "agree" 10 times.(¢Ğ—Í
+]
+java:S2259Å"FA "NullPointerException" could be thrown; "billType" is nullable here.(æƒ×Á
+G
+java:S1481·"0Remove this unused "getPriceWay" local variable.(ÙÒ‡Ï
+u
+java:S2293¨"YReplace the type specification in this constructor call with the diamond operator ("<>").(æëïÿÿÿÿÿ
+v
+java:S1149Ú"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(Éõ
+u
+java:S2293Õ"YReplace the type specification in this constructor call with the diamond operator ("<>").(æëïÿÿÿÿÿ
+i
+java:S3776ş"RRefactor this method to reduce its Cognitive Complexity from 35 to the 15 allowed.(ÊÑë£
+u
+java:S2293ø"YReplace the type specification in this constructor call with the diamond operator ("<>").(†ªøúÿÿÿÿ
+F
+java:S1066À"/Merge this if statement with the enclosing one.(²à“ö
+“
+java:S1130‡"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(†Ãş™
+g
+java:S1192õ	"KDefine a constant instead of duplicating this literal "orgUnitNo=" 7 times.(ØšÇŞüÿÿÿÿ
+˜
+java:S1130ë"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ÄñØÃşÿÿÿÿ
+F
+java:S3740Í"/Provide the parametrized type for this generic.(³é‘
+“
+java:S1130ß"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(Áº¾ª
+p
+java:S2293"YReplace the type specification in this constructor call with the diamond operator ("<>").(ˆİ©ç
+v
+java:S1149µ"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(ƒıƒí
+˜
+java:S1130¶"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(‘¹òşûÿÿÿÿ
+^
+java:S1192ü"GDefine a constant instead of duplicating this literal "refuse" 6 times.(âŒÿĞ
+~
+java:S1192Ë"gDefine a constant instead of duplicating this literal "iscm.purchasemanage.error.cancelCommit" 3 times.(…ıÏ¶
+“
+java:S1130±"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(’¹ë¦
+v
+java:S1149ß"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(¶ÆéÒ
+˜
+java:S1130€"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ÄñØÃşÿÿÿÿ
+F
+java:S3740†"/Provide the parametrized type for this generic.(ÓÕ”ğ
+u
+java:S2293¾"YReplace the type specification in this constructor call with the diamond operator ("<>").(æëïÿÿÿÿÿ
+i
+java:S3776î"RRefactor this method to reduce its Cognitive Complexity from 27 to the 15 allowed.(æœ¡¸
+o
+java:S3776á"SRefactor this method to reduce its Cognitive Complexity from 360 to the 15 allowed.(µØ»Íúÿÿÿÿ
+u
+java:S2293ò"YReplace the type specification in this constructor call with the diamond operator ("<>").(æëïÿÿÿÿÿ
+“
+java:S1130ş"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ÊÑë£
+u
+java:S2293õ"YReplace the type specification in this constructor call with the diamond operator ("<>").(æëïÿÿÿÿÿ
+˜
+java:S1130"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ìÍÜüÿÿÿÿ
+H
+java:S1481“",Remove this unused "aString" local variable.(şóåŒùÿÿÿÿ
+_
+java:S1192ë"HDefine a constant instead of duplicating this literal "5,3,6,7" 3 times.(«¬é˜
+R	java:S125"<This block of commented-out lines of code should be removed.(«•Ê·
+“
+java:S1130©"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ò¯Ëå
+“
+java:S1130ö"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(´—óà
+i
+java:S3776ß"RRefactor this method to reduce its Cognitive Complexity from 18 to the 15 allowed.(Áº¾ª
+n
+java:S2737ê"WAdd logic to this catch clause or eliminate it and rethrow the exception automatically.(ö™û
+p
+java:S2293˜"YReplace the type specification in this constructor call with the diamond operator ("<>").(‹ëõ¤
+W
+java:S1854“";Remove this useless assignment to local variable "aString".(şóåŒùÿÿÿÿ
+˜
+java:S1130ì"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(í²ÇÂıÿÿÿÿ
+•
+java:S1192ı"yDefine a constant instead of duplicating this literal "iscm.purchasemanage.purchasebusiness.find.ordernotexists" 5 times.(§ƒŒıÿÿÿÿ
+“
+java:S1130Ø"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(‘¡ı
+˜
+java:S1130é"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(‘ğ÷Ÿüÿÿÿÿ
+˜
+java:S1130‰"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(Í‘óãùÿÿÿÿ
+j
+java:S1192à"NDefine a constant instead of duplicating this literal "SCM_EditPrice" 6 times.(ƒı«øÿÿÿÿ
+F
+java:S1066Ş"/Merge this if statement with the enclosing one.(Ò§ü¶
+h
+java:S3776Û"RRefactor this method to reduce its Cognitive Complexity from 63 to the 15 allowed.(íıí
+F
+java:S1066"/Merge this if statement with the enclosing one.(Ò§ü¶
+{
+java:S1149Ü"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(“±â ÿÿÿÿÿ
+n
+java:S3776ê"RRefactor this method to reduce its Cognitive Complexity from 32 to the 15 allowed.(ûöªÈüÿÿÿÿ
+F
+java:S1066‰"/Merge this if statement with the enclosing one.(Ò§ü¶
+L
+java:S1854—"5Remove this useless assignment to local variable "i".(˜Éı™
+u
+java:S1149«"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(ßÁ¥
+n
+java:S1858³"R"notRawMaterails" is already a string, there's no need to call "toString()" on it.(Ôœ§ÿÿÿÿÿ
+^
+java:S1854Ò"BRemove this useless assignment to local variable "scmPurRequire2".(Ó‚Ä şÿÿÿÿ
+i
+java:S3776«"RRefactor this method to reduce its Cognitive Complexity from 16 to the 15 allowed.(“¡œ¦
+K
+java:S1066ƒ"/Merge this if statement with the enclosing one.(ÑŞï·øÿÿÿÿ
+i
+java:S3776Ø"RRefactor this method to reduce its Cognitive Complexity from 64 to the 15 allowed.(‘¡ı
+˜
+java:S1130Ó"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(û÷ü¥ùÿÿÿÿ
+h
+java:S3776Ë"RRefactor this method to reduce its Cognitive Complexity from 54 to the 15 allowed.(´­ëc
+B
+java:S1168¢"+Return an empty collection instead of null.(¥¹ï
+¨
+java:S1192ê	"‹Define a constant instead of duplicating this literal "iscm.purchasemanage.purchasebusiness.ScmPurRequireBizImpl.error.itemisnull" 3 times.(•íŸ€şÿÿÿÿ
+h
+java:S1192÷	"QDefine a constant instead of duplicating this literal "findByPurAllPage" 4 times.(°ìÛ®
+˜
+java:S1130š"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(Õ¿çòùÿÿÿÿ
+“
+java:S1130¼"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ñÔ¸‹
+F
+java:S3740ô	"/Provide the parametrized type for this generic.(³é‘
+K
+java:S3740â"/Provide the parametrized type for this generic.(üĞ…’şÿÿÿÿ
+{
+java:S1149«"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(“±â ÿÿÿÿÿ
+F
+java:S3740Í"/Provide the parametrized type for this generic.(³é‘
+˜
+java:S1130¦"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ğÑİıÿÿÿÿ
+n
+java:S3776ä"RRefactor this method to reduce its Cognitive Complexity from 25 to the 15 allowed.(Ç–¡Êùÿÿÿÿ
+d
+java:S1192ö"NDefine a constant instead of duplicating this literal "controlUnitNo" 3 times.(ùşì	
+u
+java:S2293Ã"YReplace the type specification in this constructor call with the diamond operator ("<>").(æëïÿÿÿÿÿ
+“
+java:S1130Ë"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(Ñ·—ã
+i
+java:S3776É"RRefactor this method to reduce its Cognitive Complexity from 46 to the 15 allowed.(ÿ®°°
+u
+java:S2293å"YReplace the type specification in this constructor call with the diamond operator ("<>").(æëïÿÿÿÿÿ
+˜
+java:S1130ñ
+"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ÀÓôôúÿÿÿÿ
+˜
+java:S1130á"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(µØ»Íúÿÿÿÿ
+O
+java:S1197ª"8Move the array designator from the variable to the type.(ü¯²ˆ
+“
+java:S1130Ş"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(êóº¨
+˜
+java:S1130ä"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(Ç–¡Êùÿÿÿÿ
+W	java:S125Ó"<This block of commented-out lines of code should be removed.(ô³°Ëüÿÿÿÿ
+f
+java:S1854ß"JRemove this useless assignment to local variable "scmPurRequireEntryList".(ßÖ›§şÿÿÿÿ
+˜
+java:S1130›"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(„ıµ©ÿÿÿÿÿ
+˜
+java:S1130ö"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ÄñØÃşÿÿÿÿ
+B
+java:S1168‹"+Return an empty collection instead of null.(¥¹ï
+n
+java:S2737û"WAdd logic to this catch clause or eliminate it and rethrow the exception automatically.(ö™û

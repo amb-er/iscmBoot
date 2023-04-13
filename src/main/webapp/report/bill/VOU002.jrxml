@@ -1,0 +1,812 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Fin008" pageWidth="635" pageHeight="842" whenNoDataType="AllSectionsNoDetail" columnWidth="595" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="3fb464eb-e8e9-4224-8f69-6070aff42eb7">
+	<property name="ireport.zoom" value="1.610510000000005"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="96"/>
+	<style name="rowBgStyle" mode="Transparent" backcolor="#DCDCDC">
+		<conditionalStyle>
+			<conditionExpression><![CDATA[(($V{PAGE_COUNT}%2)==0 ? new Boolean(true):new Boolean(false))]]></conditionExpression>
+			<style mode="Opaque" isBlankWhenNull="false"/>
+		</conditionalStyle>
+	</style>
+	<parameter name="Group_Hotel_Logo" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="label_title_rptcode" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="Title_Ename" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="Title_Cname" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="Title_Code" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="p_locale" class="java.lang.Object" isForPrompting="false"/>
+	<parameter name="queryConditionDisplay" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="p_columnlabel_map" class="java.lang.Object" isForPrompting="false"/>
+	<parameter name="operator" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="serialNo" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="Group_Hotel_CName" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="Group_Hotel_EName" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="format_date" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="format_date_hour" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="format_date_hour_min" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="format_date_hour_min_sec" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="format_date_" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="label_foot_operator" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="label_foot_seq" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="label_foot_pagename" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="label_foot_pagetotal" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="label_foot_printtime" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="label_foot_pagenames" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="label_foot_delimiter" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="label_subsum" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="label_sum" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="label_totalsum" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="integratedRequest" class="java.lang.String"/>
+	<field name="billDate" class="java.lang.String"/>
+	<field name="billType" class="java.lang.String"/>
+	<field name="status" class="java.lang.String"/>
+	<field name="billNo" class="java.lang.String"/>
+	<field name="name" class="java.lang.String"/>
+	<field name="paymentType" class="java.lang.String"/>
+	<field name="reverseBill" class="java.lang.String"/>
+	<field name="orgUnitName" class="java.lang.String"/>
+	<field name="deptName" class="java.lang.String"/>
+	<field name="empName" class="java.lang.String"/>
+	<field name="currency" class="java.lang.String"/>
+	<field name="comment" class="java.lang.String"/>
+	<field name="discountAmt" class="java.math.BigDecimal"/>
+	<field name="amt" class="java.math.BigDecimal"/>
+	<field name="unVerifyAmt" class="java.math.BigDecimal"/>
+	<field name="writeOffStatus" class="java.lang.String"/>
+	<field name="entryDiscountAmt" class="java.math.BigDecimal"/>
+	<field name="entryAmt" class="java.math.BigDecimal"/>
+	<field name="verifyAmt" class="java.math.BigDecimal"/>
+	<field name="creator" class="java.lang.String"/>
+	<field name="createDate" class="java.lang.String"/>
+	<field name="checker" class="java.lang.String"/>
+	<field name="checkDate" class="java.lang.String"/>
+	<field name="actPayAmt" class="java.math.BigDecimal"/>
+	<field name="entryActualAmt" class="java.math.BigDecimal"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="236" splitType="Stretch">
+			<textField isBlankWhenNull="false">
+				<reportElement key="textField-21" x="0" y="46" width="595" height="30" uuid="b0d80470-80f0-42cb-98e2-a45561815a6c"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="20" isBold="true" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[(((Locale)$P{p_locale}).equals(Locale.CHINA) ? $P{Title_Cname} : $P{Title_Ename})]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="76" width="55" height="20" uuid="5949ade5-18e4-470a-a470-e87e53d492dc"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[凭证日期]]></text>
+			</staticText>
+			<image scaleImage="FillFrame" isUsingCache="false" isLazy="true">
+				<reportElement key="image-1" x="0" y="0" width="32" height="32" uuid="dbcdc664-36a0-4ed5-a263-8a6363f54eb3"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<imageExpression><![CDATA[$P{Group_Hotel_Logo}]]></imageExpression>
+			</image>
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement key="textField-20" mode="Transparent" x="513" y="0" width="82" height="20" forecolor="#000000" backcolor="#FFFFFF" uuid="bfea5a1f-7dcb-4245-9075-6ec42c6e5f15"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Top" rotation="None">
+					<font fontName="宋体" size="9" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{label_title_rptcode} + ":" + $P{Title_Code}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="55" y="76" width="100" height="20" uuid="0e655f6e-e659-47de-9801-9572d05fd1ba"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{billDate}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="96" width="55" height="20" uuid="7315190b-3c86-4c6f-a436-cbd423985d34"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[客户名称]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="116" width="55" height="20" uuid="36270f43-7381-42bb-abf4-18cf74fb7f7e"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[资源组织]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="136" width="55" height="20" uuid="5ee2d3d6-9305-4cd5-929c-447c66b979a6"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[摘要]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="156" width="55" height="20" uuid="8d8553df-f42c-413d-96df-c9d26eeeb97f"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[应收金额]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="216" width="55" height="20" uuid="a0e4a17c-89cd-45b0-9e3f-1cf7b0974234"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[制单人]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="55" y="96" width="319" height="20" uuid="0865bd44-7008-4e75-b4b2-1b2e2614abb9"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="55" y="136" width="540" height="20" uuid="6061dfe6-60f8-4714-8214-39f20cd279fc"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{comment}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement x="55" y="156" width="51" height="20" uuid="8efee4fd-7efd-4c43-9f80-c963e8adc818"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{amt}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="55" y="216" width="100" height="20" uuid="067e4985-b44b-4535-a272-dd3510d399a0"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{creator}==null?"":$F{creator}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="106" y="156" width="49" height="20" uuid="f597b066-6118-4039-9a3c-a0fd52c52f3a"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[折扣额]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="210" y="76" width="164" height="20" uuid="4acc1c8e-7dd7-4b1b-96dc-7820fb6b49b3"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{billType}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="429" y="76" width="54" height="20" uuid="8f2bcbd4-6b4c-4930-bc3d-99ab08ae8917"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="155" y="76" width="55" height="20" uuid="75d30f38-e318-4809-8fc2-349845e31f3e"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[凭证类型]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="374" y="76" width="55" height="20" uuid="32b41a3c-85e4-4a62-89f7-7751011c1897"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[单据状态]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="483" y="76" width="54" height="20" uuid="8a26ca0e-9e86-42e2-968d-d9eef787257d"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[凭证编号]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="374" y="116" width="55" height="20" uuid="9e6f39f7-e192-4563-8520-97462548aa8a"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[个人]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="374" y="96" width="55" height="20" uuid="d7c97c70-592e-41d2-a57a-6f36559592c3"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[付款类型]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="429" y="96" width="54" height="20" uuid="55287453-8fee-4bc3-a3fc-e846af09fece"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{paymentType}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="429" y="116" width="54" height="20" uuid="72d7bb76-584a-44d0-b586-d6699851fe23"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{empName}==null?"":$F{empName}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="483" y="96" width="54" height="20" uuid="8d88ca33-2620-4ae0-89fe-c527dcc81978"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[是否冲减]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="483" y="116" width="54" height="20" uuid="4d256350-4642-4017-b29f-6aa36d309bbc"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[币别]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="155" y="116" width="55" height="20" uuid="ca8ffd99-0cca-4172-8b98-962f643d5904"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[部门名称]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="210" y="116" width="164" height="20" uuid="c920ee5e-9d73-419f-b8a2-7818633c18cb"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{deptName}==null?"":$F{deptName}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement x="155" y="156" width="55" height="20" uuid="3e291b97-2525-4b74-b3ef-8a7b387f6f89"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{discountAmt}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="210" y="156" width="69" height="20" uuid="7701256f-2148-4532-a998-ae5174bad763"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[实收金额]]></text>
+			</staticText>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement x="279" y="156" width="95" height="20" uuid="b30afe60-a8f0-4efe-8284-679fe6e4fe13"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{actPayAmt}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="374" y="156" width="55" height="20" uuid="a1506662-f513-4986-9471-96e1c0676139"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[未结算金额]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="55" y="116" width="100" height="20" uuid="20dc4301-17db-416f-88a6-6e667f7fa3be"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{orgUnitName}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement x="429" y="156" width="54" height="20" uuid="04288c42-ebc3-4eb4-9327-0e66d0b7fa6d"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{unVerifyAmt}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="483" y="156" width="54" height="20" uuid="2c1657d7-3c74-405d-a15a-298e3b65aa4c"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[结算状态]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="106" y="176" width="104" height="20" uuid="3c78a010-78b6-49a1-8dd7-dd0a5d462c38"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[折扣金额]]></text>
+			</staticText>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement x="106" y="196" width="104" height="20" uuid="53023bb8-6135-4b9a-99de-5a97469d76ac"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{entryDiscountAmt}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="155" y="216" width="55" height="20" uuid="b04f2984-01f8-4187-8014-d7acb381ce5e"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<bottomPen lineWidth="0.5" lineStyle="Solid"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[制单时间]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="210" y="216" width="164" height="20" uuid="111d454a-fdc4-44cf-a2ef-7e5ab5fbd04e"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{createDate}==null?"":$F{createDate}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="374" y="216" width="55" height="20" uuid="49e9e924-606e-4e94-8646-7919c7dda846"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[审核人]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="374" y="176" width="109" height="20" uuid="04ec1454-119b-4837-b572-93eccfc26419"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[已结算金额]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="537" y="216" width="58" height="20" uuid="e5681bdd-e761-411d-92c1-47b6a4163f67"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{checkDate}==null?"":$F{checkDate}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement x="374" y="196" width="109" height="20" uuid="2eaf68b6-3887-457b-93c2-478786891570"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{verifyAmt}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="429" y="216" width="54" height="20" uuid="11fed00c-06e4-436b-a0e4-36ee5add3e2c"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{checker}==null?"":$F{checker}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="483" y="216" width="54" height="20" uuid="ae8d0983-5047-44ab-a7c7-c0a6b49eaee3"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[审核日期]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="537" y="156" width="58" height="20" uuid="2419bc3b-2ba5-4c0e-90a8-06f6a13ac518"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{writeOffStatus}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="537" y="116" width="58" height="20" uuid="15931745-22db-4b47-8151-d63731761249"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{currency}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="537" y="76" width="58" height="20" uuid="e8d3cba9-78c9-4ef3-b3c9-72369fac7f5a"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{billNo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="537" y="96" width="58" height="20" uuid="49e44628-b41c-482d-98af-0ea4f9c10ff9"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{reverseBill}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="210" y="176" width="164" height="20" uuid="815cf421-8bb2-41ed-9c29-4d8d7ec0c5ab"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[实收金额]]></text>
+			</staticText>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement x="210" y="196" width="164" height="20" uuid="009bb9e0-9405-46ac-8165-65797e798526"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{entryActualAmt}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="176" width="106" height="20" uuid="76361a65-f219-41e3-bf58-c5623fb0228c"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[应收金额]]></text>
+			</staticText>
+			<textField pattern="###0.00;-###0.00">
+				<reportElement x="0" y="196" width="106" height="20" uuid="d98cb257-4d06-45f3-a3a2-db9e7a32c2f1"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{entryAmt}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="483" y="176" width="112" height="20" uuid="e9c7160c-2068-4d05-bb6e-5de7024db8ca"/>
+				<box>
+					<topPen lineWidth="0.5" lineColor="#000000"/>
+					<leftPen lineWidth="0.5" lineColor="#000000"/>
+					<rightPen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="宋体" size="10" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+				</textElement>
+				<text><![CDATA[结算状态]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="483" y="196" width="112" height="20" uuid="d370de72-3ed8-406c-b612-223785578505"/>
+				<box>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{writeOffStatus}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="30" splitType="Stretch">
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement key="textField-5" mode="Transparent" x="185" y="10" width="77" height="20" forecolor="#000000" backcolor="#FFFFFF" uuid="8697f9de-fec2-45dd-93a6-562b1b78daed"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="宋体" size="9" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{label_foot_seq} + " " + $V{PAGE_NUMBER} + " " + $P{label_foot_pagename} + " " + $P{label_foot_delimiter}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" pattern="" isBlankWhenNull="false">
+				<reportElement key="textField-6" mode="Transparent" x="262" y="10" width="76" height="20" forecolor="#000000" backcolor="#FFFFFF" uuid="4085d863-7eef-4d09-a5ec-eeb6b7a2c8ff"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement verticalAlignment="Middle" rotation="None">
+					<font fontName="宋体" size="9" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" " +$P{label_foot_pagetotal} +"  " + $V{PAGE_NUMBER} + " " + $P{label_foot_pagenames} + " "]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement key="textField-7" mode="Transparent" x="0" y="10" width="80" height="20" forecolor="#000000" backcolor="#FFFFFF" uuid="9a0c80d1-8d8f-48c0-a2e1-355ca6e22725"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None">
+					<font fontName="宋体" size="9" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{label_foot_operator} + ":"+$P{operator}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement key="textField" mode="Transparent" x="439" y="10" width="146" height="20" forecolor="#000000" backcolor="#FFFFFF" uuid="46410ac8-d720-4b30-8b91-55f31e9f87d4"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="宋体" size="9" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{label_foot_printtime} +":"+ (new SimpleDateFormat($P{format_date_hour_min_sec})).format(new Date())]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<lastPageFooter>
+		<band height="30">
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement key="textField-7" mode="Transparent" x="0" y="10" width="80" height="20" forecolor="#000000" backcolor="#FFFFFF" uuid="4599b2db-8d85-4118-857d-57e71b0c1ddc"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Middle" rotation="None">
+					<font fontName="宋体" size="9" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{label_foot_operator} + ":"+$P{operator}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement key="textField-5" mode="Transparent" x="185" y="10" width="77" height="20" forecolor="#000000" backcolor="#FFFFFF" uuid="6d2ae020-c584-439c-8173-98a41f1660d7"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="宋体" size="9" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{label_foot_seq} + " " + $V{PAGE_NUMBER} + " " + $P{label_foot_pagename} + " " + $P{label_foot_delimiter}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" pattern="" isBlankWhenNull="false">
+				<reportElement key="textField-6" mode="Transparent" x="262" y="10" width="76" height="20" forecolor="#000000" backcolor="#FFFFFF" uuid="70838110-3613-4be9-82ce-bf5195dfec00"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement verticalAlignment="Middle" rotation="None">
+					<font fontName="宋体" size="9" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" " +$P{label_foot_pagetotal} +"  " + $V{PAGE_NUMBER} + " " + $P{label_foot_pagenames} + " "]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement key="textField" mode="Transparent" x="439" y="10" width="146" height="20" forecolor="#000000" backcolor="#FFFFFF" uuid="edf4eb29-f9f1-4c7e-ab9a-162de8a8f25e"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle" rotation="None">
+					<font fontName="宋体" size="9" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="STSong-Light" pdfEncoding="UniGB-UCS2-H" isPdfEmbedded="true"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{label_foot_printtime} +":"+ (new SimpleDateFormat($P{format_date_hour_min_sec})).format(new Date())]]></textFieldExpression>
+			</textField>
+		</band>
+	</lastPageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

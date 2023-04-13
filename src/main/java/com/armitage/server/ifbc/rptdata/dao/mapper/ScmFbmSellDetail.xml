@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmfbmselldetail">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmfbmselldetail.findAll" resultType="ScmFbmSellDetail" >
+	    SELECT * FROM ScmFbmSellDetail WHERE  1=1  
+	</select>
+ 
+	<select id="scmfbmselldetail.findAllPage" resultType="ScmFbmSellDetail" parameterType="Map"> 
+		SELECT * FROM ScmFbmSellDetail WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmfbmselldetail.selectById" resultType="ScmFbmSellDetail" parameterType="Long">
+		SELECT * FROM ScmFbmSellDetail WHERE id = #{value}
+	</select> 
+	<insert id="scmfbmselldetail.add" parameterType="ScmFbmSellDetail"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmFbmSellDetail (
+        orgUnitNo,
+        accDate,
+        dishId,
+        dishCode,
+        dishName,
+        fbmStatCode,
+        fbmStatName,
+        dishSpecId,
+        specCode,
+        specName,
+        deptCode,
+        deptName,
+        saleQty,
+        stdSalePrice,
+        saleAmt,
+        realSaleAmt        )
+		VALUES (
+        #{orgUnitNo},
+        #{accDate},
+        #{dishId},
+        #{dishCode},
+        #{dishName},
+        #{fbmStatCode},
+        #{fbmStatName},
+        #{dishSpecId},
+        #{specCode},
+        #{specName},
+        #{deptCode},
+        #{deptName},
+        #{saleQty},
+        #{stdSalePrice},
+        #{saleAmt},
+        #{realSaleAmt}        )
+	</insert>
+ 	<insert id="scmfbmselldetail.batchAdd" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmFbmSellDetail (orgUnitNo,accDate,dishId,dishCode, dishName,fbmStatCode,
+        	fbmStatName,dishSpecId,specCode,specName,deptCode,deptName,saleQty,stdSalePrice,saleAmt,realSaleAmt)
+		VALUES 
+		<foreach item="scmFbmSellDetail" index="index" collection="scmFbmSellDetailList" separator=",">
+	        (#{scmFbmSellDetail.orgUnitNo},
+	        #{scmFbmSellDetail.accDate},
+	        #{scmFbmSellDetail.dishId},
+	        #{scmFbmSellDetail.dishCode},
+	        #{scmFbmSellDetail.dishName},
+	        #{scmFbmSellDetail.fbmStatCode},
+	        #{scmFbmSellDetail.fbmStatName},
+	        #{scmFbmSellDetail.dishSpecId},
+	        #{scmFbmSellDetail.specCode},
+	        #{scmFbmSellDetail.specName},
+	        #{scmFbmSellDetail.deptCode},
+	        #{scmFbmSellDetail.deptName},
+	        #{scmFbmSellDetail.saleQty},
+	        #{scmFbmSellDetail.stdSalePrice},
+	        #{scmFbmSellDetail.saleAmt},
+	        #{scmFbmSellDetail.realSaleAmt})
+       </foreach >
+	</insert>
+	<update id="scmfbmselldetail.update" parameterType="ScmFbmSellDetail">
+		UPDATE ScmFbmSellDetail set
+        orgUnitNo=#{orgUnitNo},
+        accDate=#{accDate},
+        dishId=#{dishId},
+        dishCode=#{dishCode},
+        dishName=#{dishName},
+        fbmStatCode=#{fbmStatCode},
+        fbmStatName=#{fbmStatName},
+        dishSpecId=#{dishSpecId},
+        specCode=#{specCode},
+        specName=#{specName},
+        deptCode=#{deptCode},
+        deptName=#{deptName},
+        saleQty=#{saleQty},
+        stdSalePrice=#{stdSalePrice},
+        saleAmt=#{saleAmt},
+        realSaleAmt=#{realSaleAmt}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmfbmselldetail.delete" parameterType="String">
+		DELETE FROM ScmFbmSellDetail WHERE id IN (${value})
+	</delete> 
+
+	<delete id="scmfbmselldetail.delRptData" parameterType="Map">
+		DELETE FROM ScmFbmSellDetail WHERE orgUnitNo =#{orgUnitNo} and accDate &gt;=#{begDate} and accDate &lt;=#{endDate}
+	</delete> 
+</mapper>
+ 

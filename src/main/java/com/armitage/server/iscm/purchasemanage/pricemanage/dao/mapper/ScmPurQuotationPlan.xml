@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurquotationplan">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurquotationplan.findAll" resultType="ScmPurQuotationPlan" >
+	    SELECT * FROM ScmPurQuotationPlan WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurquotationplan.findAllPage" resultType="ScmPurQuotationPlan" parameterType="Map"> 
+		SELECT * FROM ScmPurQuotationPlan WHERE  1=1 ORDER BY planNo DESC 
+	</select> 
+	<select id="scmpurquotationplan.selectById" resultType="ScmPurQuotationPlan" parameterType="Long">
+		SELECT * FROM ScmPurQuotationPlan WHERE id = #{value}
+	</select> 
+	<select id="scmpurquotationplan.selectMaxIdByDate" resultType="ScmPurQuotationPlan" parameterType="Map">
+		SELECT *
+		FROM ScmPurQuotationPlan
+		WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY planNo Desc Limit 1
+	</select> 
+	<insert id="scmpurquotationplan.add" parameterType="ScmPurQuotationPlan"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurQuotationPlan (
+        planNo,
+        orgUnitNo,
+        finOrgUnitNo,
+        bizDate,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        workFlowNo,
+        stepNo,
+        checker,
+        checkDate,
+        prtcount,
+        status,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{planNo},
+        #{orgUnitNo},
+        #{finOrgUnitNo},
+        #{bizDate},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{workFlowNo},
+        #{stepNo},
+        #{checker},
+        #{checkDate},
+        #{prtcount},
+        #{status},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpurquotationplan.update" parameterType="ScmPurQuotationPlan">
+		UPDATE ScmPurQuotationPlan set
+        planNo=#{planNo},
+        orgUnitNo=#{orgUnitNo},
+        finOrgUnitNo=#{finOrgUnitNo},
+        bizDate=#{bizDate},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        prtcount=#{prtcount},
+        status=#{status},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurquotationplan.delete" parameterType="String">
+		DELETE FROM ScmPurQuotationPlan WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

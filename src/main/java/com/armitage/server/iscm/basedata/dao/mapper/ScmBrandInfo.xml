@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmbrandinfo">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmbrandinfo.findAll" resultType="ScmBrandInfo" >
+	    SELECT * FROM ScmBrandInfo WHERE  1=1  
+	</select>
+ 
+	<select id="scmbrandinfo.findAllPage" resultType="ScmBrandInfo" parameterType="Map"> 
+		SELECT * FROM ScmBrandInfo WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmbrandinfo.selectById" resultType="ScmBrandInfo" parameterType="Long">
+		SELECT * FROM ScmBrandInfo WHERE id = #{value}
+	</select> 
+	<insert id="scmbrandinfo.add" parameterType="ScmBrandInfo"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmBrandInfo (
+        code,
+        name,
+        flag,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{code},
+        #{name},
+        #{flag},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmbrandinfo.update" parameterType="ScmBrandInfo">
+		UPDATE ScmBrandInfo set
+        code=#{code},
+        name=#{name},
+        flag=#{flag},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmbrandinfo.delete" parameterType="String">
+		DELETE FROM ScmBrandInfo WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

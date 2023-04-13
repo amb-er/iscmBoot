@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurcheck">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurcheck.findAll" resultType="ScmPurCheck2" >
+	    SELECT * FROM ScmPurCheck WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurcheck.findAllPage" resultType="ScmPurCheck2" parameterType="Map"> 
+		SELECT Distinct ScmPurCheck.*,ScmPurReceive.vendorId,ScmPurReceive.orgUnitNo as invOrgUnitNo,
+		IFNULL((Select sum(checkTaxAmt) From ScmPurReceiveEntry Where ScmPurReceiveEntry.pvId = ScmPurReceive.id),0) as totalCheckAmt
+		FROM ScmPurCheck,ScmPurReceive,ScmSupplier,ScmSupplierGroupDetail,ScmSupplierGroup,scmpurreceiveentry,scmmaterial
+ 		WHERE ScmPurCheck.id=ScmPurReceive.ckId And ScmPurReceive.vendorId=scmsupplier.id 
+ 		And scmsupplier.id=ScmSupplierGroupDetail.vendorId AND ScmSupplierGroupDetail.classId=ScmSupplierGroup.id
+ 		and ScmPurReceive.id=pvId and scmpurreceiveentry.itemId=scmmaterial.id
+ 		ORDER BY ScmPurCheck.ckNo DESC
+	</select> 
+	<select id="scmpurcheck.selectById" resultType="ScmPurCheck2" parameterType="Long">
+		SELECT ScmPurCheck.*,ScmPurOrder.vendorId,ScmPurReceive.orgUnitNo as invOrgUnitNo,
+		IFNULL((Select sum(checkTaxAmt) From ScmPurReceiveEntry Where ScmPurReceiveEntry.pvId = ScmPurReceive.id),0) as totalCheckAmt
+		FROM ScmPurCheck,ScmPurOrder,ScmPurReceive
+ 		WHERE ScmPurCheck.poId=ScmPurOrder.id And ScmPurCheck.id=ScmPurReceive.ckId And ScmPurCheck.id = #{value}
+	</select> 
+	<select id="scmpurcheck.selectMaxIdByDate" resultType="ScmPurCheck2" parameterType="Map">
+		SELECT * FROM ScmPurCheck WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY ckNo Desc Limit 1
+	</select> 
+	<select id="scmpurcheck.selectByPoId" resultType="ScmPurCheck2" parameterType="Map">
+		SELECT * FROM ScmPurCheck WHERE ScmPurCheck.poId= #{poId}
+	</select> 
+	<select id="scmpurcheck.selectBySaleIssueBill" resultType="ScmPurCheck2" parameterType="Map">
+		SELECT Distinct ScmPurCheck.* FROM ScmPurCheck,ScmPurReceive,ScmPurReceiveEntry,
+		ScmPurOrderEntry,ScmInvSaleIssueBillEntry,ScmInvSaleOrderEntry
+		WHERE ScmPurCheck.id = ScmPurReceive.ckId And ScmPurReceive.id=ScmPurReceiveEntry.pvId And ScmPurReceiveEntry.poDtlId=ScmPurOrderEntry.id 
+		And ScmInvSaleIssueBillEntry.otId=#{otId} And ScmInvSaleIssueBillEntry.sourceBillDtlId=ScmInvSaleOrderEntry.id
+		And ScmInvSaleOrderEntry.sourceBillDtlId=ScmPurOrderEntry.Id
+	</select>
+	<select id="scmpurcheck.selectByOtherIssueBill" resultType="ScmPurCheck2" parameterType="Map">
+		SELECT Distinct ScmPurCheck.* FROM ScmPurCheck,ScmPurReceive,ScmPurReceiveEntry,
+		ScmPurOrderEntry,ScmInvOtherIssueBillEntry
+		WHERE ScmPurCheck.id = ScmPurReceive.ckId And ScmPurReceive.id=ScmPurReceiveEntry.pvId And ScmPurReceiveEntry.poDtlId=ScmPurOrderEntry.id 
+		And ScmInvOtherIssueBillEntry.otId=#{otId} And ScmInvOtherIssueBillEntry.sourceBillDtlId=ScmPurOrderEntry.id
+	</select>  
+	
+	<insert id="scmpurcheck.add" parameterType="ScmPurCheck"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurCheck (
+        ckNo,
+        orgUnitNo,
+        poId,
+        poNo,
+        checkDate,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        flag,
+        prtcount,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{ckNo},
+        #{orgUnitNo},
+        #{poId},
+        #{poNo},
+        #{checkDate},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{flag},
+        #{prtcount},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpurcheck.update" parameterType="ScmPurCheck">
+		UPDATE ScmPurCheck set
+        ckNo=#{ckNo},
+        orgUnitNo=#{orgUnitNo},
+        poId=#{poId},
+        poNo=#{poNo},
+        checkDate=#{checkDate},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        flag=#{flag},
+        prtcount=#{prtcount},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurcheck.delete" parameterType="String">
+		DELETE FROM ScmPurCheck WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

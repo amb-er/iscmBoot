@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvstocktransferbill">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvstocktransferbill.findAll" resultType="ScmInvStockTransferBill2" >
+	    SELECT * FROM scminvstocktransferbill WHERE  1=1  
+	</select>
+ 	<select id="scminvstocktransferbill.selectMaxIdByDate" resultType="ScmInvStockTransferBill2" parameterType="String">
+		SELECT * FROM scminvstocktransferbill 
+		WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY wtNo Desc Limit 1
+	</select> 
+	<select id="scminvstocktransferbill.findAllPage" resultType="ScmInvStockTransferBill2" parameterType="Map"> 
+		SELECT *,
+			IFNULL((Select sum(amt) FROM ScmInvStockTransferBillEntry where wtId=ScmInvStockTransferBill.wtId),0) as amt,
+			IFNULL((Select sum(taxAmt) FROM ScmInvStockTransferBillEntry	where wtId=ScmInvStockTransferBill.wtId),0) as taxAmt
+		FROM scminvstocktransferbill WHERE  1=1 ORDER BY wtNo DESC 
+	</select> 
+	<select id="scminvstocktransferbill.selectById" resultType="ScmInvStockTransferBill2" parameterType="Long">
+		SELECT *,
+			IFNULL((Select sum(amt) FROM ScmInvStockTransferBillEntry where wtId=ScmInvStockTransferBill.wtId),0) as amt,
+			IFNULL((Select sum(taxAmt) FROM ScmInvStockTransferBillEntry	where wtId=ScmInvStockTransferBill.wtId),0) as taxAmt 
+		FROM scminvstocktransferbill WHERE wtId = #{value}
+	</select> 
+	<insert id="scminvstocktransferbill.add" parameterType="ScmInvStockTransferBill2"  keyProperty="wtId" useGeneratedKeys="true"> 
+		INSERT INTO  scminvstocktransferbill (
+        wtNo,
+        bizType,
+        bizDate,
+        billType,
+        finOrgUnitNo,
+        outOrgUnitNo,
+        wareHouseId,
+        inOrgUnitNo,
+        receiptWarehouseId,
+        currencyNo,
+        exchangeRate,
+        periodId,
+        accountYear,
+        accountPeriod,
+        creator,
+        createDate,
+        createOrgUnitNo,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        workFlowNo,
+        stepNo,
+        checker,
+        checkDate,
+        unitedBill,
+        prtcount,
+        status,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{wtNo},
+        #{bizType},
+        #{bizDate},
+        #{billType},
+        #{finOrgUnitNo},
+        #{outOrgUnitNo},
+        #{wareHouseId},
+        #{inOrgUnitNo},
+        #{receiptWarehouseId},
+        #{currencyNo},
+        #{exchangeRate},
+        #{periodId},
+        #{accountYear},
+        #{accountPeriod},
+        #{creator},
+        #{createDate},
+        #{createOrgUnitNo},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{workFlowNo},
+        #{stepNo},
+        #{checker},
+        #{checkDate},
+        #{unitedBill},
+        #{prtcount},
+        #{status},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvstocktransferbill.update" parameterType="ScmInvStockTransferBill2">
+		UPDATE scminvstocktransferbill set
+        wtNo=#{wtNo},
+        bizType=#{bizType},
+        bizDate=#{bizDate},
+        billType=#{billType},
+        finOrgUnitNo=#{finOrgUnitNo},
+        outOrgUnitNo=#{outOrgUnitNo},
+        wareHouseId=#{wareHouseId},
+        inOrgUnitNo=#{inOrgUnitNo},
+        receiptWarehouseId=#{receiptWarehouseId},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        periodId=#{periodId},
+        accountYear=#{accountYear},
+        accountPeriod=#{accountPeriod},
+        creator=#{creator},
+        createDate=#{createDate},
+        createOrgUnitNo=#{createOrgUnitNo},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        unitedBill=#{unitedBill},
+        prtcount=#{prtcount},
+        status=#{status},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE wtId = #{wtId}
+	</update>
+ 
+	<delete id="scminvstocktransferbill.delete" parameterType="String">
+		DELETE FROM scminvstocktransferbill WHERE wtId IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmconfirmrule">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmconfirmrule.findAll" resultType="ScmConfirmRule" >
+	    SELECT * FROM ScmConfirmRule WHERE  1=1  
+	</select>
+ 
+	<select id="scmconfirmrule.findAllPage" resultType="ScmConfirmRule" parameterType="Map"> 
+		SELECT * FROM ScmConfirmRule WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmconfirmrule.selectById" resultType="ScmConfirmRule" parameterType="Long">
+		SELECT * FROM ScmConfirmRule WHERE id = #{value}
+	</select> 
+	<select id="scmconfirmrule.selectByBillType" resultType="ScmConfirmRule" parameterType="Map">
+		SELECT * FROM ScmConfirmRule WHERE orgUnitNo = #{orgUnitNo} and billType=#{billType}
+	</select> 
+	<select id="scmconfirmrule.selectForPushPage" resultType="ScmConfirmRule" parameterType="Map">
+		SELECT * FROM ScmConfirmRule WHERE controlUnitNo = #{controlUnitNo} ORDER BY updateTimeStamp ASC
+	</select> 
+	<insert id="scmconfirmrule.add" parameterType="ScmConfirmRule"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmConfirmRule (
+		orgUnitNo,
+        billType,
+        confirmType,
+        billStatus,
+        sendPoint,
+        needSendSupplier,
+        autoConfirm,
+        days,
+        autoConfirmTime,
+        compareBy,
+        allowAssistConfirm,
+        lastConfirmTime,
+        controlUnitNo        )
+		VALUES (
+		#{orgUnitNo},
+        #{billType},
+        #{confirmType},
+        #{billStatus},
+        #{sendPoint},
+        #{needSendSupplier},
+        #{autoConfirm},
+        #{days},
+        #{autoConfirmTime},
+        #{compareBy},
+        #{allowAssistConfirm},
+        #{lastConfirmTime},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmconfirmrule.update" parameterType="ScmConfirmRule">
+		UPDATE ScmConfirmRule set
+		orgUnitNo=#{orgUnitNo},
+        billType=#{billType},
+        confirmType=#{confirmType},
+        billStatus=#{billStatus},
+        sendPoint=#{sendPoint},
+        needSendSupplier=#{needSendSupplier},
+        autoConfirm=#{autoConfirm},
+        days=#{days},
+        autoConfirmTime=#{autoConfirmTime},
+        compareBy=#{compareBy},
+        allowAssistConfirm=#{allowAssistConfirm},
+        lastConfirmTime=#{lastConfirmTime},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmconfirmrule.delete" parameterType="String">
+		DELETE FROM ScmConfirmRule WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvcountinglistmaterialgroup">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvcountinglistmaterialgroup.findAll" resultType="Scminvcountinglistmaterialgroup2" >
+	    SELECT * FROM scminvcountinglistmaterialgroup WHERE  1=1  
+	</select>
+ 
+	<select id="scminvcountinglistmaterialgroup.findAllPage" resultType="Scminvcountinglistmaterialgroup2" parameterType="Map"> 
+		SELECT * FROM scminvcountinglistmaterialgroup WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	
+	<select id="scminvcountinglistmaterialgroup.selectByTaskId" resultType="Scminvcountinglistmaterialgroup2" parameterType="Map">
+		SELECT ScmInvCountingListMaterialGroup.*,scmmaterialgroup.classCode,scmmaterialgroup.className
+		FROM ScmInvCountingListMaterialGroup
+		left join scmmaterialgroup on ScmInvCountingListMaterialGroup.classId=scmmaterialgroup.id
+		WHERE ScmInvCountingListMaterialGroup.taskId = #{taskId}
+	</select>
+	
+	<select id="scminvcountinglistmaterialgroup.selectById" resultType="Scminvcountinglistmaterialgroup2" parameterType="Long">
+		SELECT * FROM scminvcountinglistmaterialgroup WHERE id = #{value}
+	</select> 
+	<insert id="scminvcountinglistmaterialgroup.add" parameterType="Scminvcountinglistmaterialgroup2"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvcountinglistmaterialgroup (
+        taskId,
+        selectOrExclude,
+        classId        )
+		VALUES (
+        #{taskId},
+        #{selectOrExclude},
+        #{classId}        )
+	</insert>
+ 
+	<update id="scminvcountinglistmaterialgroup.update" parameterType="Scminvcountinglistmaterialgroup">
+		UPDATE scminvcountinglistmaterialgroup set
+        taskId=#{taskId},
+        selectOrExclude=#{selectOrExclude},
+        classId=#{classId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvcountinglistmaterialgroup.delete" parameterType="String">
+		DELETE FROM scminvcountinglistmaterialgroup WHERE id IN (${value})
+	</delete> 
+	
+	<delete id="scminvcountinglistmaterialgroup.deleteByTaskId" parameterType="Map">
+		DELETE FROM scminvcountinglistmaterialgroup WHERE taskId = #{taskId}
+	</delete>
+</mapper>
+ 

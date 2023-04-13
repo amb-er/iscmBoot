@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsupplierqualifytype">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsupplierqualifytype.findAll" resultType="ScmSupplierQualifyType" >
+	    SELECT * FROM scmsupplierqualifytype WHERE  1=1  
+	</select>
+ 
+	<select id="scmsupplierqualifytype.findAllPage" resultType="ScmSupplierQualifyType" parameterType="Map"> 
+		SELECT * FROM scmsupplierqualifytype WHERE  1=1 ORDER BY id asc
+	</select> 
+	<select id="scmsupplierqualifytype.selectById" resultType="ScmSupplierQualifyType" parameterType="Long">
+		SELECT * FROM scmsupplierqualifytype WHERE id = #{value}
+	</select>
+	<select id="scmsupplierqualifytype.selectByIds" resultType="ScmSupplierQualifyType" parameterType="String">
+	    Select * from scmsupplierqualifytype where id in (${item})
+	</select>
+	<select id="scmsupplierqualifytype.selectByCode" resultType="ScmSupplierQualifyType" parameterType="Map"> 
+        select * from scmsupplierqualifytype where code = #{code}
+        and controlUnitNo=#{controlUnitNo}
+        order by scmsupplierqualifytype.id ASC
+    </select> 
+	<insert id="scmsupplierqualifytype.add" parameterType="ScmSupplierQualifyType"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmsupplierqualifytype (
+        code,
+        name,
+        sort,
+        flag,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{code},
+        #{name},
+        #{sort},
+        #{flag},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsupplierqualifytype.update" parameterType="ScmSupplierQualifyType">
+		UPDATE scmsupplierqualifytype set
+        code=#{code},
+        name=#{name},
+        sort=#{sort},
+        flag=#{flag},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsupplierqualifytype.delete" parameterType="String">
+		DELETE FROM scmsupplierqualifytype WHERE id IN (${value})
+	</delete> 
+	<select id="scmsupplierqualifytype.selectByVendor" resultType="ScmSupplierQualifyType" parameterType="Map"> 
+		SELECT scmsupplierqualifytype.* FROM scmsupplierqualifytype,scmqualifieinfo
+		where scmsupplierqualifytype.id=scmqualifieinfo.typeId and scmsupplierqualifytype.flag=1 and scmqualifieinfo.qualifyAudit='1'
+		and scmsupplierqualifytype.controlUnitNo=#{controlUnitNo} and scmqualifieinfo.vendorId=#{vendorId}
+		GROUP BY scmsupplierqualifytype.code
+	</select>
+</mapper>

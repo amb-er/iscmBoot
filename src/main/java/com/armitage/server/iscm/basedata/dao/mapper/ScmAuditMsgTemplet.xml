@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmauditmsgtemplet">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmauditmsgtemplet.findAll" resultType="ScmAuditMsgTemplet2" >
+	    SELECT * FROM ScmAuditMsgTemplet WHERE  1=1  
+	</select>
+ 
+	<select id="scmauditmsgtemplet.findAllPage" resultType="ScmAuditMsgTemplet2" parameterType="Map"> 
+		SELECT ScmAuditMsgTemplet.*,scmauditmsgtempletchannel.id as channelId,scmauditmsgtempletchannel.templateId,scmauditmsgtempletchannel.channelCode 
+		FROM ScmAuditMsgTemplet,scmauditmsgtempletchannel WHERE  1=1 and ScmAuditMsgTemplet.id=scmauditmsgtempletchannel.templetId ORDER BY id ASC
+	</select> 
+	<select id="scmauditmsgtemplet.selectById" resultType="ScmAuditMsgTemplet2" parameterType="Long">
+		SELECT * FROM ScmAuditMsgTemplet WHERE id = #{value}
+	</select> 
+	<select id="scmauditmsgtemplet.selectByTempetType" resultType="ScmAuditMsgTemplet2" parameterType="Map">
+		SELECT * FROM ScmAuditMsgTemplet WHERE templetType = #{templetType} and controlUnitNo=#{controlUnitNo} and flag=1
+	</select> 
+	<insert id="scmauditmsgtemplet.add" parameterType="ScmAuditMsgTemplet"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmAuditMsgTemplet (
+        templetCode,
+        templetName,
+        title,
+        content,
+        templetType,
+        flag,
+        controlUnitNo        )
+		VALUES (
+        #{templetCode},
+        #{templetName},
+        #{title},
+        #{content},
+        #{templetType},
+        #{flag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmauditmsgtemplet.update" parameterType="ScmAuditMsgTemplet">
+		UPDATE ScmAuditMsgTemplet set
+        templetCode=#{templetCode},
+        templetName=#{templetName},
+        title=#{title},
+        content=#{content},
+        templetType=#{templetType},
+        flag=#{flag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmauditmsgtemplet.delete" parameterType="String">
+		DELETE FROM ScmAuditMsgTemplet WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

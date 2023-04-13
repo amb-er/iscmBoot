@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmmaterialunitrelation">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmmaterialunitrelation.findAll" resultType="ScmMaterialUnitRelation2" >
+	    SELECT * FROM ScmMaterialUnitRelation WHERE  1=1  
+	</select>
+ 
+	<select id="scmmaterialunitrelation.findAllPage" resultType="ScmMaterialUnitRelation2" parameterType="Map"> 
+		SELECT * FROM ScmMaterialUnitRelation WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmmaterialunitrelation.selectById" resultType="ScmMaterialUnitRelation2" parameterType="Long">
+		SELECT * FROM ScmMaterialUnitRelation WHERE id = #{value}
+	</select> 
+	<select id="scmmaterialunitrelation.selectBaseUnitByItem" resultType="ScmMaterialUnitRelation2" parameterType="Map">
+		SELECT * FROM ScmMaterialUnitRelation WHERE itemId = #{itemId} and BaseUnit=1
+	</select>
+	<select id="scmmaterialunitrelation.selectByItem" resultType="ScmMaterialUnitRelation2" parameterType="Long">
+		SELECT ScmMaterialUnitRelation.*,ScmMeasureUnit.unitNo,ScmMeasureUnit.unitName
+		FROM ScmMaterialUnitRelation,ScmMeasureUnit WHERE ScmMaterialUnitRelation.targetUnitId = ScmMeasureUnit.id
+		And ScmMaterialUnitRelation.itemId = #{itemId}
+	</select>
+	<select id="scmmaterialunitrelation.selectByItemPage" resultType="ScmMaterialUnitRelation2" parameterType="map">
+		SELECT ScmMaterialUnitRelation.*,ScmMeasureUnit.unitNo,ScmMeasureUnit.unitName
+		FROM ScmMaterialUnitRelation,ScmMeasureUnit WHERE ScmMaterialUnitRelation.targetUnitId = ScmMeasureUnit.id
+		And ScmMaterialUnitRelation.itemId = #{itemId}
+	</select>
+	<select id="scmmaterialunitrelation.selectByItemOrUnit" resultType="ScmMaterialUnitRelation2" parameterType="Map">
+		SELECT ScmMaterialUnitRelation.*,ScmMeasureUnit.unitNo,ScmMeasureUnit.unitName
+		FROM ScmMaterialUnitRelation,ScmMeasureUnit WHERE ScmMaterialUnitRelation.targetUnitId = ScmMeasureUnit.id
+		<if test="unitId!=null and unitId>0">
+		 	And ScmMaterialUnitRelation.targetUnitId = #{unitId}
+		</if>
+		<if test="itemId!=null and itemId>0">
+		 	And ScmMaterialUnitRelation.itemId = #{itemId}
+		</if>
+		order by ScmMaterialUnitRelation.lineId asc
+	</select>
+	<select id="scmmaterialunitrelation.selectByItemAndUnit" resultType="ScmMaterialUnitRelation2" parameterType="Map">
+		SELECT ScmMaterialUnitRelation.*,ScmMeasureUnit.unitNo,ScmMeasureUnit.unitName
+		FROM ScmMaterialUnitRelation,ScmMeasureUnit WHERE ScmMaterialUnitRelation.targetUnitId = ScmMeasureUnit.id
+		And ScmMaterialUnitRelation.targetUnitId = #{unitId}
+		And ScmMaterialUnitRelation.itemId = #{itemId}
+	</select> 
+	<insert id="scmmaterialunitrelation.add" parameterType="ScmMaterialUnitRelation"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmMaterialUnitRelation (
+        guId,
+        itemId,
+        lineId,
+        targetUnitId,
+        convrate,
+        baseUnit,
+        qtyPrecision,
+        useConvsUnit,
+        convsUnitId,
+        measureUnitType        )
+		VALUES (
+        #{guId},
+        #{itemId},
+        #{lineId},
+        #{targetUnitId},
+        #{convrate},
+        #{baseUnit},
+        #{qtyPrecision},
+        #{useConvsUnit},
+        #{convsUnitId},
+        #{measureUnitType}        )
+	</insert>
+ 
+	<update id="scmmaterialunitrelation.update" parameterType="ScmMaterialUnitRelation">
+		UPDATE ScmMaterialUnitRelation set
+        guId=#{guId},
+        itemId=#{itemId},
+        lineId=#{lineId},
+        targetUnitId=#{targetUnitId},
+        convrate=#{convrate},
+        baseUnit=#{baseUnit},
+        qtyPrecision=#{qtyPrecision},
+        useConvsUnit=#{useConvsUnit},
+        convsUnitId=#{convsUnitId},
+        measureUnitType=#{measureUnitType}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmmaterialunitrelation.delete" parameterType="String">
+		DELETE FROM ScmMaterialUnitRelation WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmindustrygroupqualifytype">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmindustrygroupqualifytype.findAll" resultType="ScmIndustryGroupQualifyType2" >
+	    SELECT * FROM scmindustrygroupqualifytype WHERE  1=1  
+	</select>
+ 
+	<select id="scmindustrygroupqualifytype.findAllPage" resultType="ScmIndustryGroupQualifyType2" parameterType="Map"> 
+		SELECT * FROM scmindustrygroupqualifytype WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmindustrygroupqualifytype.selectById" resultType="ScmIndustryGroupQualifyType2" parameterType="Long">
+		SELECT * FROM scmindustrygroupqualifytype WHERE id = #{value}
+	</select>
+	<select id="scmindustrygroupqualifytype.selectByClassId" resultType="ScmIndustryGroupQualifyType2" parameterType="Map">
+		SELECT scmindustrygroupqualifytype.*,scmsupplierqualifytype.code as typeCode, scmsupplierqualifytype.name as typeName
+		FROM scmindustrygroupqualifytype,scmsupplierqualifytype
+		WHERE scmindustrygroupqualifytype.classId = #{classId}
+		AND scmindustrygroupqualifytype.typeId=scmsupplierqualifytype.id
+	</select> 
+	<insert id="scmindustrygroupqualifytype.add" parameterType="ScmIndustryGroupQualifyType"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmindustrygroupqualifytype (
+        classId,
+        typeId,
+        required        )
+		VALUES (
+        #{classId},
+        #{typeId},
+        #{required}        )
+	</insert>
+ 
+	<update id="scmindustrygroupqualifytype.update" parameterType="ScmIndustryGroupQualifyType">
+		UPDATE scmindustrygroupqualifytype set
+        classId=#{classId},
+        typeId=#{typeId},
+        required=#{required}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmindustrygroupqualifytype.delete" parameterType="String">
+		DELETE FROM scmindustrygroupqualifytype WHERE id IN (${value})
+	</delete> 
+
+</mapper>

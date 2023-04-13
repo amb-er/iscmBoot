@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fbmdishcook">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="fbmdishcook.findAll" resultType="FbmDishCook" >
+	    SELECT * FROM fbmdishcook WHERE  1=1  
+	</select>
+ 
+	<select id="fbmdishcook.findAllPage" resultType="FbmDishCook" parameterType="Map"> 
+		SELECT * FROM fbmdishcook WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="fbmdishcook.selectById" resultType="FbmDishCook" parameterType="Long">
+		SELECT * FROM fbmdishcook WHERE id = #{value}
+	</select> 
+	<select id="fbmdishcook.selectByOrgUnitAndDishPage" resultType="FbmDishCook" parameterType="Map">
+		SELECT FbmDishCook.* FROM FbmDishCook,
+		(Select case when C.id is null then B.id else C.id end as dishResInfoId
+		From (SELECT A.* FROM FbmDishResInfo A Where A.dishId=${dishId} And A.orgUnitNo=#{controlUnitNo}) B
+		Left Join FbmDishResInfo C on C.dishId = B.dishId and C.orgUnitNo=#{orgUnitNo}) D
+		WHERE FbmDishCook.dishResInfoId=D.dishResInfoId
+		ORDER BY FbmDishCook.id ASC	
+	</select> 
+	<insert id="fbmdishcook.add" parameterType="FbmDishCook"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  fbmdishcook (
+        dishResInfoId,
+        cookId,
+        iSyncModFlag        )
+		VALUES (
+        #{dishResInfoId},
+        #{cookId},
+        #{iSyncModFlag}        )
+	</insert>
+ 
+	<update id="fbmdishcook.update" parameterType="FbmDishCook">
+		UPDATE fbmdishcook set
+        dishResInfoId=#{dishResInfoId},
+        cookId=#{cookId},
+        iSyncModFlag=#{iSyncModFlag}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="fbmdishcook.delete" parameterType="String">
+		DELETE FROM fbmdishcook WHERE id IN (${value})
+	</delete> 
+
+</mapper>

@@ -1,0 +1,17 @@
+
+E
+java:S1066l"/Merge this if statement with the enclosing one.(—õ†
+m
+java:S3776R"RRefactor this method to reduce its Cognitive Complexity from 18 to the 15 allowed.(ÎÜ£¦ÿÿÿÿÿ
+E
+java:S1066T"/Merge this if statement with the enclosing one.(Í®Ó
+—
+java:S1130?"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(ÄñØÃşÿÿÿÿ
+‘
+java:S1130+"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(êÚ×S
+’
+java:S1130G"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(„íƒŞ
+z
+java:S1149."_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(£¸ôıÿÿÿÿ
+‘
+java:S1130j"|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(‹Ú¦

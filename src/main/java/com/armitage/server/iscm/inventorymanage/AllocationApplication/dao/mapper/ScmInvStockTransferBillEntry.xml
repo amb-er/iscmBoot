@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvstocktransferbillentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvstocktransferbillentry.findAll" resultType="ScmInvStockTransferBillEntry2" >
+	    SELECT * FROM scminvstocktransferbillentry WHERE  1=1  
+	</select>
+ 
+	<select id="scminvstocktransferbillentry.findAllPage" resultType="ScmInvStockTransferBillEntry2" parameterType="Map"> 
+		SELECT ScmInvStockTransferBillEntry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		A.unitName as unitName,B.unitName as baseUnitName,C.unitName as pieUnitName,
+		ScmMaterialUnitRelation.convrate as convrate
+		FROM ScmInvStockTransferBillEntry
+		left join scmmaterial on ScmInvStockTransferBillEntry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on ScmInvStockTransferBillEntry.unit=A.id 
+		left join ScmMeasureUnit B on ScmInvStockTransferBillEntry.baseUnit=B.id
+		left join ScmMeasureUnit C on ScmInvStockTransferBillEntry.pieUnit=C.id
+		left join ScmMaterialUnitRelation on ScmInvStockTransferBillEntry.itemId=ScmMaterialUnitRelation.itemId
+		AND ScmInvStockTransferBillEntry.unit=ScmMaterialUnitRelation.targetUnitId
+		WHERE  1=1 ORDER BY ScmInvStockTransferBillEntry.id ASC 
+	</select> 
+	<select id="scminvstocktransferbillentry.selectById" resultType="ScmInvStockTransferBillEntry2" parameterType="Long">
+		SELECT ScmInvStockTransferBillEntry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,C.unitName as pieUnitName,
+		A.unitName as unitName,B.unitName as baseUnitName,
+		ScmMaterialUnitRelation.convrate as convrate
+		FROM ScmInvStockTransferBillEntry
+		left join scmmaterial on ScmInvStockTransferBillEntry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on ScmInvStockTransferBillEntry.unit=A.id 
+		left join ScmMeasureUnit B on ScmInvStockTransferBillEntry.baseUnit=B.id
+		left join ScmMeasureUnit C on ScmInvStockTransferBillEntry.pieUnit=C.id
+		left join ScmMaterialUnitRelation on ScmInvStockTransferBillEntry.itemId=ScmMaterialUnitRelation.itemId
+		AND ScmInvStockTransferBillEntry.unit=ScmMaterialUnitRelation.targetUnitId
+		WHERE ScmInvStockTransferBillEntry.id = #{value}
+	</select> 
+	<insert id="scminvstocktransferbillentry.add" parameterType="ScmInvStockTransferBillEntry2"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvstocktransferbillentry (
+        wtId,
+        lineId,
+        itemId,
+        unit,
+        pieUnit,
+        baseUnit,
+        issueOrgUnitNo,
+        wareHouseId,
+        issueManageOrgUnitNo,
+        receiveOrgUnitNo,
+        receiptWarehouseId,
+        receiveManageOrgUnitNo,
+        useOrgUnitNo,
+        costOrgUnitNo,
+        lot,
+        qty,
+        pieQty,
+        baseQty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        expDate,
+        stockId,
+        invDate,
+        issueBaseQty,
+        receiptBaseQty,
+        sourceBillDtlId,
+        remarks        )
+		VALUES (
+        #{wtId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{baseUnit},
+        #{issueOrgUnitNo},
+        #{wareHouseId},
+        #{issueManageOrgUnitNo},
+        #{receiveOrgUnitNo},
+        #{receiptWarehouseId},
+        #{receiveManageOrgUnitNo},
+        #{useOrgUnitNo},
+        #{costOrgUnitNo},
+        #{lot},
+        #{qty},
+        #{pieQty},
+        #{baseQty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{expDate},
+        #{stockId},
+        #{invDate},
+        #{issueBaseQty},
+        #{receiptBaseQty},
+        #{sourceBillDtlId},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scminvstocktransferbillentry.update" parameterType="ScmInvStockTransferBillEntry2">
+		UPDATE scminvstocktransferbillentry set
+        wtId=#{wtId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        baseUnit=#{baseUnit},
+        issueOrgUnitNo=#{issueOrgUnitNo},
+        wareHouseId=#{wareHouseId},
+        issueManageOrgUnitNo=#{issueManageOrgUnitNo},
+        receiveOrgUnitNo=#{receiveOrgUnitNo},
+        receiptWarehouseId=#{receiptWarehouseId},
+        receiveManageOrgUnitNo=#{receiveManageOrgUnitNo},
+        useOrgUnitNo=#{useOrgUnitNo},
+        costOrgUnitNo=#{costOrgUnitNo},
+        lot=#{lot},
+        qty=#{qty},
+        pieQty=#{pieQty},
+        baseQty=#{baseQty},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        expDate=#{expDate},
+        stockId=#{stockId},
+        invDate=#{invDate},
+        issueBaseQty=#{issueBaseQty},
+        receiptBaseQty=#{receiptBaseQty},
+        sourceBillDtlId=#{sourceBillDtlId},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvstocktransferbillentry.delete" parameterType="String">
+		DELETE FROM scminvstocktransferbillentry WHERE id IN (${value})
+	</delete> 
+	
+	<delete id="scminvstocktransferbillentry.deleteByWtId" parameterType="Map">
+		DELETE FROM scminvstocktransferbillentry WHERE wtId=#{wtId}
+	</delete>
+	
+	<select id="scminvstocktransferbillentry.selectByWtId" resultType="ScmInvStockTransferBillEntry2" parameterType="Map"> 
+		SELECT sse.*,smm.itemNo,smm.itemName,
+		smm.spec as spec,A.unitName as unitName,B.unitName as baseUnitName,
+		smm.spec as spec,A.unitName as unitName,B.unitName as baseUnitName,C.unitName as pieUnitName,
+		R.convrate as convrate,swh.whName as receiptWarehouse,sah.whName as wareHouseName
+		FROM ScmInvStockTransferBillEntry sse 
+		left join scmmaterial smm on sse.itemId=smm.id
+		left join ScmMeasureUnit A on sse.unit=A.id 
+		left join ScmMeasureUnit B on sse.baseUnit=B.id
+
+		left join ScmMeasureUnit C on sse.pieUnit=C.id
+		left join ScmMaterialUnitRelation R on sse.itemId=R.itemId
+			AND sse.unit=R.targetUnitId
+		left join scminvwarehouse swh on swh.id=sse.receiptWarehouseId 
+		left join scminvwarehouse sah on sah.id=sse.wareHouseId
+		AND sse.unit=R.targetUnitId
+		WHERE sse.wtId= #{wtId}
+		ORDER BY sse.lineId ASC
+	</select>
+
+</mapper>
+ 

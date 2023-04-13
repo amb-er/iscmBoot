@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvsaleprice">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvsaleprice.findAll" resultType="ScmInvSalePrice" >
+	    SELECT * FROM scminvsaleprice WHERE  1=1  
+	</select>
+ 
+	<select id="scminvsaleprice.findAllPage" resultType="ScmInvSalePrice" parameterType="Map"> 
+		SELECT * FROM scminvsaleprice WHERE  1=1 ORDER BY pmNo DESC 
+	</select> 
+	<select id="scminvsaleprice.selectById" resultType="ScmInvSalePrice" parameterType="Long">
+		SELECT * FROM scminvsaleprice WHERE pmId = #{value}
+	</select> 
+	<select id="scminvsaleprice.selectMaxIdByDate" resultType="ScmInvSalePrice" parameterType="String">
+		SELECT * FROM scminvsaleprice 
+		WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY pmNo Desc Limit 1
+	</select> 
+	<select id="scminvsaleprice.undoReleaseCheck" resultType="java.lang.Integer" parameterType="Map"> 
+		SELECT COUNT(*) FROM(
+		select * from(SELECT id FROM scminvsaleissuebillentry where priceBillId=${pmid} LIMIT 1)x
+		UNION ALL
+		select * from(SELECT id FROM scminvsaleorderentry where priceBillId=${pmid} LIMIT 1)y
+		) A
+	</select>
+    <select id="scminvsaleprice.findByBizDateAndItemId" resultType="ScmInvSalePrice2" parameterType="String">
+        select scminvsaleprice.*, scminvsalepriceentry.saleTaxPrice as salePrice from scminvsaleprice, scminvsalepriceentry
+		where scminvsaleprice.pmId = scminvsalepriceentry.pmId and
+		scminvsaleprice.orgUnitNo = #{orgUnitNo} and 
+		scminvsaleprice.begDate &lt;= #{bizDate} and 
+		scminvsaleprice.endDate &gt;= #{bizDate} and 
+		scminvsalepriceentry.itemId = #{itemId}
+    </select>
+	<select id="scminvsaleprice.getPrice" resultType="ScmMaterialPrice" parameterType="String">
+        Select itemId,priceBillId,taxRate,taxPrice,'6' as refPriceStatus From
+		(Select B.itemId,A.pmId as priceBillId,0 as taxRate,B.saleTaxPrice as taxPrice
+ 			from ScmInvSalePrice A,ScmInvSalePriceentry B
+		Where A.pmId=B.pmId And A.orgUnitNo=#{orgUnitNo} and A.status='E' And A.begDate &lt;=#{bizDate}
+		And A.endDate &gt;=#{bizDate} And B.itemId in (${itemIds})
+		ORDER BY A.pmDate Desc,B.id Desc limit ${maxInt}) T
+		GROUP BY itemId
+    </select>
+	<insert id="scminvsaleprice.add" parameterType="ScmInvSalePrice"  keyProperty="pmId" useGeneratedKeys="true"> 
+		INSERT INTO  scminvsaleprice (
+        pmNo,
+        orgUnitNo,
+        finOrgUnitNo,
+        pmDate,
+        begDate,
+        endDate,
+        priceName,
+        currencyNo,
+        exchangeRate,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        workFlowNo,
+        stepNo,
+        checker,
+        checkDate,
+        prtcount,
+        status,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{pmNo},
+        #{orgUnitNo},
+        #{finOrgUnitNo},
+        #{pmDate},
+        #{begDate},
+        #{endDate},
+        #{priceName},
+        #{currencyNo},
+        #{exchangeRate},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{workFlowNo},
+        #{stepNo},
+        #{checker},
+        #{checkDate},
+        #{prtcount},
+        #{status},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvsaleprice.update" parameterType="ScmInvSalePrice">
+		UPDATE scminvsaleprice set
+        pmNo=#{pmNo},
+        orgUnitNo=#{orgUnitNo},
+        finOrgUnitNo=#{finOrgUnitNo},
+        pmDate=#{pmDate},
+        begDate=#{begDate},
+        endDate=#{endDate},
+        priceName=#{priceName},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        prtcount=#{prtcount},
+        status=#{status},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE pmId = #{pmId}
+	</update>
+ 
+	<delete id="scminvsaleprice.delete" parameterType="String">
+		DELETE FROM scminvsaleprice WHERE pmId IN (${value})
+	</delete> 
+
+</mapper>

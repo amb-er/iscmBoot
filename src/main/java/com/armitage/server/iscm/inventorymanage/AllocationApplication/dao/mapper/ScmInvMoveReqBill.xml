@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvmovereqbill">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvmovereqbill.findAll" resultType="ScmInvMoveReqBill" >
+	    SELECT * FROM scminvmovereqbill WHERE  1=1  
+	</select>
+ 
+	<select id="scminvmovereqbill.findAllPage" resultType="ScmInvMoveReqBill2" parameterType="Map"> 
+		SELECT *,IFNULL((Select sum(amt) FROM scminvmovereqbillentry where reqId=scminvmovereqbill.reqId),0) as amt 
+		FROM scminvmovereqbill WHERE  1=1 ORDER BY reqNo DESC
+	</select> 
+	<select id="scminvmovereqbill.selectById" resultType="ScmInvMoveReqBill2" parameterType="Long">
+		SELECT *,IFNULL((Select sum(amt) FROM scminvmovereqbillentry where reqId=scminvmovereqbill.reqId),0) as amt 
+		FROM scminvmovereqbill WHERE reqId = #{value}
+	</select> 
+	<select id="scminvmovereqbill.selectMaxIdByDate" resultType="ScmInvMoveReqBill" parameterType="String">
+		SELECT * FROM scminvmovereqbill 
+		WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY reqNo Desc Limit 1
+	</select> 
+	<insert id="scminvmovereqbill.add" parameterType="ScmInvMoveReqBill"  keyProperty="reqId" useGeneratedKeys="true"> 
+		INSERT INTO  scminvmovereqbill (
+        reqNo,
+        bizType,
+        bizDate,
+        finOrgUnitNo,
+        reqOrgUnitNo,
+        reqWareHouseId,
+        outOrgUnitNo,
+        currencyNo,
+        exchangeRate,
+        periodId,
+        accountYear,
+        accountPeriod,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        workFlowNo,
+        stepNo,
+        checker,
+        checkDate,
+        prtcount,
+        status,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{reqNo},
+        #{bizType},
+        #{bizDate},
+        #{finOrgUnitNo},
+        #{reqOrgUnitNo},
+        #{reqWareHouseId},
+        #{outOrgUnitNo},
+        #{currencyNo},
+        #{exchangeRate},
+        #{periodId},
+        #{accountYear},
+        #{accountPeriod},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{workFlowNo},
+        #{stepNo},
+        #{checker},
+        #{checkDate},
+        #{prtcount},
+        #{status},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvmovereqbill.update" parameterType="ScmInvMoveReqBill">
+		UPDATE scminvmovereqbill set
+        reqNo=#{reqNo},
+        bizType=#{bizType},
+        bizDate=#{bizDate},
+        finOrgUnitNo=#{finOrgUnitNo},
+        reqOrgUnitNo=#{reqOrgUnitNo},
+        reqWareHouseId=#{reqWareHouseId},
+        outOrgUnitNo=#{outOrgUnitNo},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        periodId=#{periodId},
+        accountYear=#{accountYear},
+        accountPeriod=#{accountPeriod},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        prtcount=#{prtcount},
+        status=#{status},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE reqId = #{reqId}
+	</update>
+ 
+	<delete id="scminvmovereqbill.delete" parameterType="String">
+		DELETE FROM scminvmovereqbill WHERE reqId IN (${value})
+	</delete> 
+	
+	<select id="scminvmovereqbill.selectByReqId" resultType="ScmInvMoveReqBill" parameterType="Map"> 
+		SELECT * FROM scminvmovereqbill WHERE reqId = #{reqId}
+	</select>
+
+</mapper>

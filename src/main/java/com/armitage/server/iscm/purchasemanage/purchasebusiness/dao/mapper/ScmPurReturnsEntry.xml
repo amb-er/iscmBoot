@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurreturnsentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurreturnsentry.findAll" resultType="ScmPurReturnsEntry2" >
+	    SELECT * FROM scmpurreturnsentry WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurreturnsentry.findAllPage" resultType="ScmPurReturnsEntry2" parameterType="Map"> 
+		SELECT scmpurreturnsentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		A.unitName as purUnitName,
+		B.unitName as unitName,
+		C.unitName as baseUnitName,
+		D.unitName as pieUnitName,
+		scmpurreceiveentry.qty as maxQty,
+		ScmMaterialUnitRelation.convrate as convrate
+		FROM scmpurreturnsentry
+		left join scmmaterial on scmpurreturnsentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scmpurreturnsentry.purUnit=A.id 
+		left join ScmMeasureUnit B on scmpurreturnsentry.unit=B.id
+		left join ScmMeasureUnit C on scmpurreturnsentry.baseUnit=C.id
+		left join ScmMeasureUnit D on scmpurreturnsentry.pieunit=D.id
+		left join scmpurreceiveentry on scmpurreturnsentry.sourceDtlId=scmpurreceiveentry.id
+		left join ScmMaterialUnitRelation on scmpurreturnsentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurreturnsentry.unit=ScmMaterialUnitRelation.targetUnitId
+		WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpurreturnsentry.selectById" resultType="ScmPurReturnsEntry2" parameterType="Long">
+		SELECT scmpurreturnsentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		A.unitName as purUnitName,
+		B.unitName as unitName,
+		C.unitName as baseUnitName,
+		D.unitName as pieUnitName,
+		scmpurreceiveentry.qty as maxQty,
+		ScmMaterialUnitRelation.convrate as convrate
+		FROM scmpurreturnsentry
+		left join scmmaterial on scmpurreturnsentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scmpurreturnsentry.purUnit=A.id 
+		left join ScmMeasureUnit B on scmpurreturnsentry.unit=B.id
+		left join ScmMeasureUnit C on scmpurreturnsentry.baseUnit=C.id
+		left join ScmMeasureUnit D on scmpurreturnsentry.pieunit=D.id
+		left join scmpurreceiveentry on scmpurreturnsentry.sourceDtlId=scmpurreceiveentry.id
+		left join ScmMaterialUnitRelation on scmpurreturnsentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurreturnsentry.unit=ScmMaterialUnitRelation.targetUnitId
+		WHERE scmpurreturnsentry.id = #{value}
+	</select> 
+ 	<select id="scmpurreturnsentry.selectByRtId" resultType="ScmPurReturnsEntry2" parameterType="Map"> 
+		SELECT scmpurreturnsentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		A.unitName as purUnitName,scmpurreceiveentry.reqOrgUnitNo,
+		B.unitName as unitName,
+		C.unitName as baseUnitName,
+		D.unitName as pieUnitName,
+		scmpurreceiveentry.qty as maxQty,scmpurreceiveentry.returnQty,scmpurreceiveentry.costUseTypeId,
+		ScmMaterialUnitRelation.convrate as convrate
+		FROM scmpurreturnsentry
+		left join scmmaterial on scmpurreturnsentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scmpurreturnsentry.purUnit=A.id 
+		left join ScmMeasureUnit B on scmpurreturnsentry.unit=B.id
+		left join ScmMeasureUnit C on scmpurreturnsentry.baseUnit=C.id
+		left join ScmMeasureUnit D on scmpurreturnsentry.pieunit=D.id
+		left join scmpurreceiveentry on scmpurreturnsentry.sourceDtlId=scmpurreceiveentry.id
+		left join ScmMaterialUnitRelation on scmpurreturnsentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurreturnsentry.unit=ScmMaterialUnitRelation.targetUnitId
+		WHERE scmpurreturnsentry.rtId=#{rtId}
+		<if test="notrt!=null and notrt!=''">
+			And scmpurreturnsentry.invQty &gt; scmpurreturnsentry.outQty
+		</if>
+		ORDER BY scmpurreturnsentry.lineId ASC
+	</select>
+	<insert id="scmpurreturnsentry.add" parameterType="ScmPurReturnsEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurreturnsentry (
+        rtId,
+        lineId,
+        itemId,
+        purUnit,
+        unit,
+        pieUnit,
+        baseUnit,
+        receiveQty,
+        returnQty,
+        qty,
+        invQty,
+        baseQty,
+        pieQty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        outQty,
+        productDate,
+        expDate,
+        useOrgUnitNo,
+        invOrgUnitNo,
+        wareHouseId,
+        finOrgUnitNo,
+        balanceSupplierId,
+        storageOrgUnitNo,
+        purOrgUnitNo,
+        sourceDtlId,
+        rowStatus,
+        checker,
+        checkDate,
+        reasonCode,
+        remarks        )
+		VALUES (
+        #{rtId},
+        #{lineId},
+        #{itemId},
+        #{purUnit},
+        #{unit},
+        #{pieUnit},
+        #{baseUnit},
+        #{receiveQty},
+        #{returnQty},
+        #{qty},
+        #{invQty},
+        #{baseQty},
+        #{pieQty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{outQty},
+        #{productDate},
+        #{expDate},
+        #{useOrgUnitNo},
+        #{invOrgUnitNo},
+        #{wareHouseId},
+        #{finOrgUnitNo},
+        #{balanceSupplierId},
+        #{storageOrgUnitNo},
+        #{purOrgUnitNo},
+        #{sourceDtlId},
+        #{rowStatus},
+        #{checker},
+        #{checkDate},
+        #{reasonCode},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scmpurreturnsentry.update" parameterType="ScmPurReturnsEntry">
+		UPDATE scmpurreturnsentry set
+        rtId=#{rtId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        purUnit=#{purUnit},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        baseUnit=#{baseUnit},
+        receiveQty=#{receiveQty},
+        returnQty=#{returnQty},
+        qty=#{qty},
+        invQty=#{invQty},
+        baseQty=#{baseQty},
+        pieQty=#{pieQty},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        outQty=#{outQty},
+        productDate=#{productDate},
+        expDate=#{expDate},
+        useOrgUnitNo=#{useOrgUnitNo},
+        invOrgUnitNo=#{invOrgUnitNo},
+        wareHouseId=#{wareHouseId},
+        finOrgUnitNo=#{finOrgUnitNo},
+        balanceSupplierId=#{balanceSupplierId},
+        storageOrgUnitNo=#{storageOrgUnitNo},
+        purOrgUnitNo=#{purOrgUnitNo},
+        sourceDtlId=#{sourceDtlId},
+        rowStatus=#{rowStatus},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        reasonCode=#{reasonCode},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+ 
+ 
+ 	<update id="scmpurreturnsentry.updateRowStatusByRtId" parameterType="map">
+		UPDATE scmpurreturnsentry set
+        rowStatus=#{rowStatus},
+        checker=#{checker},
+        checkDate=#{checkDate}	 WHERE rtId = #{rtId}
+	</update>
+ 	
+	<delete id="scmpurreturnsentry.delete" parameterType="String">
+		DELETE FROM scmpurreturnsentry WHERE id IN (${value})
+	</delete> 
+	
+</mapper>
+ 

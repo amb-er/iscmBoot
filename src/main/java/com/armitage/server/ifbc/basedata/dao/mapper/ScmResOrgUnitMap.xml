@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmresorgunitmap">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmresorgunitmap.findAll" resultType="ScmResOrgUnitMap" >
+	    SELECT * FROM ScmResOrgUnitMap WHERE  1=1  
+	</select>
+ 
+	<select id="scmresorgunitmap.findAllPage" resultType="ScmResOrgUnitMap" parameterType="Map"> 
+		SELECT * FROM ScmResOrgUnitMap WHERE  controlUnitNo=#{controlUnitNo} ORDER BY id ASC 
+	</select> 
+	<select id="scmresorgunitmap.selectById" resultType="ScmResOrgUnitMap" parameterType="Long">
+		SELECT * FROM ScmResOrgUnitMap WHERE id = #{value}
+	</select> 
+	<select id="scmresorgunitmap.selectByResOrgUnit" resultType="ScmResOrgUnitMap" parameterType="Map">
+		SELECT * FROM ScmResOrgUnitMap WHERE controlUnitNo = #{controlUnitNo} and resOrgUnitNo=#{resOrgUnitNo}
+	</select> 
+	<insert id="scmresorgunitmap.add" parameterType="ScmResOrgUnitMap"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmResOrgUnitMap (
+        resOrgUnitNo,
+        invOrgUnitNo,
+        shared,
+        fbmResOrgUnitNo,
+        fbmControlUnitNo,
+        controlUnitNo        )
+		VALUES (
+        #{resOrgUnitNo},
+        #{invOrgUnitNo},
+        #{shared},
+        #{fbmResOrgUnitNo},
+        #{fbmControlUnitNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmresorgunitmap.update" parameterType="ScmResOrgUnitMap">
+		UPDATE ScmResOrgUnitMap set
+        resOrgUnitNo=#{resOrgUnitNo},
+        invOrgUnitNo=#{invOrgUnitNo},
+        shared=#{shared},
+        fbmResOrgUnitNo=#{fbmResOrgUnitNo},
+        fbmControlUnitNo=#{fbmControlUnitNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmresorgunitmap.delete" parameterType="String">
+		DELETE FROM ScmResOrgUnitMap WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

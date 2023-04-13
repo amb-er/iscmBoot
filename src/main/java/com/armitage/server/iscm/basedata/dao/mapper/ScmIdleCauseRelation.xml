@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmidlecauserelation">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmidlecauserelation.findAll" resultType="ScmIdleCauseRelation" >
+	    SELECT * FROM ScmIdleCauseRelation WHERE  1=1  
+	</select>
+ 
+	<select id="scmidlecauserelation.findAllPage" resultType="ScmIdleCauseRelation" parameterType="Map"> 
+		SELECT * FROM ScmIdleCauseRelation WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmidlecauserelation.selectById" resultType="ScmIdleCauseRelation" parameterType="Long">
+		SELECT * FROM ScmIdleCauseRelation WHERE id = #{value}
+	</select> 
+	<insert id="scmidlecauserelation.add" parameterType="ScmIdleCauseRelation"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmIdleCauseRelation (
+        targetId,
+        sourceId        )
+		VALUES (
+        #{targetId},
+        #{sourceId}        )
+	</insert>
+ 
+	<update id="scmidlecauserelation.update" parameterType="ScmIdleCauseRelation">
+		UPDATE ScmIdleCauseRelation set
+        targetId=#{targetId},
+        sourceId=#{sourceId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmidlecauserelation.delete" parameterType="String">
+		DELETE FROM ScmIdleCauseRelation WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="iscmpurchase">
+
+	<!-- default parameterType="HashMap" -->
+	<select id="iscmpurchase.Req001" resultType="java.util.HashMap" parameterType="Map">
+        select spq.prNo, spq.orgUnitNo, spq.remarks, spq.createDate, spq.applyDate, spq.reqDate, 
+			smt.itemNo, smt.itemName, smu.unitName, spqe.qty, spqe.remarks as entryRemarks,
+			spq.creator, spq.checker,spq.prtcount+1 as prtcount
+			from scmpurrequire spq, scmpurrequireentry spqe, scmmaterial smt, scmmeasureunit smu
+			where spq.id = spqe.prId
+			and spqe.purUnit = smu.id
+			and smt.id = spqe.itemId
+			and spq.orgUnitNo = #{orgUnitNo}
+			and spq.prNo = #{billNo};
+	</select>
+	
+	<select id="iscmpurchase.purprice001" resultType="java.util.HashMap" parameterType="Map">
+    select spq.pmNo , spq.begDate  , ssp.vendorName as selVndrName , ssp1.vendorName as vendorName1 , 
+    ssp2.vendorName as vendorName2 , ssp3.vendorName as vendorName3, sqig.groupName as groupName1 ,
+    sqig1.groupName as groupName2 , sqig2.groupName as groupName3 , spq.endDate , spq.createDate ,
+      spq.pmDate , smt.itemNo, smt.spec, smu.unitName as purUnitName , spqe.prePurQty, spqe.price1 , 
+			spqe.price2 , spqe.price3 , spqe.inquiryPrice1 , spqe.inquiryPrice2 , spqe.inquiryPrice3 ,
+			spqe.prePrice ,spqe.lastYearPrice ,spqe.price , spqe.taxRate  as taxRate,  spqe.remarks ,
+			 spq.priceName , spq.creator ,smt.itemName,spq.prtcount+1 as prtcount
+			from scmpurprice spq 
+      left JOIN scmsupplier ssp on spq.selVndrId=ssp.id 
+      left JOIN scmsupplier ssp1 on spq.vendorId1=ssp1.id
+      left JOIN scmsupplier ssp2 on spq.vendorId2=ssp2.id
+      left JOIN scmsupplier ssp3 on spq.vendorId3=ssp3.id
+      left JOIN scmpurinquirygroup sqig on spq.groupId1=sqig.id 
+      left JOIN scmpurinquirygroup sqig1 on spq.groupId2=sqig1.id 
+      left JOIN scmpurinquirygroup sqig2 on spq.groupId3=sqig2.id 
+			 , scmpurpriceentry spqe, scmmaterial smt, scmmeasureunit smu
+			where spq.id = spqe.pmId and spqe.purUnit = smu.id	and smt.id = spqe.itemId 
+			and spq.orgUnitNo = #{orgUnitNo}
+			and spq.pmNo = #{billNo};
+	</select>
+	
+	<select id="iscmpurchase.Ord001" resultType="java.util.HashMap" parameterType="Map">
+        select 
+	      scmsupplier.vendorName,
+	      scmmaterial.itemNo,
+	      scmmaterial.itemName,
+	      scmmeasureunit.unitname as unitName,
+	      scmpurorderEntry.Qty as qty,
+	      scmpurorderEntry.receiveorgunitno,
+	      scmpurorderEntry.Remarks as remarks,
+	      scmpurorder.createDate as createDate,
+	      scmpurorderentry.reqOrgUnitNo,
+	      scmmaterial.spec,
+	      scmpurorderentry.price,
+	      scmpurorderentry.taxRate,
+	      scmpurorderentry.amt,
+	      scmpurorder.pono,
+	      scmpurorderEntry.reqDate,
+	      scmpurorderEntry.taxprice,
+	      scmpurorderEntry.taxamt,scmpurorder.prtcount+1 as prtcount
+		FROM scmpurorder join scmsupplier on scmpurorder.VendorId =
+	      scmsupplier.Id,scmpurorderEntry
+	      join scmmaterial on scmpurorderEntry.itemId = scmmaterial.id
+	      join scmmeasureunit on scmmeasureunit.id=scmpurorderEntry.Purunit 
+		WHERE scmpurorder.Id = scmpurorderEntry.POId and
+	      scmpurorder.poNo in (${billNo}) and scmpurorder.orgUnitNo = #{orgUnitNo}
+		order by VendorName,scmpurorderentry.reqOrgUnitNo,scmpurorder.pono,ItemNo
+    </select>
+    
+    <select id="iscmpurchase.Check001" resultType="java.util.HashMap" parameterType="Map">
+		SELECT scmpurreceiveentry.reqOrgUnitNo,scmpurreceiveentry.qty,scmpurreceiveentry.price,scmpurreceiveentry.amt,scmpurreceiveentry.taxRate,scmpurreceiveentry.taxAmt,scmpurreceiveentry.remarks as entryRemarks,scmmaterial.itemNo as itemNo,scmpurcheck.ckNo,scmsupplier.vendorName,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,scmpurcheck.remarks,scmpurreceiveentry.invOrgUnitNo,scmpurcheck.checkDate,scmpurcheck.prtcount+1 as prtcount,
+		B.unitName as unitName,
+		ScmMaterialUnitRelation.convrate as convrate
+		FROM scmpurcheck,scmpurreceiveentry
+		left join scmmaterial on scmpurreceiveentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit B on scmpurreceiveentry.unit=B.id
+		Left Join ScmPurOrderEntry On ScmPurOrderEntry.id=scmpurreceiveentry.poDtlId
+		left join ScmMaterialUnitRelation on scmpurreceiveentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurreceiveentry.unit=ScmMaterialUnitRelation.targetUnitId
+		LEFT JOIN scmsupplier on scmsupplier.id = scmpurreceiveentry.balanceSupplierId
+		,ScmPurReceive
+		WHERE ScmPurReceive.id = ScmPurReceiveEntry.pvId And ScmPurReceive.ckId=scmpurcheck.Id
+		AND scmpurcheck.ckNo = #{billNo} and scmpurcheck.orgUnitNo = #{orgUnitNo}
+		ORDER BY ScmPurOrderEntry.reqFinOrgUnitNo,scmmaterial.itemNo ASC
+    </select>
+    
+	<select id="iscmpurchase.Ord002" resultType="java.util.HashMap" parameterType="Map">
+		select       scmsupplier.vendorName,
+			scmmaterial.itemNo,
+			scmmaterial.itemName,
+			scmmeasureunit.unitname as unitName,
+			sum(scmpurorderEntry.Qty) as qty,
+			scmpurorderEntry.receiveorgunitno,
+			case when GROUP_CONCAT(IFNULL(scmpurorderEntry.Remarks,'')SEPARATOR '')='' THEN '' 
+      			when count(reqOrgUnitNo)&lt;=1 THEN GROUP_CONCAT(IFNULL(scmpurorderEntry.Remarks,' ')) else 
+      			CONCAT(GROUP_CONCAT('{',IFNULL(orgbaseunit.simpleName,''),'(',cast(scmpurorderEntry.Qty as char)+0,'):',IFNULL(scmpurorderEntry.Remarks,''),'}')) end as remarks,
+			Max(scmpurorder.createDate) as createDate,CASE when scmsupplier.role=2 then 
+     			(SELECT  whName  from  scminvwarehouse where id =
+      			(SELECT defaultWhId from scmmaterialinventory where itemId=scmmaterial.id and orgUnitNo = scmsupplier.orgUnitNo))
+      			else '' end  as defaultWh,scmpurorder.prtcount+1 as prtcount
+			FROM scmpurorder join scmsupplier on scmpurorder.VendorId =
+			scmsupplier.Id,scmpurorderEntry
+			join scmmaterial on scmpurorderEntry.itemId = scmmaterial.id
+			join scmmeasureunit on scmmeasureunit.id=scmpurorderEntry.Purunit
+			left join scmmaterialgroupdetail on scmmaterial.id=scmmaterialgroupdetail.itemId
+            left join scmmaterialgroup on scmmaterialgroup.id=scmmaterialgroupdetail.classid
+            left join `iscm-icommon`.orgbaseunit orgbaseunit on orgbaseunit.orgUnitNo =scmpurorderEntry.reqOrgUnitNo
+			WHERE scmpurorder.Id = scmpurorderEntry.POId and
+			scmpurorder.poNo in (${billNo}) and scmpurorder.orgUnitNo = #{orgUnitNo}
+			group by VendorName,defaultWh,scmmaterial.ItemNo,scmmaterial.Itemname,scmmeasureunit.unitname,scmpurorderEntry.receiveorgunitno
+			order by VendorName,defaultWh,scmmaterialgroup.classcode,ItemNo
+    </select>
+    
+    <select id="iscmpurchase.Rtn001" resultType="java.util.HashMap" parameterType="Map">
+        select 
+		    srt.rtNo, srte.invOrgUnitNo, srt.remarks, srt.createDate, srt.bizDate,
+		    smt.itemNo, smt.itemName, smt.spec, smu.unitName, srte.qty, srte.wareHouseId as wareHouseName, srte.useOrgUnitNo, srte.remarks as entryRemarks,
+		    srt.creator, srt.checker,srt.prtcount+1 as prtcount
+		from 
+		    scmpurreturns srt, scmpurreturnsentry srte,
+		    scmmaterial smt, scmmeasureunit smu
+		where srt.id = srte.rtId
+		    and srte.itemId = smt.id
+		    and srte.purUnit = smu.id 
+            and srt.rtNo = #{billNo}
+            and srt.orgUnitNo = #{orgUnitNo}
+    </select>
+      
+    <select id="iscmpurchase.Pq001" resultType="java.util.HashMap" parameterType="Map">
+        Select A.pqNo,A.vendorId,A.buyerId,A.begDate,A.endDate,A.pqDate,A.creator,A.createDate,A.remarks,B.itemId,B.purUnit,B.taxRate,B.taxPrice,B.remarks as entryRemarks,A.prtcount+1 as prtcount
+		from ScmPurQuotation A, ScmPurQuotationEntry B
+		where A.id = B.pqId and A.pqNo = #{billNo}
+        and A.orgUnitNo = #{orgUnitNo}
+    </select>
+</mapper>

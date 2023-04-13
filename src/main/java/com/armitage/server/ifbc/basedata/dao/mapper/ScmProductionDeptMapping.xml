@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmproductiondeptmapping">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmproductiondeptmapping.findAll" resultType="ScmProductionDeptMapping2" >
+	    SELECT * FROM ScmProductionDeptMapping WHERE  1=1  
+	</select>
+ 
+	<select id="scmproductiondeptmapping.findAllPage" resultType="ScmProductionDeptMapping2" parameterType="Map"> 
+		SELECT * FROM ScmProductionDeptMapping WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmproductiondeptmapping.selectById" resultType="ScmProductionDeptMapping2" parameterType="Long">
+		SELECT * FROM ScmProductionDeptMapping WHERE id = #{value}
+	</select> 
+	<select id="scmproductiondeptmapping.selectByProductDeptId" resultType="ScmProductionDeptMapping2" parameterType="Map">
+		SELECT * FROM ScmProductionDeptMapping WHERE productDeptId = #{productDeptId}
+	</select> 
+	<select id="scmproductiondeptmapping.selectByOrgUnit" resultType="ScmProductionDeptMapping2" parameterType="Map">
+		SELECT ScmProductionDeptMapping.* from ScmProductionDept,ScmProductionDeptMapping 
+		where ScmProductionDept.orgUnitNo=#{orgUnitNo} And ScmProductionDept.id=ScmProductionDeptMapping.productDeptId
+	</select>
+	<select id="scmproductiondeptmapping.findRepeat" resultType="ScmProductionDeptMapping2" parameterType="Map">
+		SELECT ScmProductionDeptMapping.*,ScmProductionDept.name as productDeptName FROM ScmProductionDeptMapping,ScmProductionDept 
+		WHERE ScmProductionDeptMapping.productDeptId = ScmProductionDept.id And ScmProductionDeptMapping.deptNo = #{deptNo}
+	</select> 
+	<insert id="scmproductiondeptmapping.add" parameterType="ScmProductionDeptMapping"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmProductionDeptMapping (
+        productDeptId,
+        deptNo        )
+		VALUES (
+        #{productDeptId},
+        #{deptNo}        )
+	</insert>
+ 
+	<update id="scmproductiondeptmapping.update" parameterType="ScmProductionDeptMapping">
+		UPDATE ScmProductionDeptMapping set
+        productDeptId=#{productDeptId},
+        deptNo=#{deptNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmproductiondeptmapping.delete" parameterType="String">
+		DELETE FROM ScmProductionDeptMapping WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

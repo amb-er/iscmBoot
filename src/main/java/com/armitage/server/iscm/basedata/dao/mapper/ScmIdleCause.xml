@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmidlecause">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmidlecause.findAll" resultType="Scmidlecause" >
+	    SELECT * FROM ScmIdleCause WHERE  1=1  
+	</select>
+ 
+	<select id="scmidlecause.findAllPage" resultType="Scmidlecause" parameterType="Map"> 
+		SELECT ScmIdleCause.* FROM ScmIdleCause LEFT JOIN ScmIdleCauseRelation ON ScmIdleCause.id=ScmIdleCauseRelation.sourceId 
+		WHERE (controlUnitNo=#{controlUnitNo} or controlUnitNo='00000001') 
+		And ScmIdleCauseRelation.sourceId is null ORDER BY ScmIdleCause.code ASC 
+	</select> 
+	<select id="scmidlecause.selectById" resultType="Scmidlecause" parameterType="Long">
+		SELECT * FROM ScmIdleCause WHERE id = #{value}
+	</select> 
+	<insert id="scmidlecause.add" parameterType="Scmidlecause"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmIdleCause (
+        code,
+        name,
+        flag,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{code},
+        #{name},
+        #{flag},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmidlecause.update" parameterType="Scmidlecause">
+		UPDATE ScmIdleCause set
+        code=#{code},
+        name=#{name},
+        flag=#{flag},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmidlecause.delete" parameterType="String">
+		DELETE FROM ScmIdleCause WHERE id IN (${value})
+	</delete> 
+
+    <select id="scmidlecause.selectByCode" resultType="Scmidlecause" parameterType="Map">
+		SELECT ScmIdleCause.* FROM ScmIdleCause LEFT JOIN ScmIdleCauseRelation ON ScmIdleCause.id=ScmIdleCauseRelation.sourceId 
+		WHERE (controlUnitNo=#{controlUnitNo} or controlUnitNo='00000001') and code =#{code} 
+		And ScmIdleCauseRelation.sourceId is null
+	    <if test="id != null and id >0">
+	       and ScmIdleCause.id not in(${id})
+	    </if>
+	</select>
+</mapper>
+ 

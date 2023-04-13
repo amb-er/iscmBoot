@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvmaterialreqbill">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvmaterialreqbill.findAll" resultType="ScmInvMaterialReqBill2" >
+	    SELECT ScmInvMaterialReqBill.*,A.amt as amt, A.taxAmt as taxAmt 
+	    FROM ScmInvMaterialReqBill left join 
+	    (SELECT scminvmaterialreqbillentry.otId,sum(scminvmaterialreqbillentry.amt) as amt,sum(scminvmaterialreqbillentry.taxAmt) as taxAmt 
+		FROM scminvmaterialreqbill,scminvmaterialreqbillentry
+		where scminvmaterialreqbill.otId=scminvmaterialreqbillentry.otId group by scminvmaterialreqbillentry.otId) A
+		on scminvmaterialreqbill.otId=A.otId
+	    WHERE  1=1  
+	</select>
+ 
+	<select id="scminvmaterialreqbill.findAllPage" resultType="ScmInvMaterialReqBill2" parameterType="Map"> 
+		SELECT ScmInvMaterialReqBill.*,A.amt as amt, A.taxAmt as taxAmt,
+		CASE WHEN ScmInvMaterialReqBill.bizType ='2' THEN -A.amt ELSE A.amt END AS typeAmt,
+		CASE WHEN ScmInvMaterialReqBill.bizType ='2' THEN -A.taxAmt ELSE A.taxAmt END AS typeTaxAmt,
+		(select group_concat(distinct ScmInvMaterialRequestBill.reqNo) as reqNo
+			from ScmInvMaterialRequestBill, ScmInvMaterialRequestBillEntry, ScmInvMaterialReqBillEntry
+			where ScmInvMaterialRequestBill.reqId = ScmInvMaterialRequestBillEntry.reqId
+				and ScmInvMaterialReqBill.otId = ScmInvMaterialReqBillEntry.otId
+				and ScmInvMaterialRequestBillEntry.id = ScmInvMaterialReqBillEntry.sourceBillDtlId
+			group by scminvmaterialreqbillEntry.otId) reqNo
+		FROM ScmInvMaterialReqBill left join
+		(SELECT scminvmaterialreqbillentry.otId,sum(scminvmaterialreqbillentry.amt) as amt,sum(scminvmaterialreqbillentry.taxAmt) as taxAmt 
+		FROM scminvmaterialreqbill,scminvmaterialreqbillentry
+		where scminvmaterialreqbill.otId=scminvmaterialreqbillentry.otId group by scminvmaterialreqbillentry.otId) A
+		on scminvmaterialreqbill.otId=A.otId
+		WHERE  1=1 ORDER BY scminvmaterialreqbill.otNo DESC
+	</select> 
+	<select id="scminvmaterialreqbill.selectById" resultType="ScmInvMaterialReqBill2" parameterType="Long">
+		SELECT *, 
+			IFNULL((Select sum(amt) FROM ScmInvMaterialReqBillEntry	where otId=ScmInvMaterialReqBill.otId),0) as amt,
+			IFNULL((Select sum(taxAmt) FROM ScmInvMaterialReqBillEntry	where otId=ScmInvMaterialReqBill.otId),0) as taxAmt
+		FROM ScmInvMaterialReqBill 
+		WHERE otId = #{value}
+	</select> 
+	<select id="scminvmaterialreqbill.selectMaxIdByDate" resultType="ScmInvMaterialReqBill2" parameterType="String">
+		SELECT * FROM ScmInvMaterialReqBill 
+		WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY otNo Desc Limit 1
+	</select>
+	<select id="scminvmaterialreqbill.selectDrillBills" resultType="com.armitage.server.iscm.inventorymanage.warehouseoutbusiness.model.ScmInvMaterialDrillResult" parameterType="Map">
+        SELECT cast(scminvmaterialreqbillentry.id as char) as otDetailId,scminvmaterialreqbillentry.itemId,scmmaterial.itemNo,scmmaterial.itemName,
+	    a.reqNo,a.reqIds,a.status as reqStatus from scminvmaterialreqbill,scminvmaterialreqbillentry
+	    LEFT JOIN (SELECT scminvmaterialrequestbill.reqNo,scminvmaterialrequestbill.status,group_concat(distinct scminvmaterialrequestbill.reqId) as reqIds,
+	    scminvmaterialrequestbillentry.itemId
+	    from scminvmaterialrequestbill,scminvmaterialrequestbillentry,scminvmaterialreqbillentry
+	    where scminvmaterialrequestbill.reqId=scminvmaterialrequestbillentry.reqId
+	    and scminvmaterialreqbillentry.sourceBillDtlId=scminvmaterialrequestbillentry.id
+	    and scminvmaterialreqbillentry.otId=${otId}
+	    group by scminvmaterialrequestbillentry.itemId order by scminvmaterialrequestbill.reqId asc)
+	    as a on scminvmaterialreqbillentry.itemId=a.itemId
+	    ,scmmaterial
+	    where scminvmaterialreqbill.otId=scminvmaterialreqbillentry.otId
+	    and scminvmaterialreqbill.otId=${otId}
+	    and scminvmaterialreqbillentry.itemId=scmmaterial.id
+	    group by scminvmaterialreqbillentry.itemId
+    </select>
+	<select id="scminvmaterialreqbill.checkUnPostBill" resultType="ScmInvMaterialReqBill2" parameterType="Map">
+		select * From ScmInvMaterialReqBill Where finOrgUnitNo=#{finOrgUnitNo} and periodId=#{periodId} And status not in ('E','N')
+	</select>  
+	<select id="scminvmaterialreqbill.checkPostedBill" resultType="ScmInvMaterialReqBill2" parameterType="Map">
+		select * From ScmInvMaterialReqBill Where finOrgUnitNo=#{finOrgUnitNo} and periodId=#{periodId} And status='E'
+	</select>
+    <select id="scminvmaterialreqbill.checkWareHouseFree" resultType="ScmInvMaterialReqBill2" parameterType="Long">
+        select a.taskId as taskId, a.freeItem as freeItem from scminvcountingtask a, scminvcountingtable b,
+        (select DISTINCT a.orgUnitNo as orgUnitNo, a.wareHouseId as wareHouseId from scminvmaterialreqbill a, scminvmaterialreqbillentry b
+        where a.otId = b.otId and a.otId = #{value}) as c
+        where a.taskId = b.taskId and 
+        a.orgUnitNo = c.orgUnitNo and 
+        a.costCenter = 0 and 
+        a.status in ('T', 'B') and
+        b.wareHouseId = c.wareHouseId and 
+        a.freeItem = 1    
+    </select>
+    <select id="scminvmaterialreqbill.checkMaterialFree" resultType="Integer" parameterType="Map">
+		select count(1) from scminvcountingtable a, scminvcountingtableentry b,
+		scminvmaterialreqbill c, scminvmaterialreqbillentry d
+		where a.taskId = #{taskId} and 
+		a.tableId = b.tableId and 
+		c.otId = #{otId} and 
+		c.otId = d.otId and 
+		a.wareHouseId = c.wareHouseId and 
+		b.itemId = d.itemId
+    </select>	
+    <select id="scminvmaterialreqbill.inventoryWareHouseFree" resultType="ScmInvMaterialReqBill2" parameterType="Long">
+		select a.taskId as taskId, a.freeItem as freeItem from scminvcountingtask a, scminvcountingcostcenter b, scminvmaterialreqbill c
+		where a.taskId = b.taskId and 
+		c.otId = #{value} and 
+		a.costCenter = 1 and 
+		a.status in ('T', 'B') and
+		b.useOrgUnitNo = c.useOrgUnitNo and 
+		a.freeItem = 1    
+    </select>
+    <select id="scminvmaterialreqbill.inventoryMaterialFree" resultType="Integer" parameterType="Map">
+		select count(1) from scminvcountingcostcenter as a, scminvcountingcostcenterentry as b, 
+		scminvmaterialreqbill c, scminvmaterialreqbillentry d
+		where a.taskId = #{taskId} and 
+		a.tableId = b.tableId and 
+		c.otId = #{otId} and 
+		c.otId = d.otId and 
+		a.useOrgUnitNo = c.useOrgUnitNo and 
+		b.itemId = D.itemId
+    </select> 
+    <select id="scminvmaterialreqbill.queryForFixPage" resultType="ScmInvMaterialReqBill2" parameterType="map">
+        SELECT * FROM ScmInvMaterialReqBill WHERE finOrgUnitNo = #{finOrgUnitNo} and status = 'E'
+        ORDER BY postDate,checkDate,bizDate
+    </select>
+   	<select id="scminvmaterialreqbill.countUnPostBill" resultType="Map" parameterType="map">
+		select count(distinct(a.otNo)) as number,group_concat(distinct(a.otNo)) as data from
+		scminvmaterialreqbill a
+		where a.status not in('E','N') and
+		a.orgUnitNo =#{orgUnitNo}
+		and a.wareHouseId in (${wareHouseIds})
+		and a.bizDate&lt;=#{bizDate} order by a.otNo
+    </select>
+    <select id="scminvmaterialreqbill.countCostUnPostBill" resultType="Map" parameterType="map">
+		select count(distinct(a.otNo)) as number,group_concat(distinct(a.otNo)) as data from
+		scminvmaterialreqbill a where a.status not in('E','N') and a.useOrgUnitNo in (${useOrgUnitNos})
+		and a.bizDate&lt;=#{bizDate} order by a.otNo
+    </select>
+	<insert id="scminvmaterialreqbill.add" parameterType="ScmInvMaterialReqBill"  keyProperty="otId" useGeneratedKeys="true"> 
+		INSERT INTO  ScmInvMaterialReqBill (
+        otNo,
+        bizType,
+        bizDate,
+        finOrgUnitNo,
+        orgUnitNo,
+        wareHouseId,
+        useOrgUnitNo,
+        usePerson,
+        costOrgUnitNo,
+        offset,
+        billType,
+        currencyNo,
+        exchangeRate,
+        periodId,
+        accountYear,
+        accountPeriod,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        checker,
+        checkDate,
+        postDate,
+        prtcount,
+        status,
+        remarks,
+        workFlowNo,
+        stepNo,
+        controlUnitNo        )
+		VALUES (
+        #{otNo},
+        #{bizType},
+        #{bizDate},
+        #{finOrgUnitNo},
+        #{orgUnitNo},
+        #{wareHouseId},
+        #{useOrgUnitNo},
+        #{usePerson},
+        #{costOrgUnitNo},
+        #{offset},
+        #{billType},
+        #{currencyNo},
+        #{exchangeRate},
+        #{periodId},
+        #{accountYear},
+        #{accountPeriod},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{checker},
+        #{checkDate},
+        #{postDate},
+        #{prtcount},
+        #{status},
+        #{remarks},
+        #{workFlowNo},
+        #{stepNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvmaterialreqbill.update" parameterType="ScmInvMaterialReqBill">
+		UPDATE ScmInvMaterialReqBill set
+        otNo=#{otNo},
+        bizType=#{bizType},
+        bizDate=#{bizDate},
+        finOrgUnitNo=#{finOrgUnitNo},
+        orgUnitNo=#{orgUnitNo},
+        wareHouseId=#{wareHouseId},
+        useOrgUnitNo=#{useOrgUnitNo},
+        usePerson=#{usePerson},
+        costOrgUnitNo=#{costOrgUnitNo},
+        offset=#{offset},
+        billType=#{billType},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        periodId=#{periodId},
+        accountYear=#{accountYear},
+        accountPeriod=#{accountPeriod},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        postDate=#{postDate},
+        prtcount=#{prtcount},
+        status=#{status},
+        remarks=#{remarks},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE otId = #{otId}
+	</update>
+ 	<update id="scminvmaterialreqbill.updatePostedStatus" parameterType="Map">
+ 		UPDATE ScmInvMaterialReqBill set checker=#{checker},checkDate=#{checkDate},
+ 		postDate=#{postDate},status=#{status} Where otId = #{otId} 
+ 		<choose>
+ 			<when test='status!=null and status=="E"'>
+ 				and status='A'
+ 			</when>
+ 			<otherwise>
+ 				and status='E'
+ 			</otherwise>
+ 		</choose>
+	</update>
+	<delete id="scminvmaterialreqbill.delete" parameterType="String">
+		DELETE FROM ScmInvMaterialReqBill WHERE otId IN (${value})
+	</delete> 
+
+</mapper>

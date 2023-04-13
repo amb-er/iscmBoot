@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurpriceassign">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurpriceassign.findAll" resultType="ScmPurPriceAssign2" >
+	    SELECT * FROM scmpurpriceassign WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurpriceassign.findAllPage" resultType="ScmPurPriceAssign2" parameterType="Map"> 
+		SELECT * FROM scmpurpriceassign WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	
+	<select id="scmpurpriceassign.selectById" resultType="ScmPurPriceAssign2" parameterType="Long">
+		SELECT * FROM scmpurpriceassign WHERE id = #{value}
+	</select> 
+	
+	<insert id="scmpurpriceassign.add" parameterType="ScmPurPriceAssign2"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurpriceassign (
+        pmId,
+        finOrgUnitNo,
+        finOrgUnitName,
+        isBizUnit        )
+		VALUES (
+        #{pmId},
+        #{finOrgUnitNo},
+        #{finOrgUnitName},
+        #{isBizUnit}        )
+	</insert>
+ 
+	<update id="scmpurpriceassign.update" parameterType="ScmPurPriceAssign2">
+		UPDATE scmpurpriceassign set
+        pmId=#{pmId},
+        finOrgUnitNo=#{finOrgUnitNo},
+        finOrgUnitName=#{finOrgUnitName},
+        isBizUnit=#{isBizUnit}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurpriceassign.delete" parameterType="String">
+		DELETE FROM scmpurpriceassign WHERE id IN (${value})
+	</delete> 
+	
+	<select id="scmpurpriceassign.selectByPmId" resultType="ScmPurPriceAssign2" parameterType="Map"> 
+		SELECT scmpurpriceassign.*
+		FROM scmpurpriceassign
+		WHERE scmpurpriceassign.pmId=#{pmId} 
+	</select> 
+
+</mapper>
+ 

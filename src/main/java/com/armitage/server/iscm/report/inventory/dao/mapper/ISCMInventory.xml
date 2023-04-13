@@ -1,0 +1,427 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="iscminventory">
+
+	<!-- default parameterType="HashMap" -->
+	<select id="iscminventory.Iwr001" resultType="java.util.HashMap" parameterType="Map">
+         select  swr.bizDate,  ssp.vendorName,  
+            CASE  WHEN  swr.bizType='1'  THEN  "普通采购入库"  WHEN  swr.bizType='8'  THEN  "手工采购退货"  WHEN  swr.bizType='3'  THEN  "手工采购入库"  ELSE    "普通采购退库"  end  bizType, 
+           swr.createDate, swr.wrNo,case when ifnull(#{groupBy},'')='' Then '' else ifnull(smg.className,'NIL') end as groupCol,
+		    smg.className, smt.itemNo, smt.itemName, smt.spec, smu.unitName,
+		    swr.orgUnitNo, swre.wareHouseId as wareHouseName,swre.useOrgUnitNo as useOrgUnitNo,
+		    swre.price, swre.qty, swre.amt, swre.taxRate, swre.taxAmt, swre.remarks as entryRemarks,
+            swr.creator, swr.checker,swr.prtcount+1 as prtcount,
+           Case when swr.bizType in ('6','7','8') THEN "采购退库单" ELSE "采购入库单" end as Btype,
+          case when swre.lineId between 1 and 10 then 10 
+             when swre.lineId between 11  and 20 then 20
+             when swre.lineId between 21  and 30 then 30
+             when swre.lineId between 31  and 40 then 40
+             when swre.lineId between 41  and 50 then 50  
+             when swre.lineId between 51  and 60 then 60 
+             when swre.lineId between 61  and 70 then 70 
+             when swre.lineId between 71  and 80 then 80 
+             when swre.lineId between 81  and 90 then 90 
+             when swre.lineId between 91  and 100 then 100
+             when swre.lineId between 101  and 110 then 110
+             when swre.lineId between 111  and 120 then 120
+             when swre.lineId between 121  and 130 then 130
+             when swre.lineId between 131  and 140 then 140
+             when swre.lineId between 141 and 150 then 150 
+             when swre.lineId between 151  and 160 then 160
+             when swre.lineId between 161  and 170 then 170
+             when swre.lineId between 171  and 180 then 180
+             when swre.lineId between 181  and 190 then 190  
+             when swre.lineId between 191  and 200 then 200 
+             when swre.lineId between 201  and 210 then 210 
+             when swre.lineId between 211  and 220 then 220 
+             when swre.lineId between 221  and 230 then 230 
+             when swre.lineId between 231  and 240 then 240
+             when swre.lineId between 241  and 250 then 250
+             when swre.lineId between 251  and 260 then 260
+             when swre.lineId between 261  and 270 then 270
+             when swre.lineId between 271  and 280 then 280
+             when swre.lineId between 281  and 290 then 290
+             when swre.lineId between 291  and 300 then 300
+             when swre.lineId between 301  and 310 then 310  
+             when swre.lineId between 311  and 320 then 320 
+             when swre.lineId between 321  and 330 then 330 
+             when swre.lineId between 331  and 340 then 340 
+             when swre.lineId between 341  and 350 then 350 
+             when swre.lineId between 351  and 360 then 360
+             when swre.lineId between 361  and 370 then 370
+             when swre.lineId between 371  and 380 then 380
+             when swre.lineId between 381  and 390 then 390
+             when swre.lineId between 391  and 400 then 400
+             else 0 end linetype,swre.taxprice,receiver,swr.remarks
+	    from 
+		    scminvpurinwarehsbill swr, scminvpurinwarehsbillentry swre
+		    Left Join
+		    (select c.id,b.itemId,a.className,c.standardType FROM scmmaterialgroup a, scmmaterialgroupdetail b, scmmaterialgroupstandard c
+			WHERE a.standardId = c.id and a.id = b.classId and a.controlUnitNo=#{controlUnitNo}) smg On swre.itemId = smg.itemId 
+			<choose>
+			    <when test="groupBy!=null and groupBy!=''">
+				    and smg.id = #{groupBy}
+			    </when>
+			    <otherwise>
+				    and smg.standardType = '1'
+			    </otherwise>
+		    </choose>
+		    ,scmsupplier ssp,
+		    scmmaterial smt, scmmeasureunit smu
+	    where swr.wrId = swre.wrId
+		    and swr.vendorId = ssp.id
+		    and swre.unit = smu.id
+		    and swre.itemId = smt.id
+		    and swr.wrNo = #{billNo}
+		    and swr.orgUnitNo = #{orgUnitNo}
+	ORDER BY 
+		<if test="groupBy!=null and groupBy!=''">
+			smg.className,
+		</if>
+	swre.lineid
+	</select>
+	
+	<select id="iscminventory.ScmCstFrmLoss001" resultType="java.util.HashMap" parameterType="Map">
+	SELECT sob.billNo,sob.costOrgUnitNo,sob.remarks,sob.createDate,sob.bizDate, 
+			smm.itemNo,smm.itemName,smu.unitName,soe.lot,soe.qty,soe.price,soe.amt,
+			soe.remarks as entryRemarks,sob.prtcount+1 as prtcount,sob.creator,sob.checker
+		FROM ScmCstFrmLoss sob
+		INNER JOIN scmcstfrmlossentry soe on soe.billId=sob.id
+		INNER JOIN scmmaterial smm on smm.id=soe.itemId
+		INNER JOIN scmmeasureunit smu on soe.unit=smu.id
+		WHERE 1=1
+		AND sob.billNo=#{billNo}
+		AND sob.orgUnitNo = #{orgUnitNo}
+		ORDER BY soe.lineid
+	</select>
+	<select id="iscminventory.ScmInvIssue001" resultType="java.util.HashMap" parameterType="Map">
+		SELECT sob.bizDate,sob.otNo,soe.wareHouseId as wareHouseName,sob.remarks,smm.itemNo,smm.itemName,
+			smu.unitName,sob.createDate,soe.lot,soe.qty,soe.price,soe.amt,soe.remarks as entryRemarks,sob.prtcount+1 as prtcount
+		FROM scminvotherissuebill sob
+		INNER JOIN scminvotherissuebillentry soe on soe.otId=sob.otid
+		INNER JOIN scmmaterial smm on smm.id=soe.itemId
+		INNER JOIN scmmeasureunit smu on soe.unit=smu.id
+		WHERE 1=1
+		AND sob.otNo=#{billNo}
+		AND sob.orgUnitNo = #{orgUnitNo}
+		ORDER BY soe.lineid
+	</select>
+	
+
+	<select  id="iscminventory.Scminvmatreq001"  resultType="java.util.HashMap"  parameterType="Map">
+		SELECT  smb.bizDate,smm.spec,smb.createDate,smb.creator,smb.checker,smb.useOrgUnitNo,
+		smb.otNo,smb.wareHouseId  as  wareHouseName,smb.remarks,smm.itemNo,smm.itemName,smu.unitName,
+		sme.lot,sme.price,sme.qty,sme.amt,sme.expDate,sme.remarks  as  entryRemarks,smb.prtcount+1 as prtcount,
+          case  when  sme.lineId  between  1  and  10  then  10  
+          when  sme.lineId  between  11    and  20  then  20
+          when  sme.lineId  between  21    and  30  then  30
+          when  sme.lineId  between  31    and  40  then  40
+          when  sme.lineId  between  41    and  50  then  50    
+          when  sme.lineId  between  51    and  60  then  60  
+          when  sme.lineId  between  61    and  70  then  70  
+          when  sme.lineId  between  71    and  80  then  80  
+          when  sme.lineId  between  81    and  90  then  90  
+          when  sme.lineId  between  91    and  100  then  100
+          when  sme.lineId  between  101    and  110  then  110
+          when  sme.lineId  between  111    and  120  then  120
+          when  sme.lineId  between  121    and  130  then  130
+          when  sme.lineId  between  131    and  140  then  140
+          else  0  end  linetype
+		FROM  scminvmaterialreqbill  smb
+		INNER  JOIN  scminvmaterialreqbillentry  sme  on  smb.otId=sme.otId
+		INNER  JOIN  scmmaterial  smm  on  smm.id=sme.itemId
+		INNER  JOIN  scmmeasureunit  smu  on  smu.id=sme.Unit
+		WHERE  1=1
+		AND  smb.otNo=#{billNo}
+		AND  smb.orgUnitNo  =  #{orgUnitNo}
+	</select>
+	
+	<select  id="iscminventory.Scminvmatreq001ForGONZON"  resultType="java.util.HashMap"  parameterType="Map">
+		SELECT  smb.bizDate,smm.spec,smb.createDate,smb.creator,smb.checker,smb.useOrgUnitNo,
+		smb.otNo,smb.wareHouseId  as  wareHouseName,smb.remarks,smm.itemNo,smm.itemName,smu.unitName,
+		sme.lot,sme.price,sme.qty,sme.amt,sme.expDate,sme.remarks  as  entryRemarks,
+          case  when  sme.lineId  between  1  and  10  then  10  
+          when  sme.lineId  between  11    and  20  then  20
+          when  sme.lineId  between  21    and  30  then  30
+          when  sme.lineId  between  31    and  40  then  40
+          when  sme.lineId  between  41    and  50  then  50    
+          when  sme.lineId  between  51    and  60  then  60  
+          when  sme.lineId  between  61    and  70  then  70  
+          when  sme.lineId  between  71    and  80  then  80  
+          when  sme.lineId  between  81    and  90  then  90  
+          when  sme.lineId  between  91    and  100  then  100
+          when  sme.lineId  between  101    and  110  then  110
+          when  sme.lineId  between  111    and  120  then  120
+          when  sme.lineId  between  121    and  130  then  130
+          when  sme.lineId  between  131    and  140  then  140
+          else  0  end  linetype
+          	,CONCAT('#$usrBiz#$',smqh1.oper) as depManager,CONCAT('#$usrBiz#$',smqh.oper) as finance
+		FROM  scminvmaterialreqbill  smb
+		INNER  JOIN  scminvmaterialreqbillentry  sme  on  smb.otId=sme.otId
+		INNER  JOIN  scmmaterial  smm  on  smm.id=sme.itemId
+		INNER  JOIN  scmmeasureunit  smu  on  smu.id=sme.Unit
+		 	left join scminvmaterialrequestbillentry smqe on smqe.id=sme.sourcebilldtlid
+ 		 left join (select billId,oper,preStepNo from scminvmaterialrequestbilleventhistory A,scminvmaterialrequestbillentry B ,scminvmaterialreqbillentry C ,scminvmaterialreqbill D
+					where A.billid=B.reqId and B.ID=C.sourceBillDtlId and C.otid=D.otid and 
+					D.otno=#{billNo} and D.orgUnitNo  =  #{orgUnitNo} order by operDate desc limit 1) as smqh on smqh.billid=smqe.reqid
+		left join scminvmaterialrequestbilleventhistory smqh1 on smqh.preStepNo=smqh1.stepno
+		WHERE  1=1
+		AND  smb.otNo=#{billNo}
+		AND  smb.orgUnitNo  =  #{orgUnitNo}
+	</select>
+		
+	<select id="iscminventory.InvMove001" resultType="java.util.HashMap" parameterType="Map">
+		SELECT smb.wrNo,smb.bizDate,smb.checker,smb.creator,smb.createDate,smb.wrNo,smm.itemName,
+		sme.wareHouseId,sme.wareHouseId as wareHouseName,sme.price,smb.prtcount+1 as prtcount,
+		smb.remarks,smm.itemNo,smu.unitName,smm.spec,sme.qty,sme.amt,sme.expDate,sme.remarks as entryRemarks
+		FROM scminvmoveinwarehsbill smb 
+		INNER JOIN scminvmoveinwarehsbillentry sme on sme.wrId=smb.wrId
+		INNER JOIN scmmaterial smm on smm.id=sme.itemId
+		INNER JOIN scmmeasureunit smu on smu.id=sme.baseUnit
+		WHERE 1=1
+		AND smb.wrNo=#{billNo}
+		AND smb.orgUnitNo = #{orgUnitNo}
+		ORDER BY sme.lineid
+	</select>
+	
+	<select  id="iscminventory.counting001"  resultType="java.util.HashMap"  parameterType="Map">
+		SELECT  smm.itemNo,smm.itemName,smm.spec,smu.unitName,sct.orgUnitNo,case  When  sctk.status='O'  Then  sum(sce.qty)  else  null  end  as  qty,
+		sce.taxprice,
+		case  When  sctk.status='O'  Then  sum(sce.taxamt)  else  null  end  as  taxamt,swh.whName  wareHouseName,sct.createDate,
+		sum(sce.accountQty)  as  accountQty,
+		 case  When  sctk.status='O'  Then  sce.taxRate  else  sce.taxRate  end  as  taxRate,
+		 sce.price,
+		case  When  sctk.status='O'  Then  sum(sce.amt)  else  null  end  as  amt
+		FROM  ScmInvCountingTable  sct
+		INNER  JOIN  scminvcountingtask  sctk  on  sctk.taskId=sct.taskId
+		INNER  JOIN  ScmInvCountingTableEntry  sce  on  sce.tableId=sct.tableId
+		INNER  JOIN  scmmaterial  smm  on  smm.id=sce.ItemId
+		INNER  JOIN  scmmeasureunit  smu  on  smu.id=sce.unit
+		INNER  JOIN  scminvwarehouse  swh  on  swh.id=sct.wareHouseId
+		INNER  JOIN  scminvcountingtask  sca  on  sca.taskId  =  sct.taskId  
+		INNER  JOIN  scminvcountingtable  sta  on  sta.tableId  =  sce.tableId      
+		where  1=1
+		AND  sct.taskId  =#{taskId}
+		AND  sct.orgUnitNo  =  #{orgUnitNo}
+		group  by  sce.WareHouseID,  smm.ItemNo,smm.Itemname,  smm.Spec,sce.Unit,sct.CreateDate,sce.OrgUnitNo,sce.taxRate,sce.taxprice,sce.price
+		order  by  sce.WareHouseID,  sce.lineId,sce.id
+	</select>
+	
+	<select id="iscminventory.scmmovebill001" resultType="java.util.HashMap" parameterType="Map">
+		SELECT smb.bizDate,smb.createDate,smb.wtNo,smb.outOrgUnitNo,smb.inOrgUnitNo,smb.checker,
+		smb.creator,smb.remarks,smm.itemNo,smm.itemName,smm.spec,smu.unitName,sme.lot,sme.price,
+		sme.qty,sme.amt,sme.taxRate,sme.taxAmt,sme.remarks as entryRemarks
+		FROM scminvmovebill smb 
+		INNER JOIN scminvmovebillentry sme on sme.wtId =smb.wtId
+		INNER JOIN scmmaterial smm on smm.id=sme.ItemId
+		INNER JOIN scmmeasureunit smu on smu.id=sme.unit
+		WHERE 1=1
+		AND smb.wtNo=#{billNo} and smb.finOrgUnitNo = #{orgUnitNo}
+		ORDER BY sme.lineid
+	</select>
+	
+	<select id="iscminventory.scminvrequest001" resultType="java.util.HashMap" parameterType="Map">
+		SELECT 
+		srb.reqId,srb.reqNo,srb.bizDate,srb.orgUnitNo,
+		srb.wareHouseId,srb.finOrgUnitNo,srb.invOrgUnitNo,srb.requestPerson,
+		srb.currencyNo,srb.exchangeRate,srb.creator,srb.createDate,srb.status,srb.remarks,srb.controlUnitNo,smm.itemNo,smm.itemName,smm.spec,smu.unitName,
+		sre.*,sre.remarks  as entryRemarks,srb.prtcount+1 as prtcount,srb.checker
+		FROM ScmInvMaterialRequestBill srb 
+		INNER JOIN ScmInvMaterialRequestBillentry sre on sre.reqId =srb.reqId
+		INNER JOIN scmmaterial smm on smm.id=sre.ItemId
+		INNER JOIN scmmeasureunit smu on smu.id=sre.unit
+		WHERE 1=1
+		AND srb.reqNo=#{billNo} and srb.orgUnitNo = #{orgUnitNo}
+		ORDER BY sre.lineid
+	</select>
+	
+	<select  id="iscminventory.CostCenter001"  resultType="java.util.HashMap"  parameterType="Map">
+		SELECT  scc.useOrgUnitNo,scc.createDate,smm.itemNo,smm.itemName,smm.spec,smu.unitName,
+		sum(sce.accountQty)as  accountQty,case  When  sct.status='O'  Then  sum(sce.qty)  else  null  end  as  qty,scc.remarks,scc.countingPerson,
+		scc.countingMonitorer,sce.price as price
+		FROM  scminvcountingcostcenter  scc  
+		INNER  JOIN  scminvcountingtask  sct  on  sct.taskId=scc.taskId
+		INNER  JOIN  scminvcountingcostcenterentry  sce  on  sce.tableId=scc.tableId
+		INNER  JOIN  scmmaterial  smm  on  smm.id=sce.ItemId
+		INNER  JOIN  scmmeasureunit  smu  on  smu.id=sce.unit
+		AND  scc.taskId  =#{taskId}
+		  AND  sct.orgUnitNo  =  #{orgUnitNo}
+		GROUP  BY  scc.UseOrgUnitNo,smm.ItemNo,smm.Itemname,  smm.Spec,sce.Unit,scc.CreateDate,sce.price
+		ORDER  BY  scc.UseOrgUnitNo,sce.lineId,sce.id
+	</select>
+	
+	<select  id="iscminventory.CostCenter002"  resultType="java.util.HashMap"  parameterType="Map">
+		SELECT  scc.useOrgUnitNo,scc.createDate,smm.itemNo,smm.itemName,smm.spec,smu.unitName,
+		case  When  sct.status='O'  Then  sum(sce.qty)  else  null  end  as  qty,sce.taxprice,case  When  sct.status='O'  Then  sum(sce.taxamt)  else  null  end  as  taxamt,scc.countingPerson,scc.countingMonitorer
+		FROM  scminvcountingcostcenter  scc  
+		INNER  JOIN  scminvcountingtask  sct  on  sct.taskId=scc.taskId
+		INNER  JOIN  scminvcountingcostcenterentry  sce  on  sce.tableId=scc.tableId
+		INNER  JOIN  scmmaterial  smm  on  smm.id=sce.ItemId
+		INNER  JOIN  scmmeasureunit  smu  on  smu.id=sce.unit
+		AND  scc.taskId  =#{taskId}
+		AND  sct.orgUnitNo  =  #{orgUnitNo}
+		GROUP  BY  scc.UseOrgUnitNo,smm.ItemNo,smm.Itemname,  smm.Spec,sce.Unit,scc.CreateDate,sce.taxprice
+		ORDER BY scc.UseOrgUnitNo,sce.lineId,sce.id
+	</select>
+	
+	<select id="iscminventory.SaleIssue001" resultType="java.util.HashMap" parameterType="Map">
+		SELECT ssb.otNo,swh.whName as wareHouseName,ssb.bizDate,ssb.creator,ssb.checker,ssb.createDate,
+			ssb.remarks as remarks2,smm.itemNo,smm.itemName,smm.spec,smu.unitName,
+         	sse.lot,sse.qty,sse.remarks as remarks,sse.saleTaxPrice,
+        	sse.saleTaxAmt,ssb.prtcount+1 as prtcount,
+       	CASE WHEN  ssb.bizType=1 then '普通销售出库' WHEN  ssb.bizType=2 THEN  '调拨销售出库' 
+			 WHEN  ssb.bizType=3 then  '手工销售出库' WHEN  ssb.bizType=4 THEN  '采购方成本出库'
+             WHEN  ssb.bizType=5 then  '供应方成本出库' WHEN  ssb.bizType=6 THEN  '普通销售退货'
+             WHEN  ssb.bizType=7 then  '调拨销售退货' WHEN  ssb.bizType=8 THEN  '手工销售退货'
+             WHEN  ssb.bizType=9 then  '采购方成本入库退货' ELSE   '供应方成本入库退货'
+             END AS bizType,ssb.custId,
+                CASE WHEN  ssb.bizType in (1,2,3,4,5) then "销售出库单" else "销售退库单" END as Btype,
+             case when sse.lineId between 1 and 10 then 10 
+             when sse.lineId between 11  and 20 then 20
+             when sse.lineId between 21  and 30 then 30
+             when sse.lineId between 31  and 40 then 40
+             when sse.lineId between 41  and 50 then 50  
+             when sse.lineId between 51  and 60 then 60 
+             when sse.lineId between 61  and 70 then 70 
+             when sse.lineId between 71  and 80 then 80 
+             when sse.lineId between 81  and 90 then 90 
+             when sse.lineId between 91  and 100 then 100
+             when sse.lineId between 101  and 110 then 110
+             when sse.lineId between 111  and 120 then 120
+             when sse.lineId between 121  and 130 then 130
+             when sse.lineId between 131  and 140 then 140
+             else 0 end linetype
+    	FROM ScmInvSaleIssueBill ssb
+			INNER JOIN ScmInvSaleIssueBillEntry sse on sse.otId=ssb.otId
+			INNER JOIN ScmMaterial smm on smm.id = sse.itemId
+			INNER JOIN scmMeasureUnit smu on smu.id=sse.unit
+			LEFT  JOIN ScmInvWareHouse swh on sse.wareHouseID = swh.id
+   		WHERE 1=1 
+	 	AND ssb.otNo = #{billNo} And ssb.orgUnitNo=#{orgUnitNo}
+		ORDER BY sse.LineID ASC
+	</select>
+	
+	<select id="iscminventory.SaleIssue002" resultType="java.util.HashMap" parameterType="Map">
+		SELECT ssb.otNo,swh.whName as wareHouseName,ssb.bizDate,ssb.creator,ssb.checker,ssb.createDate,
+			ssb.remarks as remarks1,smm.itemNo,smm.itemName,smm.spec,smu.unitName,
+			sse.lot,sse.qty,sse.remarks as remarks,sse.saleTaxPrice,sse.saleTaxAmt,sse.taxPrice,sse.taxAmt,
+		CASE  WHEN ssb.bizType=1 then '普通销售入库' WHEN  ssb.BizType=2 THEN  '调拨销售入库' 
+              WHEN ssb.BizType=3 then  '手工销售入库' WHEN  ssb.BizType=4 THEN  '采购方成本入库'
+              WHEN ssb.BizType=5 then  '供应方成本入库' WHEN  ssb.BizType=6 THEN  '普通销售退货'
+              WHEN ssb.BizType=7 then  '调拨销售退货' 	WHEN  ssb.BizType=8 THEN  '手工销售退货'
+              WHEN ssb.BizType=9 then  '采购方成本入库退货' ELSE   '供应方成本入库退货'
+              END AS bizType,ssb.custId,ssb.prtcount+1 as prtcount
+		FROM ScmInvSaleIssueBill ssb
+			INNER JOIN ScmInvSaleIssueBillEntry sse on sse.otId=ssb.otId
+			INNER JOIN ScmMaterial smm on smm.id=sse.itemId
+			INNER JOIN ScmMeasureUnit smu ON smu.id=sse.unit
+    		LEFT JOIN ScmInvWareHouse swh on sse.WareHouseID = swh.id 			
+   		WHERE 1=1 
+   		AND ssb.otNo = #{billNo} And ssb.orgUnitNo=#{orgUnitNo}
+		ORDER BY sse.LineID ASC
+	</select>
+	<select id="iscminventory.SaleIssue003" resultType="java.util.HashMap" parameterType="Map">
+		SELECT ssb.otNo,swh.whName as wareHouseName,ssb.bizDate,ssb.creator,ssb.checker,ssb.createDate,
+			ssb.remarks as remarks1,smm.itemNo,
+			case when ifnull(smm.spec,'')='' Then smm.itemName else CONCAT(smm.itemName,'(',smm.spec,')') end as itemName,smu.unitName,  
+         	sse.lot,sse.qty,sse.remarks as remarks,sse.saleTaxPrice,
+        	sse.saleTaxAmt,ssb.prtcount+1 as prtcount,
+       	CASE WHEN  ssb.bizType=1 then '普通销售出库' WHEN  ssb.bizType=2 THEN  '调拨销售出库' 
+			 WHEN  ssb.bizType=3 then  '手工销售出库' WHEN  ssb.bizType=4 THEN  '采购方成本出库'
+             WHEN  ssb.bizType=5 then  '供应方成本出库' WHEN  ssb.bizType=6 THEN  '普通销售退货'
+             WHEN  ssb.bizType=7 then  '调拨销售退货' WHEN  ssb.bizType=8 THEN  '手工销售退货'
+             WHEN  ssb.bizType=9 then  '采购方成本入库退货' ELSE   '供应方成本入库退货'
+             END AS bizType,ssb.custId,
+                CASE WHEN  ssb.bizType in (1,2,3,4,5) then "销售出库单" else "销售退库单" END as Btype,
+             case when sse.lineId between 1 and 10 then 10 
+             when sse.lineId between 11  and 20 then 20
+             when sse.lineId between 21  and 30 then 30
+             when sse.lineId between 31  and 40 then 40
+             when sse.lineId between 41  and 50 then 50  
+             when sse.lineId between 51  and 60 then 60 
+             when sse.lineId between 61  and 70 then 70 
+             when sse.lineId between 71  and 80 then 80 
+             when sse.lineId between 81  and 90 then 90 
+             when sse.lineId between 91  and 100 then 100
+             when sse.lineId between 101  and 110 then 110
+             when sse.lineId between 111  and 120 then 120
+             when sse.lineId between 121  and 130 then 130
+             when sse.lineId between 131  and 140 then 140
+             else 0 end linetype
+    	FROM ScmInvSaleIssueBill ssb
+			INNER JOIN ScmInvSaleIssueBillEntry sse on sse.otId=ssb.otId
+			INNER JOIN ScmMaterial smm on smm.id = sse.itemId
+			INNER JOIN scmMeasureUnit smu on smu.id=sse.unit
+			LEFT  JOIN ScmInvWareHouse swh on sse.wareHouseID = swh.id
+   		WHERE 1=1 
+	 	AND ssb.otNo = #{billNo} And ssb.orgUnitNo=#{orgUnitNo}
+		ORDER BY sse.wareHouseID,sse.LineID ASC
+	</select>
+    <select id="iscminventory.Imb001" resultType="java.util.HashMap" parameterType="Map">
+		select  
+		    smb.bizDate, smb.outOrgUnitNo, smb.inOrgUnitNo, smb.remarks, smb.createDate, smb.wtNo,
+		    smt.itemNo, smt.itemName, smt.spec, smu.unitName,smb.prtcount+1 as prtcount,
+		    smbe.lot, smbe.price, smbe.qty, smbe.amt, smbe.taxRate, smbe.taxAmt, smbe.remarks as entryRemarks
+		from 
+		    scminvmovebill smb, scminvmovebillentry smbe,
+		    scmmaterial smt, scmmeasureunit smu
+		where smb.wtId = smbe.wtId
+		    and smbe.itemId = smt.id
+		    and smbe.unit = smu.id
+		    and smb.wtNo = #{billNo}
+		    and smb.finOrgUnitNo = #{orgUnitNo} 
+		ORDER BY smbe.lineid
+    </select>	
+  	<select id="iscminventory.scminvinit001" resultType="java.util.HashMap" parameterType="Map">
+		SELECT scminvinitbill.billNo,scminvinitbill.wareHouseId,scminvinitbill.bizDate,scminvinitbill.createDate,scminvinitbill.remarks,
+	      smm.itemNo,smm.itemName,smm.spec,scminvinitbillentry.qty,scminvinitbillentry.taxPrice,
+	     scminvinitbillentry.taxRate,scminvinitbillentry.taxAmt,scminvinitbillentry.lot,scminvinitbillentry.remarks as entryremarks,
+		 smu.unitName,scminvinitbill.creator,scminvinitbill.checker,scminvinitbill.prtcount+1 as prtcount
+	 		FROM scminvinitbill 
+	    INNER JOIN scminvinitbillentry on scminvinitbill.initId=scminvinitbillentry.initId
+	    INNER JOIN ScmMaterial smm on smm.id=scminvinitbillentry.itemId
+			INNER JOIN ScmMeasureUnit smu ON smu.id=scminvinitbillentry.unit
+		WHERE   1=1  
+		       and ScmInvInitBill.orgUnitNo = #{orgUnitNo}
+		       and scminvinitbill.billNo= #{billNo}
+		ORDER BY  scminvinitbillentry.lineId DESC 
+   </select>
+   
+	<select id="iscminventory.scmcstinit001" resultType="java.util.HashMap" parameterType="Map">
+		SELECT scmcstinitbill.billNo,scmcstinitbill.orgUnitNo,scmcstinitbill.bizDate,scmcstinitbill.prtcount+1 as prtcount,
+		       scmcstinitbill.createDate,scmcstinitbill.remarks,smm.itemNo,smm.itemName,smm.spec,scmcstinitbillentry.qty,
+		       scmcstinitbillentry.taxPrice,scmcstinitbillentry.taxRate,scmcstinitbillentry.taxAmt,scmcstinitbillentry.lot,
+		       scmcstinitbillentry.remarks as entryremarks,smu.unitName,scmcstinitbill.creator,scmcstinitbill.checker
+		 		FROM scmcstinitbill 
+		    INNER JOIN scmcstinitbillentry on scmcstinitbill.initId=scmcstinitbillentry.initId
+		    INNER JOIN ScmMaterial smm on smm.id=scmcstinitbillentry.itemId
+				INNER JOIN ScmMeasureUnit smu ON smu.id=scmcstinitbillentry.unit
+		WHERE   1=1  
+		       and ScmcstInitBill.costOrgUnitNo = #{orgUnitNo}
+		       and ScmcstInitBill.billNo= #{billNo}
+		ORDER BY  scmcstinitbillentry.lineId DESC 
+   </select>
+   <select id="iscminventory.scmDepositIn001" resultType="java.util.HashMap" parameterType="Map">
+   		SELECT A.wrNo,A.bizDate,A.vendorId,A.wareHouseId,A.createDate,A.creator,A.checker,A.bizType,
+			B.itemId,B.unit,B.qty,B.taxPrice,B.taxAmt,B.remarks as entryRemarks,A.prtcount+1 as prtcount
+		FROM scminvotherinwarehsbill A,scminvotherinwarehsbillentry B
+		Where A.wrId=B.wrId And A.orgUnitNo=#{orgUnitNo} And A.wrNo=#{billNo}
+		Order By B.lineId
+	</select>
+   <select id="iscminventory.Owr001" resultType="java.util.HashMap" parameterType="Map">
+   		SELECT A.wrNo,A.bizDate,A.wareHouseId as wareHouseName,A.createDate,A.creator,A.checker,A.bizType,smm.itemNo,A.remarks,
+			B.itemId,ScmMeasureUnit.unitName,B.qty,B.taxPrice,B.taxAmt,B.amt,B.remarks as entryRemarks,A.prtcount+1 as prtcount,smm.itemName,B.lot,B.price
+		FROM scminvotherinwarehsbill A,scminvotherinwarehsbillentry B
+		INNER JOIN ScmMaterial smm on smm.id=B.itemId
+		,ScmMeasureUnit
+		Where A.wrId=B.wrId And A.orgUnitNo=#{orgUnitNo} And A.wrNo=#{billNo} and B.unit=ScmMeasureUnit.id
+		Order By B.lineId
+	</select>
+	<select id="iscminventory.scmDepositOut001" resultType="java.util.HashMap" parameterType="Map">
+   		SELECT A.otNo,A.bizDate,B.wareHouseId,A.createDate,A.creator,A.checker,A.prtcount+1 as prtcount,
+			B.itemId,B.unit,B.qty,B.taxPrice,B.taxAmt,B.reqFinOrgUnitNo,B.remarks as entryRemarks
+		FROM scminvotherissuebill A,scminvotherissuebillentry B
+		Where A.otId=B.otId And A.orgUnitNo=#{orgUnitNo} And A.otNo=#{billNo}
+		Order By B.lineId
+	</select>
+</mapper>

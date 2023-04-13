@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvmoveinwarehsbillentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvmoveinwarehsbillentry.findAll" resultType="ScmInvMoveInWarehsBillEntry2" >
+	    SELECT * FROM scminvmoveinwarehsbillentry WHERE  1=1  
+	</select>
+ 
+	<select id="scminvmoveinwarehsbillentry.findAllPage" resultType="ScmInvMoveInWarehsBillEntry2" parameterType="Map"> 
+		SELECT ScmInvMoveInWarehsBillentry.*,scmmaterial.itemNo as itemNo,ScmInvMoveInWarehsBill.wrNo,ScmInvMoveInWarehsBill.status,
+		ScmInvMoveInWarehsBill.bizType,ScmInvMoveInWarehsBill.bizDate,ScmInvMoveInWarehsBill.creator,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,A.unitName as unitName,B.unitName as baseUnitName,
+		ScmMaterialUnitRelation.convrate as convrate,ScmMaterialGroup.className as groupName,C.unitName as pieUnitName,ScmInvWareHouse.whName as whName
+		FROM ScmInvMoveInWarehsBill,ScmInvMoveInWarehsBillentry
+		left join ScmMeasureUnit A on ScmInvMoveInWarehsBillentry.unit=A.id 
+		left join ScmMeasureUnit B on ScmInvMoveInWarehsBillentry.baseUnit=B.id
+		left join ScmMeasureUnit C on ScmInvMoveInWarehsBillentry.pieUnit=C.id
+		left join ScmInvWareHouse on ScmInvMoveInWarehsBillentry.wareHouseId=ScmInvWareHouse.id
+		left join ScmMaterialUnitRelation on ScmInvMoveInWarehsBillentry.itemId=ScmMaterialUnitRelation.itemId
+		and ScmInvMoveInWarehsBillentry.unit=ScmMaterialUnitRelation.targetUnitId,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE  ScmInvMoveInWarehsBill.wrId=ScmInvMoveInWarehsBillentry.wrId  And ScmInvMoveInWarehsBillentry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		ORDER BY ScmInvMoveInWarehsBillentry.lineId,id ASC
+
+	</select> 
+	<select id="scminvmoveinwarehsbillentry.selectById" resultType="ScmInvMoveInWarehsBillEntry2" parameterType="Long">
+		SELECT ScmInvMoveInWarehsBillentry.*,scmmaterial.itemNo as itemNo,ScmInvMoveInWarehsBill.wrNo,
+		ScmInvMoveInWarehsBill.bizType,ScmInvMoveInWarehsBill.bizDate,ScmInvMoveInWarehsBill.creator,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,D.unitName as pieUnitName,
+		A.unitName as unitName,B.unitName as baseUnitName,
+		ScmMaterialUnitRelation.convrate as convrate,C.className as groupName
+		FROM ScmInvMoveInWarehsBill,ScmInvMoveInWarehsBillentry
+		left join scmmaterial on ScmInvMoveInWarehsBillentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on ScmInvMoveInWarehsBillentry.unit=A.id 
+		left join ScmMeasureUnit B on ScmInvMoveInWarehsBillentry.baseUnit=B.id
+		left join ScmMeasureUnit D on ScmInvMoveInWarehsBillentry.pieUnit=D.id
+		left join ScmMaterialUnitRelation on ScmInvMoveInWarehsBillentry.itemId=ScmMaterialUnitRelation.itemId
+		and ScmInvMoveInWarehsBillentry.unit=ScmMaterialUnitRelation.targetUnitId
+		left join (Select ScmMaterial.id,ScmMaterialGroup.className as className 
+		From ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		Where ScmMaterial.id=ScmMaterialGroupDetail.itemId
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+        and ScmMaterialGroupStandard.standardType='1') C on ScmInvMoveInWarehsBillentry.itemId=C.id
+		WHERE  ScmInvMoveInWarehsBill.wrId=ScmInvMoveInWarehsBillentry.wrId
+			and ScmInvMoveInWarehsBillentry.id = #{value}
+		ORDER BY id ASC
+	</select> 
+	
+	<select id="scminvmoveinwarehsbillentry.selectByWrId" resultType="ScmInvMoveInWarehsBillEntry2" parameterType="Long">
+	    SELECT ScmInvMoveInWarehsBillentry.*,
+	        scmmaterial.itemNo as itemNo,D.unitName as pieUnitName,
+	        scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+	        A.unitName as unitName,B.unitName as baseUnitName,
+	        ScmMaterialUnitRelation.convrate as convrate,C.className as groupName
+	    FROM ScmInvMoveInWarehsBillentry
+	    left join scmmaterial on ScmInvMoveInWarehsBillentry.itemId=scmmaterial.id
+	    left join ScmMeasureUnit A on ScmInvMoveInWarehsBillentry.unit=A.id 
+	    left join ScmMeasureUnit B on ScmInvMoveInWarehsBillentry.baseUnit=B.id
+	    left join ScmMeasureUnit D on ScmInvMoveInWarehsBillentry.pieUnit=D.id
+	    left join ScmMaterialUnitRelation on ScmInvMoveInWarehsBillentry.itemId=ScmMaterialUnitRelation.itemId
+	        and ScmInvMoveInWarehsBillentry.unit=ScmMaterialUnitRelation.targetUnitId
+	    left join 
+	        (Select ScmMaterial.id,ScmMaterialGroup.className as className 
+	        From ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+	        Where ScmMaterial.id=ScmMaterialGroupDetail.itemId
+	            And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+	            and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+        		and ScmMaterialGroupStandard.standardType='1') C on ScmInvMoveInWarehsBillentry.itemId=C.id
+	            WHERE ScmInvMoveInWarehsBillentry.wrId = #{wrId}
+	    ORDER BY ScmInvMoveInWarehsBillentry.lineId ASC
+    </select>
+    <select id="scminvmoveinwarehsbillentry.selectInvQty" resultType="ScmInvMoveInWarehsBillEntry2" parameterType="Map">
+        select T1.itemId, T1.itemNo, T1.itemName, T1.lot, T1.qty, IFNULL(SUM(T2.qty),0) as invQty from 
+            (select A.orgUnitNo, A.wareHouseId, A.itemId, A.lot, A.unit, A.qty, B.bizDate, C.itemNo, C.itemName from 
+                scminvmoveinwarehsbillentry A, scminvmoveinwarehsbill B, scmmaterial C
+            where A.wrId = B.wrId 
+                and A.wrId = #{wrId}
+                and A.itemId = C.id) T1
+        left join scminvstock T2 on T1.orgUnitNo = T2.orgUnitNo
+            and T1.wareHouseId = T2.wareHouseId
+            and T2.costCenter = 0
+            and T1.itemId = T2.itemId
+            and T1.unit = T2.unit
+            and T2.invDate &lt;= T1.bizDate
+            and (T1.lot = T2.lot or IFNULL(T1.lot,'') = '')
+        group by T1.itemId, T1.lot, T1.qty
+        having T1.qty &gt; IFNULL((SUM(T2.qty)),0)
+    </select>
+    <select id="scminvmoveinwarehsbillentry.selectOutEffectRow" resultType="ScmInvMoveInWarehsBillEntry2" parameterType="Map">
+        select 
+		        T1.invDate, T1.finOrgUnitNo, T1.orgUnitNo, T1.expDate,T1.vendorId,
+		        T1.wareHouseId, T1.costOrgUnitNo, (case when ifnull(T1.wareHouseId,0) = 0 then 1 else 0 end) as isCostCentor,
+		        T1.itemId, T1.itemNo, T1.itemName, T1.spec, T1.unit, 
+		        T1.pieUnit, T1.lot, T1.price, sum(T1.qty) as qty,
+		        sum(T1.pieQty) as pieQty, sum(T1.amt) as amt, T1.taxRate, T1.taxPrice, sum(T1.taxAmt) as taxAmt, 
+		        T1.baseUnit, sum(T1.baseQty) as baseQty
+		    from 
+		        (select M.wrId, D.lineId, M.bizDate as invDate, M.finOrgUnitNo, M.orgUnitNo, 
+		        D.wareHouseId, '' as costOrgUnitNo, 0 as isCostCentor, D.itemId, A.itemNo, A.itemName,
+		        A.spec, D.unit, D.pieUnit, D.lot, D.qty, D.taxRate, D.taxPrice, D.taxAmt,
+		        ifnull(D.pieQty,0) as pieQty, D.price, D.amt, 0 as allocatedQty, D.expDate, 
+		        M.accountYear as fYear, M.accountPeriod as period,D.orgSourceVendorId as vendorId,
+		        D.sourceBillDtlId as sourceBillDtlId, D.outBillDtlId as outBillDtlId,
+		        A.baseUnitId as baseUnit, scmmaterialunitrelation.convrate * D.qty as baseQty
+		        from 
+		        scminvmoveinwarehsbill as M, scminvmoveinwarehsbillentry as D
+		        left join scmmaterial as A on D.itemId = A.id
+		        left join scmmaterialunitrelation on 
+		            D.itemId = scmmaterialunitrelation.itemId and 
+		            D.unit = scmmaterialunitrelation.targetUnitId
+		        where M.wrId = D.wrId and
+		        M.wrId = #{wrId} and 
+		        M.status = 'E' 
+		        order by D.lineId) T1
+		    group by 
+		        T1.invDate, T1.finOrgUnitNo, T1.orgUnitNo, T1.wareHouseId, T1.costOrgUnitNo, 
+		        (case when ifnull(T1.wareHouseId,0) = 0 then '1' else '0' end),T1.vendorId,
+		        T1.itemNo, T1.itemName, T1.spec, T1.unit, T1.pieUnit, T1.lot, T1.price, T1.baseUnit, T1.expDate
+    </select>  
+	<insert id="scminvmoveinwarehsbillentry.add" parameterType="ScmInvMoveInWarehsBillEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvmoveinwarehsbillentry (
+        wrId,
+        lineId,
+        itemId,
+        unit,
+        pieUnit,
+        baseUnit,
+        lot,
+        orgUnitNo,
+        wareHouseId,
+        useOrgUnitNo,
+        costOrgUnitNo,
+        qty,
+        pieQty,
+        baseQty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        productDate,
+        expDate,
+        offset,
+        sourceBillDtlId,
+        outBillDtlId,
+        invDate,
+        orgSourceId,
+        orgSourceVendorId,
+        remarks        )
+		VALUES (
+        #{wrId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{baseUnit},
+        #{lot},
+        #{orgUnitNo},
+        #{wareHouseId},
+        #{useOrgUnitNo},
+        #{costOrgUnitNo},
+        #{qty},
+        #{pieQty},
+        #{baseQty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{productDate},
+        #{expDate},
+        #{offset},
+        #{sourceBillDtlId},
+        #{outBillDtlId},
+        #{invDate},
+        #{orgSourceId},
+        #{orgSourceVendorId},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scminvmoveinwarehsbillentry.update" parameterType="ScmInvMoveInWarehsBillEntry">
+		UPDATE scminvmoveinwarehsbillentry set
+        wrId=#{wrId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        baseUnit=#{baseUnit},
+        lot=#{lot},
+        orgUnitNo=#{orgUnitNo},
+        wareHouseId=#{wareHouseId},
+        useOrgUnitNo=#{useOrgUnitNo},
+        costOrgUnitNo=#{costOrgUnitNo},
+        qty=#{qty},
+        pieQty=#{pieQty},
+        baseQty=#{baseQty},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        productDate=#{productDate},
+        expDate=#{expDate},
+        offset=#{offset},
+        sourceBillDtlId=#{sourceBillDtlId},
+        outBillDtlId=#{outBillDtlId},
+        invDate=#{invDate},
+        orgSourceId=#{orgSourceId},
+        orgSourceVendorId=#{orgSourceVendorId},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvmoveinwarehsbillentry.delete" parameterType="String">
+		DELETE FROM scminvmoveinwarehsbillentry WHERE id IN (${value})
+	</delete> 
+	
+	<delete id="scminvmoveinwarehsbillentry.deleteByWrId" parameterType="String">
+        DELETE FROM scminvmoveinwarehsbillentry WHERE wrId = #{wrId}
+    </delete> 
+
+</mapper>

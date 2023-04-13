@@ -1,0 +1,46 @@
+package com.armitage.server.iscm.basedata.dao.impl;
+
+import java.util.HashMap;
+import java.util.List;
+
+import com.armitage.server.common.base.dao.BasicDAOImpl;
+import com.armitage.server.common.base.dao.SqlSessionTemplate;
+import com.armitage.server.common.exception.DAOException;
+import com.armitage.server.iscm.basedata.dao.ScmsupplierlinkmanDAO;
+import com.armitage.server.iscm.basedata.model.Scmsupplierlinkman;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import javax.annotation.Resource;
+
+@Repository("scmsupplierlinkmanDAO")
+public class ScmsupplierlinkmanDAOImpl extends BasicDAOImpl<Scmsupplierlinkman> implements ScmsupplierlinkmanDAO {
+
+	@Override
+	@Autowired
+	@Resource(name = "sqlSessionIscm")
+	public void setSqlSession(SqlSessionTemplate sqlSession){
+		super.setSqlSession(sqlSession);
+	}
+
+	@Override
+	public List<Scmsupplierlinkman> selectByVendorId(HashMap<String, Object> map) throws DAOException {
+		try {
+			sqlSession.clearCache();
+			return sqlSession.selectList(simpleName + ".selectByVendorId",map);
+		} catch (Exception e) {
+			throw new DAOException("iscm.basedata.dao.ScmsupplierlinkmanDAOImpl.error.selectByVendorId", e);
+		}
+	}
+
+	@Override
+	public void deleteByVendorId(HashMap<String, Object> map) throws DAOException {
+		try {
+			 sqlSession.clearCache();
+			 sqlSession.delete(simpleName + ".deleteByVendorId", map);
+		} catch (Exception e) {
+			throw new DAOException("iscm.basedata.dao.ScmsupplierlinkmanDAOImpl.error.deleteByVendorId", e);
+		}
+	}
+
+}

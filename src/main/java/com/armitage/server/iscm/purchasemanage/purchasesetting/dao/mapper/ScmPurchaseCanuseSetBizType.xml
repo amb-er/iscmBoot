@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurchasecanusesetbiztype">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurchasecanusesetbiztype.findAll" resultType="ScmPurchaseCanuseSetBizType2" >
+	    SELECT * FROM ScmPurchaseCanuseSetBizType WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurchasecanusesetbiztype.findAllPage" resultType="ScmPurchaseCanuseSetBizType2" parameterType="Map"> 
+		SELECT * FROM ScmPurchaseCanuseSetBizType WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpurchasecanusesetbiztype.selectById" resultType="ScmPurchaseCanuseSetBizType2" parameterType="Long">
+		SELECT * FROM ScmPurchaseCanuseSetBizType WHERE id = #{value}
+	</select> 
+	<insert id="scmpurchasecanusesetbiztype.add" parameterType="ScmPurchaseCanuseSetBizType"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurchaseCanuseSetBizType (
+        pcsId,
+        purTypeId        )
+		VALUES (
+        #{pcsId},
+        #{purTypeId}        )
+	</insert>
+ 
+	<update id="scmpurchasecanusesetbiztype.update" parameterType="ScmPurchaseCanuseSetBizType">
+		UPDATE ScmPurchaseCanuseSetBizType set
+        pcsId=#{pcsId},
+        purTypeId=#{purTypeId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurchasecanusesetbiztype.delete" parameterType="String">
+		DELETE FROM ScmPurchaseCanuseSetBizType WHERE id IN (${value})
+	</delete> 
+
+	<select id="scmpurchasecanusesetbiztype.selectByPcsId" resultType="ScmPurchaseCanuseSetBizType2" parameterType="Map">
+		SELECT * FROM ScmPurchaseCanuseSetBizType WHERE pcsId = #{pcsId}
+	</select>
+
+</mapper>
+ 

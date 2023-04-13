@@ -1,0 +1,9 @@
+
+O
+java:S4719>"9Replace charset name argument with StandardCharsets.UTF_8(Æş¿
+A
+java:S1874?"+Remove this use of "put"; it is deprecated.(ŞŞÁ‘
+n
+java:S2139A"XEither log this exception and handle it, or rethrow it with some contextual information.(”ı¾
+c
+java:S4488."HReplace "@RequestMapping(method = RequestMethod.GET)" with "@GetMapping"(úôæ¸ÿÿÿÿÿ

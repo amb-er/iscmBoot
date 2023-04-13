@@ -1,0 +1,17 @@
+
+V	java:S107'"<Method has 8 parameters, which is greater than 7 authorized.(öãôóøÿÿÿÿ
+Q	java:S107/"<Method has 8 parameters, which is greater than 7 authorized.(ûºËç
+Q	java:S107J"<Method has 8 parameters, which is greater than 7 authorized.(±‚°ƒ
+Q	java:S107R"<Method has 8 parameters, which is greater than 7 authorized.(ŠÊ«
+u
+java:S1149i"_Replace the synchronized class "StringBuffer" by an unsynchronized one such as "StringBuilder".(˜ññâ
+U
+java:S1118":Add a private constructor to hide the implicit public one.(ÜòÅøÿÿÿÿ
+C
+java:S1172/"-Remove this unused method parameter "unitId".(ûºËç
+C
+java:S1172R"-Remove this unused method parameter "unitId".(ŠÊ«
+t
+java:S3252c"YUse static access with "com.armitage.server.iscm.basedata.model.ScmMaterial" for "FN_ID".(«…³çşÿÿÿÿ
+t
+java:S3252c"YUse static access with "com.armitage.server.iscm.basedata.model.ScmMaterial" for "FN_ID".(«…³çşÿÿÿÿ

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcostbill">
+	<select id="scmcostbill.selectPostAndDateByItem" resultType="ScmCostBill" parameterType="Map"> 
+		select * from(SELECT * FROM(
+		<if test="CstFrmLoss != null and CstFrmLoss=='CstFrmLoss'">
+			select * from
+			(SELECT ScmCstFrmLoss.id,ScmCstFrmLossEntry.itemId,ScmCstFrmLoss.orgUnitNo,ScmCstFrmLoss.costOrgUnitNo,ScmCstFrmLoss.postDate,"CstFrmLoss" as billType,ScmCstFrmLoss.editor,ScmCstFrmLoss.billNo as billNo FROM ScmCstFrmLossEntry,ScmCstFrmLoss
+			where ScmCstFrmLossEntry.billId=ScmCstFrmLoss.id and ScmCstFrmLoss.postDate>#{postDate} and ScmCstFrmLoss.controlUnitNo=#{controlUnitNo}
+			and ScmCstFrmLoss.orgUnitNo=#{orgUnitNo} and ScmCstFrmLoss.costOrgUnitNo=#{costOrgUnitNo} and ScmCstFrmLossEntry.itemId in (${itemIds})
+			and ScmCstFrmLoss.status='E' ORDER BY ScmCstFrmLoss.postDate ASC)CstFrmLoss GROUP BY CstFrmLoss.itemid
+		</if>
+		<if test="InvCostConsume != null and InvCostConsume=='InvCostConsume'">
+			<if test="CstFrmLoss != null and CstFrmLoss=='CstFrmLoss'">
+				union
+			</if>
+			select * from
+			(SELECT ScmInvCostConsume.dcid as id,ScmInvCostConsumeentry.itemId,ScmInvCostConsume.useOrgUnitNo as 'orgUnitNo',ScmInvCostConsume.orgUnitNo as 'costOrgUnitNo',ScmInvCostConsume.postDate,"InvCostConsume" as billType,ScmInvCostConsume.editor,ScmInvCostConsume.dcNo as billNo  FROM ScmInvCostConsumeentry,ScmInvCostConsume
+			where ScmInvCostConsumeentry.dcid=ScmInvCostConsume.dcid and ScmInvCostConsume.postDate>#{postDate} and ScmInvCostConsume.controlUnitNo=#{controlUnitNo}
+			and ScmInvCostConsume.useOrgUnitNo=#{orgUnitNo} and ScmInvCostConsume.orgUnitNo=#{costOrgUnitNo} and ScmInvCostConsumeentry.itemId in (${itemIds})
+			and ScmInvCostConsume.status='E' ORDER BY ScmInvCostConsume.postDate ASC)InvCostConsume GROUP BY InvCostConsume.itemid
+		</if>
+		<if test="InvMoveBill != null and InvMoveBill=='InvMoveBill'">
+			<if test="CstFrmLoss != null and CstFrmLoss=='CstFrmLoss'">
+				union
+			</if>
+			select * from
+			(SELECT ScmInvMoveBill.wtId as id,ScmInvMoveBillentry.itemId,ScmInvMoveBill.outOrgUnitNo as 'orgUnitNo',ScmInvMoveBill.outCstOrgUnitNo as 'costOrgUnitNo',ScmInvMoveBill.postDate,"InvMoveBill" as billType,ScmInvMoveBill.editor,ScmInvMoveBill.wtNo as billNo FROM ScmInvMoveBillentry,ScmInvMoveBill
+			where ScmInvMoveBillentry.wtId=ScmInvMoveBill.wtId and ScmInvMoveBill.postDate>#{postDate} and ScmInvMoveBill.controlUnitNo=#{controlUnitNo}
+			and ScmInvMoveBill.outOrgUnitNo=#{orgUnitNo} and ScmInvMoveBill.outCstOrgUnitNo=#{costOrgUnitNo} and ScmInvMoveBillentry.itemId in (${itemIds})
+			and ScmInvMoveBill.status='E' ORDER BY ScmInvMoveBill.postDate ASC)InvMoveBill GROUP BY InvMoveBill.itemid
+		</if>
+		)t ORDER BY t.postDate ASC)a GROUP BY a.itemId 
+	</select>
+</mapper>

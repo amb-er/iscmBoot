@@ -1,0 +1,44 @@
+
+K
+java:S1066"/Merge this if statement with the enclosing one.(²Ï™şøÿÿÿÿ
+>
+java:S1148V"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+˜
+java:S1845¢"€Rename method "getHighlightedFlows" to prevent any misunderstanding/clash with method "getHighLightedFlows" defined on line 132.(“ØÙ­
+˜
+java:S1845ş"€Rename method "getHighlightedFlows" to prevent any misunderstanding/clash with method "getHighLightedFlows" defined on line 132.(‹ûÅ
+]
+java:S44888"HReplace "@RequestMapping(method = RequestMethod.GET)" with "@GetMapping"(£Œ£^
+F
+java:S1874Y"+Remove this use of "put"; it is deprecated.(Å„ãìüÿÿÿÿ
+F
+java:S1874Z"+Remove this use of "put"; it is deprecated.(³ı‚‚üÿÿÿÿ
+1
+java:S3626r"Remove this redundant jump.(ÉŠ©ƒ
+N
+java:S1172f"8Remove this unused method parameter "processDefinition".(È¤ä€
+t
+java:S2293g"YReplace the type specification in this constructor call with the diamond operator ("<>").(›ò˜üÿÿÿÿ
+t
+java:S2293l"YReplace the type specification in this constructor call with the diamond operator ("<>").(ØµŞşÿÿÿÿ
+u
+java:S2293†"YReplace the type specification in this constructor call with the diamond operator ("<>").(—äÄ»ùÿÿÿÿ
+u
+java:S2293"YReplace the type specification in this constructor call with the diamond operator ("<>").(ØµŞşÿÿÿÿ
+i
+java:S3776¢"RRefactor this method to reduce its Cognitive Complexity from 16 to the 15 allowed.(“ØÙ­
+p
+java:S2293¥"YReplace the type specification in this constructor call with the diamond operator ("<>").(ç‚Íä
+u
+java:S2293¦"YReplace the type specification in this constructor call with the diamond operator ("<>").(ˆîêışÿÿÿÿ
+@
+java:S1905¶")Remove this unnecessary cast to "String".(›¤Ş¾
+u
+java:S2293Ê"YReplace the type specification in this constructor call with the diamond operator ("<>").(Ÿ«› ûÿÿÿÿ
+u
+java:S2293ì"YReplace the type specification in this constructor call with the diamond operator ("<>").(¨ö”«üÿÿÿÿ
+i
+java:S3776ş"RRefactor this method to reduce its Cognitive Complexity from 19 to the 15 allowed.(‹ûÅ
+p
+java:S2293€"YReplace the type specification in this constructor call with the diamond operator ("<>").(¯şù¼
+V	java:S125I"<This block of commented-out lines of code should be removed.(Ê±óÀÿÿÿÿÿ

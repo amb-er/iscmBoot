@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvsalepriceentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvsalepriceentry.findAll" resultType="ScmInvSalePriceentry2" >
+	    SELECT * FROM scminvsalepriceentry WHERE  1=1  
+	</select>
+ 
+	<select id="scminvsalepriceentry.findAllPage" resultType="ScmInvSalePriceentry2" parameterType="Map"> 
+		SELECT scminvsalepriceentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as unitName
+		FROM scminvsalepriceentry
+		left join scmmaterial on scminvsalepriceentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scminvsalepriceentry.unit=ScmMeasureUnit.id
+		WHERE  1=1 ORDER BY scminvsalepriceentry.id ASC 
+	</select> 
+	<select id="scminvsalepriceentry.selectById" resultType="ScmInvSalePriceentry2" parameterType="Long">
+		SELECT scminvsalepriceentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as unitName
+		FROM scminvsalepriceentry
+		left join scmmaterial on scminvsalepriceentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scminvsalepriceentry.unit=ScmMeasureUnit.id
+		WHERE scminvsalepriceentry.id = #{value}
+	</select> 
+	<select id="scminvsalepriceentry.selectByPmId" resultType="ScmInvSalePriceentry2" parameterType="Map"> 
+		SELECT scminvsalepriceentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as unitName
+		FROM scminvsalepriceentry
+		left join scmmaterial on scminvsalepriceentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scminvsalepriceentry.unit=ScmMeasureUnit.id
+		WHERE scminvsalepriceentry.pmId=#{id} 
+		ORDER BY scminvsalepriceentry.lineId ASC
+	</select>
+	<insert id="scminvsalepriceentry.add" parameterType="ScmInvSalePriceentry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvsalepriceentry (
+        pmId,
+        lineId,
+        itemId,
+        unit,
+        saleTaxPrice,
+        preSaleTaxPrice,
+        rowStatus,
+        checker,
+        checkDate,
+        remarks        )
+		VALUES (
+        #{pmId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{saleTaxPrice},
+        #{preSaleTaxPrice},
+        #{rowStatus},
+        #{checker},
+        #{checkDate},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scminvsalepriceentry.update" parameterType="ScmInvSalePriceentry">
+		UPDATE scminvsalepriceentry set
+        pmId=#{pmId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        saleTaxPrice=#{saleTaxPrice},
+        preSaleTaxPrice=#{preSaleTaxPrice},
+        rowStatus=#{rowStatus},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+	
+	<update id="scminvsalepriceentry.updateRowStatusByPmId" parameterType="map">
+		UPDATE scminvsalepriceentry set
+        rowStatus=#{rowStatus},
+        checker=#{checker},
+        checkDate=#{checkDate}	 WHERE pmId = #{pmId}
+	</update>
+ 
+	<delete id="scminvsalepriceentry.delete" parameterType="String">
+		DELETE FROM scminvsalepriceentry WHERE id IN (${value})
+	</delete> 
+	
+	<delete id="scminvsalepriceentry.deleteByPmId" parameterType="Map">
+		DELETE FROM scminvsalepriceentry WHERE pmId=#{id}
+	</delete> 
+
+</mapper>

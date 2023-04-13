@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fbmdish">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="fbmdish.findAll" resultType="FbmDish2" >
+	    SELECT * FROM FbmDish WHERE  1=1  
+	</select>
+ 
+	<select id="fbmdish.findAllPage" resultType="FbmDish2" parameterType="Map"> 
+		SELECT FbmDish.id,FbmDish.code, FbmDish.name,  Case when D.permit is null then FbmDish.permit else D.permit end as permit, FbmDish.controlUnitNo,
+		belongOrgUnitNo as orgUnitNo, FbmDish.sort,FbmDish.statId FROM
+		(Select A.id, A.code, A.name, case when B.permit is null then A.permit else B.permit end as permit, A.controlUnitNo,B.orgUnitNo,
+		A.belongOrgUnitNo,A.sort,B.statId,itemId
+		From (SELECT FbmDish.* FROM FbmDish WHERE controlUnitNo=#{controlUnitNo}
+			Union Select FbmDish.* from FbmDish,FbmDishAssign where toCtrUnitNo=#{controlUnitNo} and FbmDishAssign.dishId=FbmDish.id) A, 
+		FbmDishSaleInfo B Where A.id = b.dishId And B.orgUnitNo=#{controlUnitNo} and menuId=0) FbmDish
+		Left Join FbmDishSaleInfo D on FbmDish.id = D.dishId and D.orgUnitNo=#{orgUnitNo} and menuId=0,
+		FbmItem WHERE Case when D.itemId is null then FbmDish.itemId else D.itemId end = FbmItem.id 
+		ORDER BY FbmDish.sort,FbmDish.code ASC	
+	</select> 
+	<select id="fbmdish.selectById" resultType="FbmDish2" parameterType="Long">
+		SELECT * FROM FbmDish WHERE id = #{value}
+	</select> 
+	<select id="fbmdish.selectByOrgUnitAndItemPage" resultType="FbmDish2" parameterType="Map">
+		SELECT FbmDish.id,FbmDish.code, FbmDish.name,  Case when D.permit is null then FbmDish.permit else D.permit end as permit, FbmDish.controlUnitNo,
+		#{orgUnitNo} as orgUnitNo, FbmDish.sort,Case when E.productionTime is null then FbmDish.productionTime else E.productionTime end as productionTime FROM
+		(Select A.id, A.code, A.name, case when A.permit=0 Then A.permit Else case when B.permit is null then A.permit else B.permit end end as permit, 
+		A.controlUnitNo,B.orgUnitNo,  A.sort,B.statId,C.productionTime,case when A.permit=0 Then A.permit Else Case when C.permit is null then A.permit else C.permit end end as resPermit
+		From (SELECT FbmDish.* FROM FbmDish WHERE controlUnitNo=#{controlUnitNo}
+			Union Select FbmDish.* from FbmDish,FbmDishAssign where toCtrUnitNo=#{controlUnitNo} and FbmDishAssign.dishId=FbmDish.id) A
+		Left Join FbmDishSaleInfo B On A.id = B.dishId And B.orgUnitNo=#{controlUnitNo} and B.menuId=0
+		Left Join FbmDishResInfo C ON A.id=c.dishId And C.orgUnitNo=#{controlUnitNo} and C.menuId=0) FbmDish
+		Left Join FbmDishSaleInfo D on FbmDish.id = D.dishId and D.orgUnitNo=#{orgUnitNo} and D.menuId=0
+		Left Join FbmDishResInfo E on FbmDish.id = E.dishId and E.orgUnitNo=#{orgUnitNo} and E.menuId=0
+		WHERE Case when D.permit is null then FbmDish.permit else D.permit end = 1 And Case when D.permit is null then FbmDish.resPermit else D.permit end = 1 
+		<if test="itemids!=null and itemids!=''">
+			And Case when D.statId is null then FbmDish.statId else D.statId end in (${itemids})
+		</if>
+		ORDER BY FbmDish.sort,FbmDish.code ASC	
+	</select> 
+	<select id="fbmdish.selectByOrgUnitPage" resultType="FbmDish2" parameterType="Map"> 
+		SELECT FbmDish.id,FbmDish.code, FbmDish.name,  Case when D.permit is null then FbmDish.permit else D.permit end as permit, FbmDish.controlUnitNo,
+		belongOrgUnitNo as orgUnitNo, FbmDish.sort,FbmDish.statId FROM
+		(Select A.id, A.code, A.name, case when B.permit is null then A.permit else B.permit end as permit, A.controlUnitNo,
+		B.orgUnitNo,A.belongOrgUnitNo,A.sort,B.statId,itemId
+		From (SELECT FbmDish.* FROM FbmDish WHERE controlUnitNo=#{controlUnitNo}
+			Union Select FbmDish.* from FbmDish,FbmDishAssign where toCtrUnitNo=#{controlUnitNo} and FbmDishAssign.dishId=FbmDish.id) A, 
+		FbmDishSaleInfo B Where A.id = b.dishId And B.orgUnitNo=#{controlUnitNo} and menuId=0) FbmDish
+		Left Join FbmDishSaleInfo D on FbmDish.id = D.dishId and D.orgUnitNo=#{orgUnitNo} and menuId=0,
+		FbmItem WHERE Case when D.itemId is null then FbmDish.itemId else D.itemId end = FbmItem.id and FbmDish.belongOrgUnitNo=#{orgUnitNo}
+		AND Case when D.permit is null then FbmDish.permit else D.permit end=1
+		ORDER BY FbmDish.sort,FbmDish.code ASC	
+	</select> 
+	<insert id="fbmdish.add" parameterType="FbmDish"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  FbmDish (
+        code,
+        name,
+        mnemonic,
+        keyword,
+        sort,
+        permit,
+        remarks,
+        iSyncModFlag,
+        controlUnitNo        )
+		VALUES (
+        #{code},
+        #{name},
+        #{mnemonic},
+        #{keyword},
+        #{sort},
+        #{permit},
+        #{remarks},
+        #{iSyncModFlag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="fbmdish.update" parameterType="FbmDish">
+		UPDATE FbmDish set
+        code=#{code},
+        name=#{name},
+        mnemonic=#{mnemonic},
+        keyword=#{keyword},
+        sort=#{sort},
+        permit=#{permit},
+        remarks=#{remarks},
+        iSyncModFlag=#{iSyncModFlag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="fbmdish.delete" parameterType="String">
+		DELETE FROM FbmDish WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

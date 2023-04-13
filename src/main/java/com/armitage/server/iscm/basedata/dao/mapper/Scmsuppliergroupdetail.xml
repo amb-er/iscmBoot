@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsuppliergroupdetail">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsuppliergroupdetail.findAll" resultType="Scmsuppliergroupdetail" >
+	    SELECT * FROM Scmsuppliergroupdetail WHERE  1=1  
+	</select>
+ 
+	<select id="scmsuppliergroupdetail.findAllPage" resultType="Scmsuppliergroupdetail" parameterType="Map"> 
+		SELECT * FROM Scmsuppliergroupdetail WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmsuppliergroupdetail.selectById" resultType="Scmsuppliergroupdetail" parameterType="Long">
+		SELECT * FROM Scmsuppliergroupdetail WHERE id = #{value}
+	</select> 
+	<insert id="scmsuppliergroupdetail.add" parameterType="Scmsuppliergroupdetail"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  Scmsuppliergroupdetail (
+        classId,
+        vendorId        )
+		VALUES (
+        #{classId},
+        #{vendorId}        )
+	</insert>
+ 
+	<update id="scmsuppliergroupdetail.update" parameterType="Scmsuppliergroupdetail">
+		UPDATE Scmsuppliergroupdetail set
+        classId=#{classId},
+        vendorId=#{vendorId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsuppliergroupdetail.delete" parameterType="String">
+		DELETE FROM Scmsuppliergroupdetail WHERE id IN (${value})
+	</delete> 
+	<delete id="scmsuppliergroupdetail.deleteByVendorIdOrGroupId" parameterType="map">
+		DELETE FROM Scmsuppliergroupdetail WHERE 1=1
+		<if test="vendorId !=null and vendorId !=''">
+			AND vendorId = #{vendorId}
+		</if>
+		<if test="classId !=null and classId !=''">
+			AND classId = #{classId} 
+		</if>
+	</delete>
+
+</mapper>
+ 

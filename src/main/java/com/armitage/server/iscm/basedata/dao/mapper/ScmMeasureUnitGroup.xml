@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmmeasureunitgroup">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmmeasureunitgroup.findAll" resultType="ScmMeasureUnitGroup" >
+	    SELECT * FROM ScmMeasureUnitGroup WHERE  1=1  
+	</select>
+ 
+	<select id="scmmeasureunitgroup.findAllPage" resultType="ScmMeasureUnitGroup" parameterType="Map"> 
+		SELECT * FROM ScmMeasureUnitGroup WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmmeasureunitgroup.selectById" resultType="ScmMeasureUnitGroup" parameterType="Long">
+		SELECT * FROM ScmMeasureUnitGroup WHERE id = #{value}
+	</select> 
+	<insert id="scmmeasureunitgroup.add" parameterType="ScmMeasureUnitGroup"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmMeasureUnitGroup (
+        guId,
+        code,
+        name,
+        description,
+        parentId,
+        controlUnitNo,
+        creator,
+        createDate,
+        editor,
+        editDate        )
+		VALUES (
+        #{guId},
+        #{code},
+        #{name},
+        #{description},
+        #{parentId},
+        #{controlUnitNo},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate}        )
+	</insert>
+ 
+	<update id="scmmeasureunitgroup.update" parameterType="ScmMeasureUnitGroup">
+		UPDATE ScmMeasureUnitGroup set
+        guId=#{guId},
+        code=#{code},
+        name=#{name},
+        description=#{description},
+        parentId=#{parentId},
+        controlUnitNo=#{controlUnitNo},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmmeasureunitgroup.delete" parameterType="String">
+		DELETE FROM ScmMeasureUnitGroup WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

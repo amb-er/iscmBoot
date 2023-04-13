@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmproductcostcarddetailhistory">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmproductcostcarddetailhistory.findAll" resultType="ScmProductCostCardDetailHistory" >
+	    SELECT * FROM ScmProductCostCardDetailHistory WHERE  1=1  
+	</select>
+ 
+	<select id="scmproductcostcarddetailhistory.findAllPage" resultType="ScmProductCostCardDetailHistory" parameterType="Map"> 
+		SELECT * FROM ScmProductCostCardDetailHistory WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmproductcostcarddetailhistory.selectById" resultType="ScmProductCostCardDetailHistory" parameterType="Long">
+		SELECT * FROM ScmProductCostCardDetailHistory WHERE id = #{value}
+	</select> 
+	<select id="scmproductcostcarddetailhistory.selectByProductIdAndDate" resultType="ScmProductCostCardDetailHistory" parameterType="Map">
+		SELECT * FROM ScmProductCostCardDetailHistory WHERE orgUnitNo=#{orgUnitNo}
+		And productId = #{productId} and beginDate &lt;=#{bizDate} and endDate &gt;=#{bizDate}
+	</select> 
+	<select id="scmproductcostcarddetailhistory.selectByEffectDay" resultType="ScmProductCostCardDetailHistory" parameterType="Map">
+		SELECT * FROM ScmProductCostCardDetailHistory WHERE cardId=#{cardId} and beginDate &gt;=#{effectDate}
+	</select>
+	<select id="scmproductcostcarddetailhistory.selectByEffectDayAndDetailItemId" resultType="ScmProductCostCardDetailHistory" parameterType="Map">
+		SELECT * FROM ScmProductCostCardDetailHistory WHERE cardId=#{cardId} and beginDate &gt;=#{effectDate} and itemId=#{itemId}
+	</select>
+	<delete id="scmproductcostcarddetailhistory.deleteByEffectDay" parameterType="Map">
+		DELETE FROM ScmProductCostCardDetailHistory Where cardId=#{cardId} and beginDate &gt;=#{effectDate}
+	</delete>
+	<delete id="scmproductcostcarddetailhistory.deleteByEffectDayAndDetailItemId" parameterType="Map">
+		DELETE FROM ScmProductCostCardDetailHistory Where cardId=#{cardId} and beginDate &gt;=#{effectDate} and itemId=#{itemId}
+	</delete>
+	<insert id="scmproductcostcarddetailhistory.addByCostCard" parameterType="map" keyProperty="id" useGeneratedKeys="true">
+		INSERT INTO ScmProductCostCardDetailHistory(cardId,orgUnitNo,beginDate,endDate,productId,productUnit,productQty,costPrice,price,type,itemId,cstUnit,qty,convrate,invunit,creator,checker,controlUnitNo)
+		SELECT ScmProductCostCard.id,ScmProductCostCard.orgUnitNo,ScmProductCostCard.effectiveDate,'2030-12-31',ScmProductCostCard.productId,ScmProductCostCard.productUnit,
+		ScmProductCostCard.productQty,ScmProductCostCard.costPrice,ScmProductCostCardDetail.price, ScmProductCostCardDetail.type,ScmProductCostCardDetail.itemId,ScmProductCostCardDetail.cstUnit,ScmProductCostCardDetail.qty,ScmProductCostCardDetail.convrate,ScmProductCostCardDetail.invunit,
+		ScmProductCostCardDetail.creator,ScmProductCostCardDetail.checker,ScmProductCostCard.controlUnitNo
+		FROM ScmProductCostCard,ScmProductCostCardDetail where ScmProductCostCard.id = ScmProductCostCardDetail.cardId and ScmProductCostCard.id=#{cardId}
+		ON DUPLICATE KEY UPDATE endDate='2030-12-31',type=ScmProductCostCardDetail.type,itemId=ScmProductCostCardDetail.itemId,
+		cstUnit=ScmProductCostCardDetail.cstUnit,qty=ScmProductCostCardDetail.qty,creator=ScmProductCostCardDetail.creator,checker=ScmProductCostCardDetail.checker,
+		costPrice=ScmProductCostCard.costPrice,price=ScmProductCostCardDetail.price,convrate=ScmProductCostCardDetail.convrate,invunit=ScmProductCostCardDetail.invunit
+	</insert>
+	<update id="scmproductcostcarddetailhistory.updateLastByCostCard" parameterType="Map">
+		UPDATE ScmProductCostCardDetailHistory Set endDate=DATE_ADD(#{effectiveDate},INTERVAL -1 DAY) Where cardId=#{cardId} and endDate &gt;=#{effectiveDate}
+	</update>
+	<update id="scmproductcostcarddetailhistory.updateByAuditCostCardAndDetailItemId" parameterType="Map">
+		UPDATE ScmProductCostCardDetailHistory Set endDate=DATE_ADD(#{effectDate},INTERVAL -1 DAY) Where cardId=#{cardId} and endDate &gt;#{effectiveDate} and itemId=#{itemId}
+	</update>
+	<insert id="scmproductcostcarddetailhistory.add" parameterType="ScmProductCostCardDetailHistory"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmProductCostCardDetailHistory (
+        cardId,
+        orgUnitNo,
+        beginDate,
+        endDate,
+        productId,
+        productUnit,
+        productQty,
+        type,
+        itemId,
+        cstUnit,
+        qty,
+        creator,
+        checker,
+        controlUnitNo        )
+		VALUES (
+        #{cardId},
+        #{orgUnitNo},
+        #{beginDate},
+        #{endDate},
+        #{productId},
+        #{productUnit},
+        #{productQty},
+        #{type},
+        #{itemId},
+        #{cstUnit},
+        #{qty},
+        #{creator},
+        #{checker},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmproductcostcarddetailhistory.update" parameterType="ScmProductCostCardDetailHistory">
+		UPDATE ScmProductCostCardDetailHistory set
+        cardId=#{cardId},
+        orgUnitNo=#{orgUnitNo},
+        beginDate=#{beginDate},
+        endDate=#{endDate},
+        productId=#{productId},
+        productUnit=#{productUnit},
+        productQty=#{productQty},
+        type=#{type},
+        itemId=#{itemId},
+        cstUnit=#{cstUnit},
+        qty=#{qty},
+        creator=#{creator},
+        checker=#{checker},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmproductcostcarddetailhistory.delete" parameterType="String">
+		DELETE FROM ScmProductCostCardDetailHistory WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

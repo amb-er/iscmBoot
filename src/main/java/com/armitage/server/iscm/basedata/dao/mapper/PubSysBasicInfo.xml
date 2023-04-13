@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pubsysbasicinfo">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="pubsysbasicinfo.findAll" resultType="PubSysBasicInfo" >
+	    SELECT * FROM pubsysbasicinfo WHERE  1=1  
+	</select>
+ 
+	<select id="pubsysbasicinfo.findAllPage" resultType="PubSysBasicInfo" parameterType="Map"> 
+		SELECT * FROM pubsysbasicinfo WHERE  1=1 ORDER BY fValue ASC 
+	</select> 
+	<select id="pubsysbasicinfo.selectById" resultType="PubSysBasicInfo" parameterType="Long">
+		SELECT * FROM pubsysbasicinfo WHERE id = #{value}
+	</select> 
+	<select id="pubsysbasicinfo.selectTaxRate" resultType="PubSysBasicInfo" parameterType="Map">
+		SELECT * FROM pubsysbasicinfo WHERE fInfoNo is not null
+		<if test="fRegNo !=null and fRegNo !=''">
+			AND fRegNo = #{fRegNo}
+		</if>
+		<if test="fValue !=null and fValue !=''">
+			AND (fValue = #{fValue} or #{fValue}='0')
+		</if>
+		<if test="fMemo !=null and fMemo !=''">
+			AND fMemo LIKE '%${fMemo}%'
+		</if>
+	</select> 
+	<insert id="pubsysbasicinfo.add" parameterType="PubSysBasicInfo"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  pubsysbasicinfo (
+        guId,
+        fRegNo,
+        fInfoNo,
+        fInfoName,
+        fValue,
+        fMemo,
+        fStatus        )
+		VALUES (
+        #{guId},
+        #{fRegNo},
+        #{fInfoNo},
+        #{fInfoName},
+        #{fValue},
+        #{fMemo},
+        #{fStatus}        )
+	</insert>
+ 
+	<update id="pubsysbasicinfo.update" parameterType="PubSysBasicInfo">
+		UPDATE pubsysbasicinfo set
+        guId=#{guId},
+        fRegNo=#{fRegNo},
+        fInfoNo=#{fInfoNo},
+        fInfoName=#{fInfoName},
+        fValue=#{fValue},
+        fMemo=#{fMemo},
+        fStatus=#{fStatus}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="pubsysbasicinfo.delete" parameterType="String">
+		DELETE FROM pubsysbasicinfo WHERE id IN (${value})
+	</delete> 
+
+</mapper>

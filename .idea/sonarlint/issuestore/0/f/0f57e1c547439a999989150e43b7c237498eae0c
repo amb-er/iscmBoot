@@ -1,0 +1,55 @@
+
+S
+java:S1444."8Make this "public static TRIGGER_GROUP_NAME" field final(ÿÜ«Íúÿÿÿÿ
+a	java:S112°"FDefine and throw a dedicated exception instead of using a generic one.(Ò‚Òéüÿÿÿÿ
+?
+java:S1148Ö"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+y
+java:S1104."^Make TRIGGER_GROUP_NAME a static final constant or non-public and provide accessors if needed.(ÿÜ«Íúÿÿÿÿ
+?
+java:S1148ª"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148À"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148•"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148î"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+t
+java:S3008*"YRename this field "JOB_GROUP_NAME" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(ĞÍÌüÿÿÿÿ
+x
+java:S3008."]Rename this field "TRIGGER_GROUP_NAME" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(ÿÜ«Íúÿÿÿÿ
+?
+java:S1148“"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+K
+java:S3740ñ"/Provide the parametrized type for this generic.(¦ÖÁ½şÿÿÿÿ
+u
+java:S1104*"ZMake JOB_GROUP_NAME a static final constant or non-public and provide accessors if needed.(ĞÍÌüÿÿÿÿ
+a	java:S112¢"FDefine and throw a dedicated exception instead of using a generic one.(Ò‚Òéüÿÿÿÿ
+?
+java:S1148Ä"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+g
+java:S1128"ERemove this unused import 'org.springframework.stereotype.Component'.(Ş÷Ñ¸ÿÿÿÿÿ8÷²‚0
+K
+java:S3740°"/Provide the parametrized type for this generic.(¦ÖÁ½şÿÿÿÿ
+?
+java:S1148Ï"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148è"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+w
+java:S1104&"\Make schedulerFactory a static final constant or non-public and provide accessors if needed.(ıÛ»üøÿÿÿÿ
+Q
+java:S1444&"6Make this "public static schedulerFactory" field final(ıÛ»üøÿÿÿÿ
+O
+java:S1444*"4Make this "public static JOB_GROUP_NAME" field final(ĞÍÌüÿÿÿÿ
+?
+java:S1148İ"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+x
+java:S1104""bMake clusterQuartzScheduler a static final constant or non-public and provide accessors if needed.(àÜÉƒ
+?
+java:S1148½"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148•"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148›"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ

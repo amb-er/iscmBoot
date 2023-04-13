@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsuppliergroup">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsuppliergroup.findAll" resultType="Scmsuppliergroup2" >
+	    SELECT * FROM scmsuppliergroup WHERE  1=1  
+	</select>
+ 
+	<select id="scmsuppliergroup.findAllPage" resultType="Scmsuppliergroup2" parameterType="Map"> 
+		SELECT a.id,a.standardId,a.classCode,a.className,a.parentId,a.level
+		FROM scmsuppliergroup AS a 
+		WHERE 1=1  ORDER BY id ASC	
+	</select> 
+	<select id="scmsuppliergroup.selectById" resultType="Scmsuppliergroup2" parameterType="Long">
+		SELECT * FROM scmsuppliergroup WHERE id = #{value}
+	</select> 
+	<select id="scmsuppliergroup.selectByIds" resultType="Scmsuppliergroup2" parameterType="Map">
+		SELECT * FROM scmsuppliergroup WHERE id in (${item})
+	</select> 
+	<select id="scmsuppliergroup.selectByVendorId" resultType="Scmsuppliergroup2" parameterType="Map">
+		SELECT ScmsupplierGroup.* FROM ScmsupplierGroup,ScmsupplierGroupDetail,ScmsuppliergroupStandard
+		Where Scmsuppliergroup.id=Scmsuppliergroupdetail.classId And Scmsuppliergroup.standardId=ScmsuppliergroupStandard.id
+		And ScmsuppliergroupStandard.standardNo='BaseStandard' and Scmsuppliergroupdetail.vendorId=${vendorId}
+	</select> 
+ 
+	<insert id="scmsuppliergroup.add" parameterType="Scmsuppliergroup"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmsuppliergroup (
+        standardId,
+        classCode,
+        className,
+        parentId,
+        longNo,
+        level,
+        description,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        flag,
+        controlUnitNo        )
+		VALUES (
+        #{standardId},
+        #{classCode},
+        #{className},
+        #{parentId},
+        #{longNo},
+        #{level},
+        #{description},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{flag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsuppliergroup.update" parameterType="Scmsuppliergroup">
+		UPDATE scmsuppliergroup set
+        standardId=#{standardId},
+        classCode=#{classCode},
+        className=#{className},
+        parentId=#{parentId},
+        longNo=#{longNo},
+        level=#{level},
+        description=#{description},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        flag=#{flag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsuppliergroup.delete" parameterType="String">
+		DELETE FROM scmsuppliergroup WHERE id IN (${value})
+	</delete> 
+
+    <select id="scmsuppliergroup.findChild" resultType="Scmsuppliergroup2" parameterType="Map"> 
+        select * from scmsuppliergroup where controlUnitNo = #{controlUnitNo} and longNo like #{longNo}
+        order by scmsuppliergroup.id ASC
+    </select> 
+    
+    <select id="scmsuppliergroup.selectByClassCode" resultType="Scmsuppliergroup2" parameterType="Map"> 
+        select * from scmsuppliergroup where standardId = #{standardId} and classCode = #{classCode}
+        and controlUnitNo=#{controlUnitNo}
+        order by scmsuppliergroup.id ASC
+    </select>
+</mapper>
+ 

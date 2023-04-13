@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvsupplierlot">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvsupplierlot.findAll" resultType="ScmInvSupplierLot" >
+	    SELECT * FROM ScmInvSupplierLot WHERE  1=1  
+	</select>
+ 
+	<select id="scminvsupplierlot.findAllPage" resultType="ScmInvSupplierLot" parameterType="Map"> 
+		SELECT * FROM ScmInvSupplierLot WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scminvsupplierlot.selectById" resultType="ScmInvSupplierLot" parameterType="Long">
+		SELECT * FROM ScmInvSupplierLot WHERE id = #{value}
+	</select> 
+	<insert id="scminvsupplierlot.addByOtherInWarehsBill" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmInvSupplierLot (vendorId,lot)
+		Select DISTINCT scminvotherinwarehsbill.vendorId,scminvotherinwarehsbillentry.lot 
+		FROM scminvotherinwarehsbill,scminvotherinwarehsbillentry 
+		Where scminvotherinwarehsbill.wrId=scminvotherinwarehsbillentry.wrId
+		And scminvotherinwarehsbill.wrId=#{wrId} ON DUPLICATE KEY UPDATE lot=scminvotherinwarehsbillentry.lot
+	</insert>
+	<delete id="scminvsupplierlot.delByOtherInWarehsBill" parameterType="Map"> 
+		DELETE A From ScmInvSupplierLot A,
+		(Select DISTINCT scminvotherinwarehsbill.vendorId,scminvotherinwarehsbillentry.lot 
+		FROM scminvotherinwarehsbill,scminvotherinwarehsbillentry 
+		Where scminvotherinwarehsbill.wrId=scminvotherinwarehsbillentry.wrId
+		And scminvotherinwarehsbill.wrId=#{wrId}) B Where A.vendorId=B.vendorId And A.lot=B.lot
+	</delete>
+	<insert id="scminvsupplierlot.add" parameterType="ScmInvSupplierLot"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmInvSupplierLot (
+        vendorId,
+        lot        )
+		VALUES (
+        #{vendorId},
+        #{lot}        )
+	</insert>
+ 
+	<update id="scminvsupplierlot.update" parameterType="ScmInvSupplierLot">
+		UPDATE ScmInvSupplierLot set
+        vendorId=#{vendorId},
+        lot=#{lot}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvsupplierlot.delete" parameterType="String">
+		DELETE FROM ScmInvSupplierLot WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmdatacollectionreg">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmdatacollectionreg.findAll" resultType="ScmDataCollectionReg" >
+	    SELECT * FROM ScmDataCollectionReg WHERE  1=1  
+	</select>
+ 
+	<select id="scmdatacollectionreg.findAllPage" resultType="ScmDataCollectionReg" parameterType="Map"> 
+		SELECT * FROM ScmDataCollectionReg WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmdatacollectionreg.selectById" resultType="ScmDataCollectionReg" parameterType="Long">
+		SELECT * FROM ScmDataCollectionReg WHERE id = #{value}
+	</select> 
+	<insert id="scmdatacollectionreg.add" parameterType="ScmDataCollectionReg"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmDataCollectionReg (
+		category,
+        code,
+        name,
+        sequenceId,
+        invoke        )
+		VALUES (
+		#{category},
+        #{code},
+        #{name},
+        #{sequenceId},
+        #{invoke}        )
+	</insert>
+ 
+	<update id="scmdatacollectionreg.update" parameterType="ScmDataCollectionReg">
+		UPDATE ScmDataCollectionReg set
+		category=#{category},
+        code=#{code},
+        name=#{name},
+        sequenceId=#{sequenceId},
+        invoke=#{invoke}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmdatacollectionreg.delete" parameterType="String">
+		DELETE FROM ScmDataCollectionReg WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

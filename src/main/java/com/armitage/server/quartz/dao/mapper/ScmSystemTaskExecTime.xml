@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsystemtaskexectime">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsystemtaskexectime.findAll" resultType="ScmSystemTaskExecTime" >
+	    SELECT * FROM ScmSystemTaskExecTime WHERE  1=1  
+	</select>
+ 
+	<select id="scmsystemtaskexectime.findAllPage" resultType="ScmSystemTaskExecTime" parameterType="Map"> 
+		SELECT * FROM ScmSystemTaskExecTime WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmsystemtaskexectime.selectById" resultType="ScmSystemTaskExecTime" parameterType="Long">
+		SELECT * FROM ScmSystemTaskExecTime WHERE id = #{value}
+	</select> 
+	<select id="scmsystemtaskexectime.selectByTaskType" resultType="ScmSystemTaskExecTime" parameterType="Map">
+		SELECT * FROM ScmSystemTaskExecTime WHERE orgUnitNo = #{orgUnitNo} and taskType=#{taskType}
+	</select> 
+	<insert id="scmsystemtaskexectime.add" parameterType="ScmSystemTaskExecTime"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmSystemTaskExecTime (
+        orgUnitNo,
+        taskType,
+        execTime,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{taskType},
+        #{execTime},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsystemtaskexectime.update" parameterType="ScmSystemTaskExecTime">
+		UPDATE ScmSystemTaskExecTime set
+        orgUnitNo=#{orgUnitNo},
+        taskType=#{taskType},
+        execTime=#{execTime},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsystemtaskexectime.delete" parameterType="String">
+		DELETE FROM ScmSystemTaskExecTime WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

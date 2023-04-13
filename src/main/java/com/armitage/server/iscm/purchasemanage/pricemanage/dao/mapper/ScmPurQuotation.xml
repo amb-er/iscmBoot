@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurquotation">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurquotation.findAll" resultType="ScmPurQuotation2" >
+	    SELECT * FROM scmpurquotation WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurquotation.findAllPage" resultType="ScmPurQuotation2" parameterType="Map"> 
+		SELECT ScmPurQuotation.*,scmsupplier.vendorName as vendorName
+		FROM ScmPurQuotation,ScmSupplier,ScmSupplierGroupDetail,ScmSupplierGroup,ScmSupplierGroupStandard 
+		WHERE ScmPurQuotation.vendorId=scmsupplier.id And scmsupplier.id=ScmSupplierGroupDetail.vendorId
+		AND ScmSupplierGroupDetail.classId=ScmSupplierGroup.id And ScmSupplierGroupStandard.standardType='1'
+		AND ScmSupplierGroup.standardId=ScmSupplierGroupStandard.id
+		ORDER BY ScmPurQuotation.pqNo DESC
+	</select> 
+	<select id="scmpurquotation.selectById" resultType="ScmPurQuotation2" parameterType="Long">
+		SELECT scmpurquotation.*,scmsupplier.vendorName as vendorName
+		FROM scmpurquotation left join scmsupplier
+		on scmpurquotation.vendorId=scmsupplier.id WHERE scmpurquotation.id = #{value}
+	</select> 
+	<select id="scmpurquotation.selectMaxIdByDate" resultType="ScmPurQuotation2" parameterType="Map">
+		SELECT scmpurquotation.*,scmsupplier.vendorName as vendorName
+		FROM scmpurquotation left join scmsupplier
+		on scmpurquotation.vendorId=scmsupplier.id
+		WHERE scmpurquotation.createDate &gt;=#{createDate} And scmpurquotation.createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And scmpurquotation.controlUnitNo=#{controlUnitNo} Order BY scmpurquotation.pqNo Desc Limit 1
+	</select> 
+	<select id="scmpurquotation.getPrice" resultType="ScmMaterialPrice" parameterType="Map">
+		SELECT B.itemId,A.id as priceBillId,A.pqNo as priceBillNo,A.vendorId,B.price,B.taxrate,B.taxPrice,B.purUnit
+		 FROM scmpurquotation A,scmpurquotationentry B,
+		(SELECT Max(B.id) as id
+		 FROM scmpurquotation A,scmpurquotationentry B WHere A.Id=B.pqId
+		And A.orgUnitNo=#{orgUnitNo} and A.vendorId=#{vendorId} and A.status='E' And A.begDate &lt;=#{bizDate}
+		And A.endDate &gt;=#{bizDate} And B.itemId in (${itemIds})
+		GROUP BY B.itemId ORDER BY A.pqDate Desc,B.id Desc) C
+		Where A.Id=B.pqId
+		And A.orgUnitNo=#{orgUnitNo} and A.vendorId=#{vendorId} and A.status='E' And A.begDate &lt;=#{bizDate}
+		And A.endDate &gt;=#{bizDate} And B.itemId in (${itemIds})
+		And B.id=C.id
+	</select> 
+	<select id="scmpurquotation.getPriceByVendorIds" resultType="ScmMaterialPrice" parameterType="Map">
+		<foreach collection="ScmPurPriceQuery" item="item" separator="union">
+			SELECT B.itemId,A.id as priceBillId,A.pqNo as priceBillNo,A.vendorId,B.price,B.taxrate,B.taxPrice,B.purUnit
+			 FROM scmpurquotation A,scmpurquotationentry B,
+			(SELECT Max(B.id) as id
+			 FROM scmpurquotation A,scmpurquotationentry B WHere A.Id=B.pqId
+			And A.orgUnitNo=#{item.purOrgUnitNo} and A.vendorId=#{item.vendorId} and A.status='E' And A.begDate &lt;=#{item.bizDate}
+			And A.endDate &gt;=#{item.bizDate} And B.itemId in (${item.itemId})
+			GROUP BY B.itemId ORDER BY A.pqDate Desc,B.id Desc) C
+			Where A.Id=B.pqId
+			And A.orgUnitNo=#{item.purOrgUnitNo} and A.vendorId=#{item.vendorId} and A.status='E' And A.begDate &lt;=#{item.bizDate}
+			And A.endDate &gt;=#{item.bizDate} And B.itemId in (${item.itemId})
+			And B.id=C.id
+		</foreach>
+	</select> 
+	<select id="scmpurquotation.selectRecentPrice" resultType="ScmPurQuotation2" parameterType="Map">
+		Select vendorId,price,taxRate From
+		(Select vendorId,case when #{priceType}='1' then taxPrice else price end as price,B.taxRate from ScmPurQuotation A,ScmPurQuotationEntry B
+		Where A.id=B.pqId  And A.begDate &lt;= #{begDate} And A.endDate &gt;= #{endDate}
+		And B.itemId=${itemId} And A.vendorId in (${vendorIds})
+		And A.orgUnitNo=#{orgUnitNo}
+		And A.status = 'E'
+		ORDER BY A.pqDate Desc,B.id Desc) T
+		GROUP BY vendorId
+	</select> 
+	<select id="scmpurquotation.selectItemsRecentPrice" resultType="ScmPurQuotation2" parameterType="Map">
+		Select itemId,vendorId,price,taxRate From
+		(Select B.itemId,vendorId,case when #{priceType}='1' then taxPrice else price end as price,B.taxRate from ScmPurQuotation A,ScmPurQuotationEntry B
+		Where A.id=B.pqId  And A.begDate &lt;= #{begDate} And A.endDate &gt;= #{endDate}
+		And B.itemId in (${itemIds}) And A.vendorId in (${vendorIds})
+		And A.status = 'E'
+		ORDER BY A.pqDate Desc,B.id Desc) T
+		GROUP BY itemId,vendorId
+	</select> 
+	<select id="scmpurquotation.getLastPrice" resultType="ScmMaterialPrice" parameterType="Map">
+		Select scmpurquotationentry.itemId,scmpurquotationentry.price,scmpurquotationentry.taxrate,scmpurquotationentry.taxPrice,scmpurquotation.pqNo as priceBillNo
+		 From scmpurquotation,scmpurquotationentry,
+		(Select max(scmpurquotationentry.id) as id
+		 FROM scmpurquotation,scmpurquotationentry WHere scmpurquotation.Id=scmpurquotationentry.pqId
+		And scmpurquotation.orgUnitNo=#{orgUnitNo} and scmpurquotation.status in('E','C') And scmpurquotation.pqDate &lt;=#{bizDate}
+		And scmpurquotation.vendorId=#{vendorId} And scmpurquotationentry.itemId in(${itemIds}) Group By scmpurquotationentry.itemId ORDER BY scmpurquotation.pqDate Desc,scmpurquotationentry.id Desc)T
+		where scmpurquotation.Id=scmpurquotationentry.pqId
+		And scmpurquotation.vendorId=#{vendorId} And scmpurquotation.orgUnitNo=#{orgUnitNo}
+		And scmpurquotationentry.itemId in(${itemIds}) and scmpurquotationentry.id=T.id
+	</select> 
+	<insert id="scmpurquotation.add" parameterType="ScmPurQuotation"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurQuotation (
+        pqNo,
+        vendorId,
+        pqDate,
+        begDate,
+        endDate,
+        orgUnitNo,
+        finOrgUnitNo,
+        buyerId,
+        purGroupId,
+        currencyNo,
+        exchangeRate,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        checker,
+        checkDate,
+        prtcount,
+        status,
+        remarks,
+        workFlowNo,
+        stepNo,
+        controlUnitNo        )
+		VALUES (
+        #{pqNo},
+        #{vendorId},
+        #{pqDate},
+        #{begDate},
+        #{endDate},
+        #{orgUnitNo},
+        #{finOrgUnitNo},
+        #{buyerId},
+        #{purGroupId},
+        #{currencyNo},
+        #{exchangeRate},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{checker},
+        #{checkDate},
+        #{prtcount},
+        #{status},
+        #{remarks},
+        #{workFlowNo},
+        #{stepNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpurquotation.update" parameterType="ScmPurQuotation">
+		UPDATE scmpurquotation set
+        pqNo=#{pqNo},
+        vendorId=#{vendorId},
+        pqDate=#{pqDate},
+        begDate=#{begDate},
+        endDate=#{endDate},
+        orgUnitNo=#{orgUnitNo},
+        finOrgUnitNo=#{finOrgUnitNo},
+        buyerId=#{buyerId},
+        purGroupId=#{purGroupId},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        prtcount=#{prtcount},
+        status=#{status},
+        remarks=#{remarks},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurquotation.delete" parameterType="String">
+		DELETE FROM scmpurquotation WHERE id IN (${value})
+	</delete> 
+
+</mapper>

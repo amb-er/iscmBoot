@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsupplierunified">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsupplierunified.findAll" resultType="ScmSupplierUnified" >
+	    SELECT * FROM ScmSupplierUnified WHERE  1=1  
+	</select>
+ 
+	<select id="scmsupplierunified.findAllPage" resultType="ScmSupplierUnified" parameterType="Map"> 
+		SELECT * FROM ScmSupplierUnified WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmsupplierunified.selectById" resultType="ScmSupplierUnified" parameterType="Long">
+		SELECT * FROM ScmSupplierUnified WHERE id = #{value}
+	</select> 
+	<select id="scmsupplierunified.selectByVendorId" resultType="ScmSupplierUnified" parameterType="Map">
+		SELECT * FROM ScmSupplierUnified WHERE vendorId = #{vendorId}
+	</select> 
+	<insert id="scmsupplierunified.add" parameterType="ScmSupplierUnified"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmSupplierUnified (
+        vendorId,
+        orgUnitNo        )
+		VALUES (
+        #{vendorId},
+        #{orgUnitNo}        )
+	</insert>
+ 
+	<update id="scmsupplierunified.update" parameterType="ScmSupplierUnified">
+		UPDATE ScmSupplierUnified set
+        vendorId=#{vendorId},
+        orgUnitNo=#{orgUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsupplierunified.delete" parameterType="String">
+		DELETE FROM ScmSupplierUnified WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

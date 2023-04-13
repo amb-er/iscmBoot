@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmitemcostpricelog">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmitemcostpricelog.findAll" resultType="ScmItemCostPriceLog" >
+	    SELECT * FROM ScmItemCostPriceLog WHERE  1=1  
+	</select>
+ 
+	<select id="scmitemcostpricelog.findAllPage" resultType="ScmItemCostPriceLog" parameterType="Map"> 
+		SELECT * FROM ScmItemCostPriceLog WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmitemcostpricelog.selectById" resultType="ScmItemCostPriceLog" parameterType="Long">
+		SELECT * FROM ScmItemCostPriceLog WHERE id = #{value}
+	</select> 
+	<insert id="scmitemcostpricelog.add" parameterType="ScmItemCostPriceLog"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmItemCostPriceLog (
+        orgUnitNo,
+        beginDate,
+        endDate,
+        priceDate,
+        classId,
+        itemId,
+        operDate,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{beginDate},
+        #{endDate},
+        #{priceDate},
+        #{classId},
+        #{itemId},
+        #{operDate},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmitemcostpricelog.update" parameterType="ScmItemCostPriceLog">
+		UPDATE ScmItemCostPriceLog set
+        orgUnitNo=#{orgUnitNo},
+        beginDate=#{beginDate},
+        endDate=#{endDate},
+        priceDate=#{priceDate},
+        classId=#{classId},
+        itemId=#{itemId},
+        operDate=#{operDate},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmitemcostpricelog.delete" parameterType="String">
+		DELETE FROM ScmItemCostPriceLog WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

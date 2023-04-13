@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmfbmsellcookdetail">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmfbmsellcookdetail.findAll" resultType="ScmFbmSellCookDetail" >
+	    SELECT * FROM ScmFbmSellCookDetail WHERE  1=1  
+	</select>
+ 
+	<select id="scmfbmsellcookdetail.findAllPage" resultType="ScmFbmSellCookDetail" parameterType="Map"> 
+		SELECT * FROM ScmFbmSellCookDetail WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmfbmsellcookdetail.selectById" resultType="ScmFbmSellCookDetail" parameterType="Long">
+		SELECT * FROM ScmFbmSellCookDetail WHERE id = #{value}
+	</select> 
+	<insert id="scmfbmsellcookdetail.add" parameterType="ScmFbmSellCookDetail"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmFbmSellCookDetail (
+        orgUnitNo,
+        accDate,
+        dishId,
+        dishCode,
+        dishName,
+        fbmStatCode,
+        fbmStatName,
+        cookId,
+        cookCode,
+        cookName,
+        dishSpecId,
+        specCode,
+        specName,
+        deptCode,
+        deptName,
+        saleQty,
+        stdSalePrice,
+        saleAmt,
+        realSaleAmt        )
+		VALUES (
+        #{orgUnitNo},
+        #{accDate},
+        #{dishId},
+        #{dishCode},
+        #{dishName},
+        #{fbmStatCode},
+        #{fbmStatName},
+        #{cookId},
+        #{cookCode},
+        #{cookName},
+        #{dishSpecId},
+        #{specCode},
+        #{specName},
+        #{deptCode},
+        #{deptName},
+        #{saleQty},
+        #{stdSalePrice},
+        #{saleAmt},
+        #{realSaleAmt},        )
+	</insert>
+  	<insert id="scmfbmsellcookdetail.batchAdd" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+ 		INSERT INTO  ScmFbmSellCookDetail (
+        orgUnitNo,
+        accDate,
+        dishId,
+        dishCode,
+        dishName,
+        fbmStatCode,
+        fbmStatName,
+        cookId,
+        cookCode,
+        cookName,
+        dishSpecId,
+        specCode,
+        specName,
+        deptCode,
+        deptName,
+        saleQty,
+        stdSalePrice,
+        saleAmt,
+        realSaleAmt        )
+		VALUES
+		<foreach item="scmFbmSellCookDetail" index="index" collection="scmFbmSellCookDetailList" separator=",">
+	 		(
+	        #{scmFbmSellCookDetail.orgUnitNo},
+	        #{scmFbmSellCookDetail.accDate},
+	        #{scmFbmSellCookDetail.dishId},
+	        #{scmFbmSellCookDetail.dishCode},
+	        #{scmFbmSellCookDetail.dishName},
+	        #{scmFbmSellCookDetail.fbmStatCode},
+	        #{scmFbmSellCookDetail.fbmStatName},
+	        #{scmFbmSellCookDetail.cookId},
+	        #{scmFbmSellCookDetail.cookCode},
+	        #{scmFbmSellCookDetail.cookName},
+	        #{scmFbmSellCookDetail.dishSpecId},
+	        #{scmFbmSellCookDetail.specCode},
+	        #{scmFbmSellCookDetail.specName},
+	        #{scmFbmSellCookDetail.deptCode},
+	        #{scmFbmSellCookDetail.deptName},
+	        #{scmFbmSellCookDetail.saleQty},
+	        #{scmFbmSellCookDetail.stdSalePrice},
+	        #{scmFbmSellCookDetail.saleAmt},
+	        #{scmFbmSellCookDetail.realSaleAmt}
+	        )
+      </foreach >
+	</insert>
+	<update id="scmfbmsellcookdetail.update" parameterType="ScmFbmSellCookDetail">
+		UPDATE ScmFbmSellCookDetail set
+        orgUnitNo=#{orgUnitNo},
+        accDate=#{accDate},
+        dishId=#{dishId},
+        dishCode=#{dishCode},
+        dishName=#{dishName},
+        fbmStatCode=#{fbmStatCode},
+        fbmStatName=#{fbmStatName},
+        cookId=#{cookId},
+        cookCode=#{cookCode},
+        cookName=#{cookName},
+        dishSpecId=#{dishSpecId},
+        specCode=#{specCode},
+        specName=#{specName},
+        deptCode=#{deptCode},
+        deptName=#{deptName},
+        saleQty=#{saleQty},
+        stdSalePrice=#{stdSalePrice},
+        saleAmt=#{saleAmt},
+        realSaleAmt=#{realSaleAmt}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmfbmsellcookdetail.delete" parameterType="String">
+		DELETE FROM ScmFbmSellCookDetail WHERE id IN (${value})
+	</delete> 
+	<delete id="scmfbmsellcookdetail.delRptData" parameterType="Map">
+		DELETE FROM ScmFbmSellCookDetail WHERE orgUnitNo =#{orgUnitNo} and accDate &gt;=#{begDate} and accDate &lt;=#{endDate}
+	</delete> 
+
+</mapper>
+ 

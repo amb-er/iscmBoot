@@ -1,0 +1,374 @@
+spring:
+  jms:
+    pub-sub-domain: false      #配置消息类型，如果是true则表示topic消息，如果为false表示Queue消息
+    activemq:
+      user: #hhj                  #连接用户名
+      password: #hello            #连接密码
+      broker-url: tcp://127.0.0.1:61616  #host文件中已经配置了服务器ip映射
+  security:
+    user:
+      name: test
+      password: test
+  aop:
+    proxy-target-class: false
+  jta:
+    log-dir: classpath:tx-logs
+    transaction-manager-id: jtaTransactionManager
+
+  datasource:
+    druid:
+      use-global-data-source-stat: true
+      # 配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+      # 通过connectProperties属性来打开mergeSql功能；慢SQL记录
+      connect-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      #基础监控配置
+      web-stat-filter:
+        enabled: true
+        url-pattern: /*
+        #设置不统计哪些URL
+        exclusions: "/static/*,*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*"
+        session-stat-enable: true
+        session-stat-max-count: 100
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        reset-enable: true
+        #设置监控页面的登录名和密码
+        login-username: ipmsadmin
+        login-password: ipmsxcopy123456
+        allow:
+        deny:
+
+server:
+  tomcat:
+    max-threads: 800
+    uri-encoding: UTF-8
+  servlet:
+    context-path: /ISCMService
+  port: 8080
+
+
+common:
+  systemIds: 220
+  productCode: iscm
+  licenseService: http://ilm.test.com:5008/iLM/iLMService/api
+  reportLogoServlet: reportLogo
+  gzip:
+    threshold: 10240
+  compression:
+    enabled: true
+    threshold: 1024
+  resource:
+    clientPath: #C:\\wanxun\\wanxun\\ISCM\\20220325\\source\\iSCMClient\\src\\
+    servicePath: #C:\\wanxun\\wanxun\\ISCM\\20220325\\source\\iSCMService\\src\\
+    resourceSql:
+  routine:
+    enabled: false
+
+# 日志配置
+logging:
+  file: C:/logs/iscmservice.log
+  file.max-size: 100MB
+  file.max-history: 30
+  level:
+    org:
+      springframework:
+        web: INFO
+    springfox: ERROR
+    root: INFO
+  pattern:
+    console: "%d %-5level %logger{50}@%L - %msg %X{chainid}%n"
+    file: "%d %-5level %logger{50}@%L - %msg %X{chainid}%n"
+  filter:
+    maxOutputLength: 10240
+# 缓存设置
+cache:
+  localCache: false
+  cacheType: 0
+  memcached:
+    servers: 127.0.0.1:11211
+    weights: 3
+    initConn: 5
+    minConn: 5
+    maxConn: 250
+    maxIdle: 6
+    maintSleep: 30
+    socketTO: 3000
+    socketConnectTO: 0
+    aliveCheck: true
+    failover: true
+    nagel: false
+  token:
+    expire: 30
+  cacheEnabledModels: "com.armitage.server.system.model.Code,\
+    com.armitage.server.system.model.SysParam,\
+    com.armitage.server.system.model.OrgBaseUnit,\
+    com.armitage.server.system.model.OrgAdmin,\
+    com.armitage.server.system.model.OrgCompany,\
+    com.armitage.server.system.model.OrgHouseKeeper,\
+    com.armitage.server.system.model.OrgPoint,\
+    com.armitage.server.system.model.OrgPurchase,\
+    com.armitage.server.system.model.OrgStorage,\
+    com.armitage.server.system.model.OrgCostCenter,\
+    com.armitage.server.system.model.OrgResource,\
+    com.armitage.server.system.model.OrgSale,\
+    com.armitage.server.system.model.OrgService,\
+    com.armitage.server.system.model.Outlet,\
+    com.armitage.server.system.model.BillSequence,\
+    com.armitage.server.user.model.Usr,\
+    com.armitage.server.system.model.Employee,\
+    com.armitage.server.system.model.Routine,\
+    com.armitage.server.system.model.Currency,\
+    com.armitage.server.iscm.basedata.model.PubSysBasicInfo,\
+    com.armitage.server.iscm.basedata.model.ScmMaterial,\
+    com.armitage.server.iscm.basedata.model.ScmMaterialGroup,\
+    com.armitage.server.iscm.basedata.model.ScmMeasureUnit,\
+    com.armitage.server.iscm.basedata.model.Scmsupplier,\
+    com.armitage.server.iscm.basedata.model.ScmPurchaseType,\
+    com.armitage.server.iscm.basedata.model.ScmCostCategory,\
+    com.armitage.server.iscm.basedata.model.ScmMaterialGroupStandard,\
+    com.armitage.server.iscm.inventorymanage.inventorysetting.model.ScmInvWareHouse,\
+    com.armitage.server.iscm.purchasemanage.purchasesetting.model.ScmPurBuyer,\
+    com.armitage.server.iscm.purchasemanage.purchasesetting.model.ScmPurGroup,\
+    com.armitage.server.ifbm.model.FbmDish,\
+    com.armitage.server.ifbm.model.FbmDishSpec"
+
+mysql:
+  icommon:
+    enable: true
+    unique-resource-name: dataSourceIcommon
+    xa-data-source-class-name: com.alibaba.druid.pool.xa.DruidXADataSource
+    min-pool-size: 2
+    max-pool-size: 150
+    borrow-connection-timeout: 120
+    reap-timeout: 2000
+    max-idle-time: 60
+    maintenance-interval: 60
+    login-timeout: 60
+    test-query: SELECT 1
+    xa-properties:
+      name: iCommon
+      driverClassName: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://127.0.0.1:3306/yun_icommon?serverTimezone=Asia/Shanghai&characterEncoding=utf-8&useLocalSessionState=true
+      username: root
+      password: 123456
+      initialSize: 1
+      minIdle: 1
+      maxActive: 150
+      maxWait: 20000
+      timeBetweenEvictionRunsMillis: 180000
+      minEvictableIdleTimeMillis: 30000
+      maxEvictableIdleTimeMillis: 120000
+      validationQuery: select 1
+      testWhileIdle: true
+      testOnBorrow: true
+      testOnReturn: false
+      poolPreparedStatements: true
+      maxOpenPreparedStatements: 20
+      filters: stat,config
+  iscm:
+    enable: true
+    unique-resource-name: dataSourceIscm
+    xa-data-source-class-name: com.alibaba.druid.pool.xa.DruidXADataSource
+    min-pool-size: 2
+    max-pool-size: 150
+    borrow-connection-timeout: 60
+    reap-timeout: 2000
+    max-idle-time: 60
+    maintenance-interval: 60
+    login-timeout: 60
+    test-query: SELECT 1
+    xa-properties:
+      name: ISCM
+      driverClassName: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://127.0.0.1:3306/yun_iscm?serverTimezone=Asia/Shanghai&characterEncoding=utf-8&useLocalSessionState=true
+      username: root
+      password: 123456
+      initialSize: 1
+      minIdle: 1
+      maxActive: 150
+      maxWait: 20000
+      timeBetweenEvictionRunsMillis: 180000
+      minEvictableIdleTimeMillis: 30000
+      maxEvictableIdleTimeMillis: 120000
+      validationQuery: select 1
+      testWhileIdle: true
+      testOnBorrow: true
+      testOnReturn: false
+      poolPreparedStatements: true
+      maxOpenPreparedStatements: 20
+      filters: stat,config
+  iconfig:
+    enable: true
+    unique-resource-name: dataSourceIconfig
+    xa-data-source-class-name: com.alibaba.druid.pool.xa.DruidXADataSource
+    min-pool-size: 2
+    max-pool-size: 150
+    borrow-connection-timeout: 60
+    reap-timeout: 2000
+    max-idle-time: 60
+    maintenance-interval: 60
+    login-timeout: 60
+    test-query: SELECT 1
+    xa-properties:
+      name: ICONFIG
+      driverClassName: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://127.0.0.1:3306/yun_iconfig?serverTimezone=Asia/Shanghai&characterEncoding=utf-8&useLocalSessionState=true
+      username: root
+      password: 123456
+      initialSize: 1
+      minIdle: 1
+      maxActive: 150
+      maxWait: 20000
+      timeBetweenEvictionRunsMillis: 180000
+      minEvictableIdleTimeMillis: 30000
+      maxEvictableIdleTimeMillis: 120000
+      validationQuery: select 1
+      testWhileIdle: true
+      testOnBorrow: true
+      testOnReturn: false
+      poolPreparedStatements: true
+      maxOpenPreparedStatements: 20
+      filters: stat,config
+  iars:
+    enable: true
+    unique-resource-name: dataSourceIars
+    xa-data-source-class-name: com.alibaba.druid.pool.xa.DruidXADataSource
+    min-pool-size: 2
+    max-pool-size: 150
+    borrow-connection-timeout: 60
+    reap-timeout: 2000
+    max-idle-time: 60
+    maintenance-interval: 60
+    login-timeout: 60
+    test-query: SELECT 1
+    xa-properties:
+      name: IARS
+      driverClassName: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://127.0.0.1:3306/yun_iars?serverTimezone=Asia/Shanghai&characterEncoding=utf-8&useLocalSessionState=true
+      username: root
+      password: 123456
+      initialSize: 1
+      minIdle: 1
+      maxActive: 150
+      maxWait: 20000
+      timeBetweenEvictionRunsMillis: 180000
+      minEvictableIdleTimeMillis: 30000
+      maxEvictableIdleTimeMillis: 120000
+      validationQuery: select 1
+      testWhileIdle: true
+      testOnBorrow: true
+      testOnReturn: false
+      poolPreparedStatements: true
+      maxOpenPreparedStatements: 20
+      filters: stat,config
+  iaps:
+    enable: true
+    unique-resource-name: dataSourceIaps
+    xa-data-source-class-name: com.alibaba.druid.pool.xa.DruidXADataSource
+    min-pool-size: 2
+    max-pool-size: 150
+    borrow-connection-timeout: 60
+    reap-timeout: 2000
+    max-idle-time: 60
+    maintenance-interval: 60
+    login-timeout: 60
+    test-query: SELECT 1
+    xa-properties:
+      name: IAPS
+      driverClassName: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://127.0.0.1:3306/yun_iaps?serverTimezone=Asia/Shanghai&characterEncoding=utf-8&useLocalSessionState=true
+      username: root
+      password: 123456
+      initialSize: 1
+      minIdle: 1
+      maxActive: 150
+      maxWait: 20000
+      timeBetweenEvictionRunsMillis: 180000
+      minEvictableIdleTimeMillis: 30000
+      maxEvictableIdleTimeMillis: 120000
+      validationQuery: select 1
+      testWhileIdle: true
+      testOnBorrow: true
+      testOnReturn: false
+      poolPreparedStatements: true
+      maxOpenPreparedStatements: 20
+      filters: stat,config
+  activity:
+    enable: true
+    unique-resource-name: dataSourceActivity
+    xa-data-source-class-name: com.alibaba.druid.pool.xa.DruidXADataSource
+    min-pool-size: 2
+    max-pool-size: 150
+    borrow-connection-timeout: 60
+    reap-timeout: 2000
+    max-idle-time: 60
+    maintenance-interval: 60
+    login-timeout: 60
+    test-query: SELECT 1
+    xa-properties:
+      name: ACTIVITY
+      driverClassName: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://127.0.0.1:3306/yun_activity?serverTimezone=Asia/Shanghai&characterEncoding=utf-8&useLocalSessionState=true
+      username: root
+      password: 123456
+      initialSize: 1
+      minIdle: 1
+      maxActive: 150
+      maxWait: 20000
+      timeBetweenEvictionRunsMillis: 180000
+      minEvictableIdleTimeMillis: 30000
+      maxEvictableIdleTimeMillis: 120000
+      validationQuery: select 1
+      testWhileIdle: true
+      testOnBorrow: true
+      testOnReturn: false
+      poolPreparedStatements: true
+      maxOpenPreparedStatements: 20
+      filters: stat,config
+  ifbm:
+    enable: true
+    unique-resource-name: dataSourceIfbm
+    xa-data-source-class-name: com.alibaba.druid.pool.xa.DruidXADataSource
+    min-pool-size: 2
+    max-pool-size: 150
+    borrow-connection-timeout: 60
+    reap-timeout: 2000
+    max-idle-time: 60
+    maintenance-interval: 60
+    login-timeout: 60
+    test-query: SELECT 1
+    xa-properties:
+      name: IFBM
+      driverClassName: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://127.0.0.1:3306/yun_ifbm?serverTimezone=Asia/Shanghai&characterEncoding=utf-8&useLocalSessionState=true
+      username: root
+      password: 123456
+      initialSize: 1
+      minIdle: 1
+      maxActive: 150
+      maxWait: 20000
+      timeBetweenEvictionRunsMillis: 180000
+      minEvictableIdleTimeMillis: 30000
+      maxEvictableIdleTimeMillis: 120000
+      validationQuery: select 1
+      testWhileIdle: true
+      testOnBorrow: true
+      testOnReturn: false
+      poolPreparedStatements: true
+      maxOpenPreparedStatements: 20
+      filters: stat,config
+
+cxf:
+  path: /rest
+  servlet.init:
+    service-list-path: /info
+  jaxrs:
+    component-scan: true
+    in-interceptors:
+      - org.apache.cxf.transport.common.gzip.GZIPInInterceptor
+    out-interceptors:
+      - org.apache.cxf.transport.common.gzip.GZIPOutInterceptor
+
+swagger:
+  enable: true

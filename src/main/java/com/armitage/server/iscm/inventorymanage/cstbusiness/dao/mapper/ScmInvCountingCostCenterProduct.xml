@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvcountingcostcenterproduct">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvcountingcostcenterproduct.findAll" resultType="ScmInvCountingCostCenterProduct" >
+	    SELECT * FROM scminvcountingcostcenterproduct WHERE  1=1  
+	</select>
+ 
+	<select id="scminvcountingcostcenterproduct.findAllPage" resultType="ScmInvCountingCostCenterProduct" parameterType="Map"> 
+		SELECT * FROM scminvcountingcostcenterproduct WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scminvcountingcostcenterproduct.selectById" resultType="ScmInvCountingCostCenterProduct" parameterType="Long">
+		SELECT * FROM scminvcountingcostcenterproduct WHERE id = #{value}
+	</select> 
+	<insert id="scminvcountingcostcenterproduct.add" parameterType="ScmInvCountingCostCenterProduct"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvcountingcostcenterproduct (
+        tableId,
+        lineId,
+        itemId,
+        unit,
+        qty        )
+		VALUES (
+        #{tableId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{qty}        )
+	</insert>
+ 
+	<update id="scminvcountingcostcenterproduct.update" parameterType="ScmInvCountingCostCenterProduct">
+		UPDATE scminvcountingcostcenterproduct set
+        tableId=#{tableId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        qty=#{qty}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvcountingcostcenterproduct.delete" parameterType="String">
+		DELETE FROM scminvcountingcostcenterproduct WHERE id IN (${value})
+	</delete> 
+	
+	<select id="scminvcountingcostcenterproduct.selectByTableId" resultType="ScmInvCountingCostCenterProduct2" parameterType="Map"> 
+		SELECT ScmInvCountingCostCenterProduct.*,scmmaterial.itemNo,scmmaterial.itemName,A.unitName,scmmaterialgroup.className as groupName,scmmaterial.spec as spec FROM ScmInvCountingCostCenterProduct
+		LEFT JOIN scmmaterial on ScmInvCountingCostCenterProduct.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on ScmInvCountingCostCenterProduct.unit=A.id 
+		LEFT JOIN ScmMaterialGroupDetail on ScmInvCountingCostCenterProduct.itemId=ScmMaterialGroupDetail.itemId
+		LEFT JOIN scmmaterialgroup on ScmMaterialGroupDetail.classId=scmmaterialgroup.id
+		where scminvcountingcostcenterproduct.tableId=${tableId}
+		order by scminvcountingcostcenterproduct.lineId,scminvcountingcostcenterproduct.id
+	</select>
+	<delete id="scminvcountingcostcenterproduct.deleteByTableId" parameterType="Map">
+		DELETE FROM ScmInvCountingCostCenterProduct WHERE tableId=#{tableId}
+	</delete>
+</mapper>
+ 

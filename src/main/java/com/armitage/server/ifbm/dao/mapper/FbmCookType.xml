@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fbmcooktype">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="fbmcooktype.findAll" resultType="FbmCookType" >
+	    SELECT * FROM fbmcooktype WHERE  1=1  
+	</select>
+ 
+	<select id="fbmcooktype.findAllPage" resultType="FbmCookType" parameterType="Map"> 
+		SELECT * FROM fbmcooktype WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="fbmcooktype.selectById" resultType="FbmCookType" parameterType="Long">
+		SELECT * FROM fbmcooktype WHERE id = #{value}
+	</select>
+	<select id="fbmcooktype.selectByControlUnitPage" resultType="FbmCookType" parameterType="Map">
+		SELECT FbmCookType.* FROM FbmCookType WHERE (controlUnitNo=#{controlUnitNo}
+		or exists (Select 1 from FbmCookTypeAssign where toCtrUnitNo=#{controlUnitNo} and cookTypeId=FbmCookType.id))
+		ORDER BY FbmCookType.id ASC
+	</select> 
+	<insert id="fbmcooktype.add" parameterType="FbmCookType"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  fbmcooktype (
+        code,
+        name,
+        permit,
+        remarks,
+        iSyncModFlag,
+        controlUnitNo        )
+		VALUES (
+        #{code},
+        #{name},
+        #{permit},
+        #{remarks},
+        #{iSyncModFlag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="fbmcooktype.update" parameterType="FbmCookType">
+		UPDATE fbmcooktype set
+        code=#{code},
+        name=#{name},
+        permit=#{permit},
+        remarks=#{remarks},
+        iSyncModFlag=#{iSyncModFlag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="fbmcooktype.delete" parameterType="String">
+		DELETE FROM fbmcooktype WHERE id IN (${value})
+	</delete> 
+
+</mapper>

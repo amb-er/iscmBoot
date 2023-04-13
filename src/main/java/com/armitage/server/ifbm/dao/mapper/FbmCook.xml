@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fbmcook">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="fbmcook.findAll" resultType="FbmCook2" >
+	    SELECT * FROM fbmcook WHERE  1=1  
+	</select>
+ 
+	<select id="fbmcook.findAllPage" resultType="FbmCook2" parameterType="Map"> 
+		SELECT FbmCook.id,FbmCook.code, FbmCook.name,Case when D.permit is null then FbmCook.permit else D.permit end as permit, FbmCook.controlUnitNo,
+		#{orgUnitNo} as orgUnitNo, FbmCook.sort FROM
+		(Select A.id, A.code, A.name, case when B.permit is null then A.permit else B.permit end as permit, A.controlUnitNo,B.orgUnitNo,A.sort,A.cookTypeId
+		From (SELECT FbmCook.* FROM FbmCook WHERE (controlUnitNo=#{controlUnitNo}
+			or exists (Select 1 from FbmCookAssign where toCtrUnitNo=#{controlUnitNo} and cookId=FbmCook.id))) A Left Join 
+		FbmCookResInfo B ON A.id = b.cookId And B.orgUnitNo=#{controlUnitNo}) FbmCook
+		Left Join FbmCookResInfo D on FbmCook.id = D.cookId and D.orgUnitNo=#{orgUnitNo}
+		WHERE 1 = 1 
+		ORDER BY FbmCook.sort,FbmCook.code ASC 
+	</select> 
+	<select id="fbmcook.selectById" resultType="FbmCook2" parameterType="Long">
+		SELECT * FROM fbmcook WHERE id = #{value}
+	</select> 
+	<select id="fbmcook.selectByOrgUnitAndCookTypePage" resultType="FbmCook2" parameterType="Map">
+		SELECT FbmCook.id,FbmCook.code, FbmCook.name,  Case when D.permit is null then FbmCook.permit else D.permit end as permit, FbmCook.controlUnitNo,
+		#{orgUnitNo} as orgUnitNo, FbmCook.sort FROM
+		(Select A.id, A.code, A.name, case when B.permit is null then A.permit else B.permit end as permit, A.controlUnitNo,B.orgUnitNo,A.sort,A.cookTypeId
+		From (SELECT FbmCook.* FROM FbmCook WHERE (controlUnitNo=#{controlUnitNo}
+			or exists (Select 1 from FbmCookAssign where toCtrUnitNo=#{controlUnitNo} and cookId=FbmCook.id))) A Left Join
+		FbmCookResInfo B On A.id = b.cookId And B.orgUnitNo=#{controlUnitNo}) FbmCook
+		Left Join FbmCookResInfo D on FbmCook.id = D.cookId and D.orgUnitNo=#{orgUnitNo}
+		WHERE 1 = 1 
+		<if test="cookTypeIds!=null and cookTypeIds!=''">
+			And FbmCook.cookTypeId  in (${cookTypeIds})
+		</if>
+		ORDER BY FbmCook.sort,FbmCook.code ASC
+	</select> 
+	<select id="fbmcook.selectByDishId" resultType="FbmCook2" parameterType="Map">
+		Select FbmCook.* From FbmDish,FbmDishResInfo,FbmDishCook,FbmCook where FbmDishResInfo.dishId=FbmDish.id 
+		and FbmDishCook.dishResInfoId=FbmDishResInfo.id and FbmCook.id=FbmDishCook.cookId
+		and FbmDishResInfo.orgUnitNo=#{orgUnitNo} and FbmDish.id=#{dishId} and FbmDishResInfo.menuId=0
+	</select> 
+	<select id="fbmcook.selectByOrgUnitPage" resultType="FbmCook2" parameterType="Map"> 
+		SELECT FbmCook.id,FbmCook.code, FbmCook.name,  Case when D.permit is null then FbmCook.permit else D.permit end as permit, FbmCook.controlUnitNo,
+		FbmCook.belongOrgUnitNo as orgUnitNo, FbmCook.sort FROM
+		(Select A.id, A.code, A.name, case when B.permit is null then A.permit else B.permit end as permit, A.controlUnitNo,B.orgUnitNo,A.belongOrgUnitNo,A.sort,A.cookTypeId
+		From (SELECT FbmCook.* FROM FbmCook WHERE (controlUnitNo=#{controlUnitNo}
+			or exists (Select 1 from FbmCookAssign where toCtrUnitNo=#{controlUnitNo} and cookId=FbmCook.id))) A left Join
+		FbmCookResInfo B On A.id = b.cookId And B.orgUnitNo=#{controlUnitNo}) FbmCook
+		Left Join FbmCookResInfo D on FbmCook.id = D.cookId and D.orgUnitNo=#{orgUnitNo},
+		FbmCookType
+		WHERE FbmCook.cookTypeId = FbmCookType.id and FbmCook.belongOrgUnitNo=#{orgUnitNo}
+		ORDER BY FbmCook.sort,FbmCook.code ASC 
+	</select> 
+	<insert id="fbmcook.add" parameterType="FbmCook"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  fbmcook (
+        cookTypeId,
+        code,
+        name,
+        mnemonic,
+        price,
+        mode,
+        sort,
+        permit,
+        remarks,
+        iSyncModFlag,
+        controlUnitNo        )
+		VALUES (
+        #{cookTypeId},
+        #{code},
+        #{name},
+        #{mnemonic},
+        #{price},
+        #{mode},
+        #{sort},
+        #{permit},
+        #{remarks},
+        #{iSyncModFlag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="fbmcook.update" parameterType="FbmCook">
+		UPDATE fbmcook set
+        cookTypeId=#{cookTypeId},
+        code=#{code},
+        name=#{name},
+        mnemonic=#{mnemonic},
+        price=#{price},
+        mode=#{mode},
+        sort=#{sort},
+        permit=#{permit},
+        remarks=#{remarks},
+        iSyncModFlag=#{iSyncModFlag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="fbmcook.delete" parameterType="String">
+		DELETE FROM fbmcook WHERE id IN (${value})
+	</delete> 
+
+</mapper>

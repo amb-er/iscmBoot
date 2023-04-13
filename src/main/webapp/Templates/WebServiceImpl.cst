@@ -1,0 +1,22 @@
+<%@ CodeTemplate Language="C#" TargetLanguage="Java" Description="Generates a db<->class mapping file for use with NHibnate." %>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" Category="Context" Description="Table that the dao is based on" %>
+<%@ Property Name="package" Type="System.String" Default="com.armitage.server.system" Category="Object" Description="The class namespace that the parent of the class should use" %>
+<%@ Property Name="className" Type="System.String"  Category="Object" Description="Model class name" %>
+
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Text.RegularExpressions" %> 
+ 
+<!-- #include file="common.inc" -->
+package <%=package%>.webservice.impl;
+
+import com.armitage.server.common.base.webservice.BaseServiceImpl;
+import <%=package%>.model.<%=className%>WSBean;
+import <%=package%>.service.<%=className%>Biz;
+import <%=package%>.webservice.<%=className%>Service;
+
+public class <%=className%>ServiceImpl extends BaseServiceImpl<<%=className%>Biz, <%=className%>WSBean> implements <%=className%>Service {
+	
+}

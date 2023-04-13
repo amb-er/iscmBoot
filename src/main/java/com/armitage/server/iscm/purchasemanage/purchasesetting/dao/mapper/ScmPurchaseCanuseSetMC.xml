@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurchasecanusesetmc">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurchasecanusesetmc.findAll" resultType="ScmPurchaseCanuseSetMC2" >
+	    SELECT * FROM ScmPurchaseCanuseSetMC WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurchasecanusesetmc.findAllPage" resultType="ScmPurchaseCanuseSetMC2" parameterType="Map"> 
+		SELECT * FROM ScmPurchaseCanuseSetMC WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpurchasecanusesetmc.selectById" resultType="ScmPurchaseCanuseSetMC2" parameterType="Long">
+		SELECT * FROM ScmPurchaseCanuseSetMC WHERE id = #{value}
+	</select> 
+	<select id="scmpurchasecanusesetmc.selectByPcsIds" resultType="ScmPurchaseCanuseSetMC2" parameterType="Map">
+		SELECT ScmPurchaseCanuseSetMC.*,ScmMaterialGroup.longNo FROM ScmPurchaseCanuseSetMC,ScmMaterialGroup 
+		WHERE ScmPurchaseCanuseSetMC.classId=ScmMaterialGroup.id
+		And ScmPurchaseCanuseSetMC.pcsId in (${pcsIds})
+	</select> 
+	<insert id="scmpurchasecanusesetmc.add" parameterType="ScmPurchaseCanuseSetMC"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurchaseCanuseSetMC (
+        pcsId,
+        classId        )
+		VALUES (
+        #{pcsId},
+        #{classId}        )
+	</insert>
+ 
+	<update id="scmpurchasecanusesetmc.update" parameterType="ScmPurchaseCanuseSetMC">
+		UPDATE ScmPurchaseCanuseSetMC set
+        pcsId=#{pcsId},
+        classId=#{classId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurchasecanusesetmc.delete" parameterType="String">
+		DELETE FROM ScmPurchaseCanuseSetMC WHERE id IN (${value})
+	</delete> 
+	
+	<select id="scmpurchasecanusesetmc.selectByPcsId" resultType="ScmPurchaseCanuseSetMC2" parameterType="Map">
+		SELECT * FROM ScmPurchaseCanuseSetMC WHERE pcsId = #{pcsId}
+	</select> 
+</mapper>

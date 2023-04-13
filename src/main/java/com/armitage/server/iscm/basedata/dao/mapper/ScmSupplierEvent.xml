@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsupplierevent">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsupplierevent.findAll" resultType="ScmSupplierEvent2" >
+	    SELECT * FROM scmsupplierevent WHERE  1=1  
+	</select>
+ 
+	<select id="scmsupplierevent.findAllPage" resultType="ScmSupplierEvent2" parameterType="Map"> 
+		SELECT * FROM scmsupplierevent WHERE  1=1 ORDER BY flag DESC,endDate DESC 
+	</select> 
+	<select id="scmsupplierevent.selectById" resultType="ScmSupplierEvent2" parameterType="Long">
+		SELECT * FROM scmsupplierevent WHERE id = #{value}
+	</select>
+	<select id="scmsupplierevent.selectForPushPage" resultType="ScmSupplierEvent2" parameterType="Map">
+		SELECT * FROM scmsupplierevent WHERE controlUnitNo=#{controlUnitNo} ORDER BY updateTimeStamp ASC
+	</select> 
+	<insert id="scmsupplierevent.add" parameterType="ScmSupplierEvent"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmsupplierevent (
+        eventCode,
+        eventType,
+        begDate,
+        endDate,
+        remarks,
+        wxUrl,
+        filePath,
+        flag,
+        controlUnitNo        )
+		VALUES (
+        #{eventCode},
+        #{eventType},
+        #{begDate},
+        #{endDate},
+        #{remarks},
+        #{wxUrl},
+        #{filePath},
+        #{flag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsupplierevent.update" parameterType="ScmSupplierEvent">
+		UPDATE scmsupplierevent set
+        eventCode=#{eventCode},
+        eventType=#{eventType},
+        begDate=#{begDate},
+        endDate=#{endDate},
+        remarks=#{remarks},
+        wxUrl=#{wxUrl},
+        filePath=#{filePath},
+        flag=#{flag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsupplierevent.delete" parameterType="String">
+		DELETE FROM scmsupplierevent WHERE id IN (${value})
+	</delete> 
+
+</mapper>

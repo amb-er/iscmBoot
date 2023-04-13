@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurreceiveentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurreceiveentry.findAll" resultType="ScmPurReceiveEntry2" >
+	    SELECT * FROM scmpurreceiveentry WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurreceiveentry.findAllPage" resultType="ScmPurReceiveEntry2" parameterType="Map"> 
+		SELECT scmpurreceiveentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		A.unitName as purUnitName,
+		B.unitName as unitName,
+		C.unitName as baseUnitName,
+		D.unitName as pieUnitName,
+		ScmMaterialUnitRelation.convrate as convrate
+		FROM scmpurreceiveentry
+		left join scmmaterial on scmpurreceiveentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scmpurreceiveentry.purUnit=A.id 
+		left join ScmMeasureUnit B on scmpurreceiveentry.unit=B.id
+		left join ScmMeasureUnit C on scmpurreceiveentry.baseUnit=C.id
+		left join ScmMeasureUnit D on scmpurreceiveentry.pieunit=D.id
+		left join ScmMaterialUnitRelation on scmpurreceiveentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurreceiveentry.unit=ScmMaterialUnitRelation.targetUnitId
+		WHERE  1=1
+		ORDER BY id ASC 
+	</select> 
+	<select id="scmpurreceiveentry.selectById" resultType="ScmPurReceiveEntry2" parameterType="Long">
+		SELECT scmpurreceiveentry.*,scmmaterial.itemNo as itemNo,
+		scmbaseattachment.id as attachmentId,scmbaseattachment.fileName as attachmentName,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		A.unitName as purUnitName,
+		B.unitName as unitName,
+		C.unitName as baseUnitName,
+		D.unitName as pieUnitName,
+		ScmMaterialUnitRelation.convrate as convrate
+		FROM scmpurreceiveentry
+		LEFT JOIN (SELECT * FROM (SELECT * FROM scmbaseattachment ORDER BY createTime DESC) r GROUP BY r.billtype,r.billId)scmbaseattachment
+		on scmpurreceiveentry.itemId=scmbaseattachment.billId and scmbaseattachment.billtype="ScmMaterial"
+		left join scmmaterial on scmpurreceiveentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scmpurreceiveentry.purUnit=A.id 
+		left join ScmMeasureUnit B on scmpurreceiveentry.unit=B.id
+		left join ScmMeasureUnit C on scmpurreceiveentry.baseUnit=C.id
+		left join ScmMeasureUnit D on scmpurreceiveentry.pieunit=D.id
+		left join ScmMaterialUnitRelation on scmpurreceiveentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurreceiveentry.unit=ScmMaterialUnitRelation.targetUnitId
+		WHERE scmpurreceiveentry.id = #{value}
+	</select>
+	<select id="scmpurreceiveentry.selectByPvId" resultType="ScmPurReceiveEntry2" parameterType="Map"> 
+		SELECT scmpurreceiveentry.*,scmmaterial.itemNo as itemNo,scmpurreceive.pvNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		scmbaseattachment.id as attachmentId,scmbaseattachment.fileName as attachmentName,
+		A.unitName as purUnitName,
+		B.unitName as pieUnitName,
+		C.unitName as baseUnitName,
+		ScmMaterialUnitRelation.convrate as convrate,
+		D.convrate as purConvRate,IFNULL(scmpurorderentry.pricebillid,0) as poPriceBillId
+		FROM scmpurreceiveentry
+		LEFT JOIN (SELECT * FROM (SELECT * FROM scmbaseattachment Where billtype='ScmMaterial' and controlUnitNo=#{controlUnitNo} ORDER BY createTime DESC) r GROUP BY r.billtype,r.billId) scmbaseattachment
+		on scmpurreceiveentry.itemId=scmbaseattachment.billId
+		left join scmmaterial on scmpurreceiveentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scmpurreceiveentry.purUnit=A.id 
+		left join ScmMeasureUnit B on scmpurreceiveentry.pieUnit=B.id
+		left join ScmMeasureUnit C on scmpurreceiveentry.baseUnit=C.id
+		LEFT JOIN scmpurorderentry on scmpurorderentry.id=scmpurreceiveentry.PoDtlId
+		left join ScmMaterialUnitRelation on scmpurreceiveentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurreceiveentry.unit=ScmMaterialUnitRelation.targetUnitId
+		left join ScmMaterialUnitRelation D on scmpurreceiveentry.itemId=D.itemId
+		AND scmpurreceiveentry.purUnit=D.targetUnitId,ScmPurReceive
+		WHERE ScmPurReceive.id = scmpurreceiveentry.pvId and scmpurreceiveentry.pvId=#{pvId}
+		<if test="notwr != null and notwr ==2">
+			And scmpurreceiveentry.invQty &gt; scmpurreceiveentry.addInQty
+		</if>
+		<if test="notwr != null and notwr == 1">
+			And scmpurreceiveentry.invQty+scmpurreceiveentry.concessiveRecQty &gt; scmpurreceiveentry.addInQty
+		</if>
+		ORDER BY scmpurreceiveentry.lineId ASC
+	</select>
+	<select id="scmpurreceiveentry.selectByCkId" resultType="ScmPurReceiveEntry2" parameterType="Map"> 
+		SELECT scmpurreceiveentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		A.unitName as purUnitName,
+		B.unitName as unitName,
+		C.unitName as baseUnitName,
+		D.unitName as pieUnitName,
+		ScmMaterialUnitRelation.convrate as convrate,scmpurreceiveentry.deliveryQty*scmpurreceiveentry.taxPrice as checkAmt
+		FROM scmpurreceiveentry
+		left join scmmaterial on scmpurreceiveentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scmpurreceiveentry.purUnit=A.id 
+		left join ScmMeasureUnit B on scmpurreceiveentry.unit=B.id
+		left join ScmMeasureUnit C on scmpurreceiveentry.baseUnit=C.id
+		left join ScmMeasureUnit D on scmpurreceiveentry.pieunit=D.id
+		Left Join ScmPurOrderEntry On ScmPurOrderEntry.id=scmpurreceiveentry.poDtlId
+		left join ScmMaterialUnitRelation on scmpurreceiveentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurreceiveentry.unit=ScmMaterialUnitRelation.targetUnitId,
+		ScmPurReceive
+		WHERE ScmPurReceive.id = ScmPurReceiveEntry.pvId And ScmPurReceive.ckId=#{ckId}
+		ORDER BY ScmPurOrderEntry.reqFinOrgUnitNo,scmmaterial.itemNo ASC
+	</select> 
+	<insert id="scmpurreceiveentry.add" parameterType="ScmPurReceiveEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurreceiveentry (
+        pvId,
+        lineId,
+        itemId,
+        purUnit,
+        unit,
+        pieUnit,
+        baseUnit,
+        orderQty,
+        receiveQty,
+        deliveryQty,
+        qty,
+        unqualifiedQty,
+        concessiveRecRate,
+        concessiveRecQty,
+        invQty,
+        pieQty,
+        baseQty,
+        price,
+        amt,
+        checkAmt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        checkTaxAmt,
+        addInQty,
+        returnQty,
+        productDate,
+        expDate,
+        useOrgUnitNo,
+        invOrgUnitNo,
+        wareHouseId,
+        finOrgUnitNo,
+        balanceSupplierId,
+        storageOrgUnitNo,
+        reqOrgUnitNo,
+        purOrgUnitNo,
+        buyerId,
+        purGroupId,
+        poDtlId,
+        poNo,
+        priceBillId,
+        refPriceStatus,
+        rowStatus,
+        costUseTypeId,
+        checker,
+        checkDate,
+        remarks        )
+		VALUES (
+        #{pvId},
+        #{lineId},
+        #{itemId},
+        #{purUnit},
+        #{unit},
+        #{pieUnit},
+        #{baseUnit},
+        #{orderQty},
+        #{receiveQty},
+        #{deliveryQty},
+        #{qty},
+        #{unqualifiedQty},
+        #{concessiveRecRate},
+        #{concessiveRecQty},
+        #{invQty},
+        #{pieQty},
+        #{baseQty},
+        #{price},
+        #{amt},
+        #{checkAmt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{checkTaxAmt},
+        #{addInQty},
+        #{returnQty},
+        #{productDate},
+        #{expDate},
+        #{useOrgUnitNo},
+        #{invOrgUnitNo},
+        #{wareHouseId},
+        #{finOrgUnitNo},
+        #{balanceSupplierId},
+        #{storageOrgUnitNo},
+        #{reqOrgUnitNo},
+        #{purOrgUnitNo},
+        #{buyerId},
+        #{purGroupId},
+        #{poDtlId},
+        #{poNo},
+        #{priceBillId},
+        #{refPriceStatus},
+        #{rowStatus},
+        #{costUseTypeId},
+        #{checker},
+        #{checkDate},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scmpurreceiveentry.update" parameterType="ScmPurReceiveEntry">
+		UPDATE scmpurreceiveentry set
+        pvId=#{pvId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        purUnit=#{purUnit},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        baseUnit=#{baseUnit},
+        orderQty=#{orderQty},
+        receiveQty=#{receiveQty},
+        deliveryQty=#{deliveryQty},
+        qty=#{qty},
+        unqualifiedQty=#{unqualifiedQty},
+        concessiveRecRate=#{concessiveRecRate},
+        concessiveRecQty=#{concessiveRecQty},
+        invQty=#{invQty},
+        pieQty=#{pieQty},
+        baseQty=#{baseQty},
+        price=#{price},
+        amt=#{amt},
+        checkAmt=#{checkAmt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        checkTaxAmt=#{checkTaxAmt},
+        addInQty=#{addInQty},
+        returnQty=#{returnQty},
+        productDate=#{productDate},
+        expDate=#{expDate},
+        useOrgUnitNo=#{useOrgUnitNo},
+        invOrgUnitNo=#{invOrgUnitNo},
+        wareHouseId=#{wareHouseId},
+        finOrgUnitNo=#{finOrgUnitNo},
+        balanceSupplierId=#{balanceSupplierId},
+        storageOrgUnitNo=#{storageOrgUnitNo},
+        reqOrgUnitNo=#{reqOrgUnitNo},
+        purOrgUnitNo=#{purOrgUnitNo},
+        buyerId=#{buyerId},
+        purGroupId=#{purGroupId},
+        poDtlId=#{poDtlId},
+        poNo=#{poNo},
+        priceBillId=#{priceBillId},
+        refPriceStatus=#{refPriceStatus},
+        rowStatus=#{rowStatus},
+        costUseTypeId=#{costUseTypeId},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+	
+	<update id="scmpurreceiveentry.updateRowStatusByPvId" parameterType="map">
+		UPDATE scmpurreceiveentry set
+        rowStatus=#{rowStatus},
+        checker=#{checker},
+        checkDate=#{checkDate}	 WHERE pvId = #{pvId}
+	</update>
+ 	<delete id="scmpurreceiveentry.delete" parameterType="String">
+		DELETE FROM scmpurreceiveentry WHERE id IN (${value})
+	</delete> 
+	<update id="scmpurreceiveentry.clearInvQty" parameterType="map">
+		UPDATE scmpurreceiveentry set addInQty=0,rowStatus='E' where id in(${ids})
+	</update>
+</mapper>

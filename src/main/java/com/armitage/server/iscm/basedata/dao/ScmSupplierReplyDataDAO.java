@@ -1,0 +1,17 @@
+package com.armitage.server.iscm.basedata.dao;
+
+
+import java.util.HashMap;
+import java.util.List;
+
+import com.armitage.server.common.base.dao.BasicDAO;
+import com.armitage.server.common.exception.DAOException;
+import com.armitage.server.iscm.basedata.model.ScmSupplierReplyData;
+import com.armitage.server.iscm.basedata.model.ScmSupplierReplyData2;
+
+public interface ScmSupplierReplyDataDAO extends BasicDAO<ScmSupplierReplyData> {
+	public ScmSupplierReplyData selectMaxUpdateTimeByCtrl(HashMap<String, Object> map) throws DAOException;
+	public List<ScmSupplierReplyData2> selectPendingPushByCtrl(HashMap<String, Object> map) throws DAOException;
+	public ScmSupplierReplyData selectByReplyDataId(HashMap<String, Object> map) throws DAOException;
+}
+

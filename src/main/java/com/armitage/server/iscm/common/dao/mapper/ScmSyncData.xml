@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsyncdata">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsyncdata.findAll" resultType="ScmSyncData" >
+	    SELECT * FROM ScmSyncData WHERE  1=1  
+	</select>
+ 
+	<select id="scmsyncdata.findAllPage" resultType="ScmSyncData" parameterType="Map"> 
+		SELECT * FROM ScmSyncData WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmsyncdata.selectById" resultType="ScmSyncData" parameterType="Long">
+		SELECT * FROM ScmSyncData WHERE id = #{value}
+	</select>
+	<select id="scmsyncdata.selectByScmSyncData" resultType="ScmSyncData" parameterType="Map">
+		SELECT * FROM ScmSyncData WHERE ScmSyncData.orgUnitNo=#{orgUnitNo} and ScmSyncData.billType=#{billType}
+		and ScmSyncData.dataId=#{dataId} and ScmSyncData.controlUnitNo=#{controlUnitNo}
+		and ScmSyncData.taskCode=#{taskCode} and ScmSyncData.dataClass=#{dataClass} 
+	</select> 
+	<select id="scmsyncdata.selectForTaskPage" resultType="ScmSyncData" parameterType="Map">
+		SELECT * FROM ScmSyncData WHERE controlUnitNo=#{controlUnitNo} ORDER BY updateTime ASC
+	</select> 
+	<insert id="scmsyncdata.add" parameterType="ScmSyncData"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmSyncData (
+        orgUnitNo,
+        taskCode,
+        dataClass,
+        dataId,
+        platSupplierId,
+        billType,
+        billNo,
+        syncType,
+        operator,
+        createDate,
+        lastTaskTime,
+        taskCount,
+        syncTime,
+        synchron,
+        errorMessage,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{taskCode},
+        #{dataClass},
+        #{dataId},
+        #{platSupplierId},
+        #{billType},
+        #{billNo},
+        #{syncType},
+        #{operator},
+        #{createDate},
+        #{lastTaskTime},
+        #{taskCount},
+        #{syncTime},
+        #{synchron},
+        #{errorMessage},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsyncdata.update" parameterType="ScmSyncData">
+		UPDATE ScmSyncData set
+        orgUnitNo=#{orgUnitNo},
+        taskCode=#{taskCode},
+        dataClass=#{dataClass},
+        dataId=#{dataId},
+        platSupplierId=#{platSupplierId},
+        billType=#{billType},
+        billNo=#{billNo},
+        syncType=#{syncType},
+        operator=#{operator},
+        createDate=#{createDate},
+        lastTaskTime=#{lastTaskTime},
+        taskCount=#{taskCount},
+        syncTime=#{syncTime},
+        synchron=#{synchron},
+        errorMessage=#{errorMessage},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+	
+	<update id="scmsyncdata.updateBillNoChangeTime" parameterType="ScmSyncData">
+		UPDATE ScmSyncData set
+        orgUnitNo=#{orgUnitNo},
+        taskCode=#{taskCode},
+        dataClass=#{dataClass},
+        dataId=#{dataId},
+        platSupplierId=#{platSupplierId},
+        billType=#{billType},
+        billNo=#{billNo},
+        syncType=#{syncType},
+        operator=#{operator},
+        createDate=#{createDate},
+        lastTaskTime=#{lastTaskTime},
+        taskCount=#{taskCount},
+        syncTime=#{syncTime},
+        synchron=#{synchron},
+        errorMessage=#{errorMessage},
+        controlUnitNo=#{controlUnitNo},
+        updateTime=updateTime		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsyncdata.delete" parameterType="String">
+		DELETE FROM ScmSyncData WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvwarehouseusr">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvwarehouseusr.findAll" resultType="ScmInvWareHouseUsr" >
+	    SELECT * FROM ScmInvWareHouseUsr WHERE  1=1  
+	</select>
+ 
+	<select id="scminvwarehouseusr.findAllPage" resultType="ScmInvWareHouseUsr" parameterType="Map"> 
+		SELECT * FROM ScmInvWareHouseUsr WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scminvwarehouseusr.selectById" resultType="ScmInvWareHouseUsr" parameterType="Long">
+		SELECT * FROM ScmInvWareHouseUsr WHERE id = #{value}
+	</select> 
+	<select id="scminvwarehouseusr.selectByWareHouseId" resultType="ScmInvWareHouseUsr2" parameterType="Map">
+		SELECT * FROM ScmInvWareHouseUsr WHERE wareHouseId = #{wareHouseId}
+	</select> 
+	<select id="scminvwarehouseusr.selectByUsrCode" resultType="ScmInvWareHouseUsr2" parameterType="Map">
+		SELECT scminvwarehouse.*,scminvaccreditwh.wareHouseId  FROM scminvwarehouse,scminvaccreditwh
+		WHERE scminvwarehouse.id = scminvaccreditwh.wareHouseId
+		and scminvaccreditwh.status='Y' and scminvaccreditwh.endInit=1
+		and scminvaccreditwh.endInit = 1
+		and scminvaccreditwh.morgUnitNo = #{orgUnitNo}
+		And (scminvwarehouse.usePermission=0 or (scminvwarehouse.usePermission=1 
+		And EXISTS(SELECT 1 FROM ScmInvWareHouseUsr Where wareHouseId=scminvwarehouse.id And usrCode=#{usrCode})))
+	</select>
+	<insert id="scminvwarehouseusr.add" parameterType="ScmInvWareHouseUsr"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmInvWareHouseUsr (
+        wareHouseId,
+        orgUnitNo,
+        usrCode        )
+		VALUES (
+        #{wareHouseId},
+        #{orgUnitNo},
+        #{usrCode}        )
+	</insert>
+ 
+	<update id="scminvwarehouseusr.update" parameterType="ScmInvWareHouseUsr">
+		UPDATE ScmInvWareHouseUsr set
+        wareHouseId=#{wareHouseId},
+        orgUnitNo=#{orgUnitNo},
+        usrCode=#{usrCode}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvwarehouseusr.delete" parameterType="String">
+		DELETE FROM ScmInvWareHouseUsr WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

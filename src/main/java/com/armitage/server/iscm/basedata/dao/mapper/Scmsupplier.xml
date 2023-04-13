@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsupplier">
+ 	
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsupplier.findAll" resultType="Scmsupplier2" >
+	    SELECT * FROM scmsupplier WHERE  1=1  
+	</select>
+ 
+	<select id="scmsupplier.findAllPage" resultType="Scmsupplier2" parameterType="Map"> 
+		SELECT scmsupplier.* FROM scmsupplier,ScmSupplierGroupDetail,ScmSupplierGroup,ScmSupplierGroupStandard 
+		WHERE scmsupplier.id=ScmSupplierGroupDetail.vendorId
+		AND ScmSupplierGroupDetail.classId=ScmSupplierGroup.id
+		AND ScmSupplierGroup.standardId=ScmSupplierGroupStandard.id
+		ORDER BY scmsupplier.id ASC 
+	</select>
+	<select id="scmsupplier.findByPurAllPage" resultType="Scmsupplier2" parameterType="Map"> 
+		SELECT ScmSupplier.id,ScmSupplier.vendorNo,ScmSupplier.vendorName,ScmSupplier.mnemonicCode,
+		 	Case WHEN ScmSupplierPurChaseInfo.status is null Then ScmSupplier.status Else ScmSupplierPurChaseInfo.status end as status FROM
+			(Select ScmSupplier.id,ScmSupplier.vendorNo,ScmSupplier.vendorName,ScmSupplier.mnemonicCode,
+				Case WHEN ScmSupplierPurChaseInfo.status is null Then ScmSupplier.status Else ScmSupplierPurChaseInfo.status End as status
+				From ScmSupplier
+					Join ScmSupplierPurChaseInfo
+					On ScmSupplier.id=ScmSupplierPurChaseInfo.vendorId and ScmSupplierPurChaseInfo.orgUnitNo=#{controlUnitNo}
+				Where ScmSupplier.status='A') ScmSupplier
+		Left Join ScmSupplierPurChaseInfo ON ScmSupplier.id=ScmSupplierPurChaseInfo.vendorId 
+			and ScmSupplierPurChaseInfo.orgUnitNo=#{orgUnitNo}
+		WHERE  Case WHEN ScmSupplierPurChaseInfo.status is null Then ScmSupplier.status Else ScmSupplierPurChaseInfo.status End='A' 
+		ORDER BY ScmSupplier.vendorNo ASC
+	</select>  
+	<select id="scmsupplier.findByFinAllPage" resultType="Scmsupplier2" parameterType="Map"> 
+		SELECT ScmSupplier.id,ScmSupplier.vendorNo,ScmSupplier.vendorName,ScmSupplier.mnemonicCode,
+		 	Case WHEN ScmSupplierCompanyInfo.status is null Then ScmSupplier.status Else ScmSupplierCompanyInfo.status end as status FROM
+			(Select ScmSupplier.id,ScmSupplier.vendorNo,ScmSupplier.vendorName,ScmSupplier.mnemonicCode,
+				Case WHEN ScmSupplierCompanyInfo.status is null Then ScmSupplier.status Else ScmSupplierCompanyInfo.status End as status
+				From ScmSupplier
+					Join ScmSupplierCompanyInfo
+					On ScmSupplier.id=ScmSupplierCompanyInfo.vendorId and ScmSupplierCompanyInfo.orgUnitNo=#{controlUnitNo}
+					And ScmSupplier.status='A') ScmSupplier
+		Left Join ScmSupplierCompanyInfo ON ScmSupplier.id=ScmSupplierCompanyInfo.vendorId 
+			and ScmSupplierCompanyInfo.orgUnitNo=#{orgUnitNo}
+		WHERE Case WHEN ScmSupplierCompanyInfo.status is null Then ScmSupplier.status Else ScmSupplierCompanyInfo.status end='A'
+	    ORDER BY ScmSupplier.vendorNo ASC
+	</select> 
+	<select id="scmsupplier.findByGroupPage" resultType="Scmsupplier2" parameterType="Map">
+		SELECT  scmsupplier.*
+		 FROM  scmsupplier,scmsuppliergroupstandard,
+		scmsuppliergroupdetail,scmsuppliergroup
+		<if test="groupList!=null and groupList!='' and groupList!='@venderClassName'">
+		,(SELECT scmsuppliergroup.longNo
+			FROM scmsuppliergroup
+			WHERE  scmsuppliergroup.controlUnitNo=#{controlUnitNo}
+			AND scmsuppliergroup.id IN (${groupList})
+		) AS scmsuppliergroup2
+		</if>
+		WHERE scmsupplier.id=scmsuppliergroupdetail.vendorId AND scmsuppliergroupdetail.classId=scmsuppliergroup.id
+		AND scmsuppliergroup.standardId=scmsuppliergroupstandard.id
+		<if test="groupList!=null and groupList!='' and groupList!='@venderClassName'">
+			AND INSTR(scmsuppliergroup.longNo,scmsuppliergroup2.longNo)=1
+		</if>
+		AND scmsuppliergroup.controlUnitNo=#{controlUnitNo}
+		ORDER BY scmsupplier.id ASC
+	</select>
+	<select id="scmsupplier.findForSupplierPlatPage" resultType="Scmsupplier2" parameterType="Map"> 
+		SELECT scmsupplier.*,ScmSupplierRegInvitation.platSupplierId as platVendorId
+		FROM scmsupplier,ScmSupplierGroupDetail,ScmSupplierGroup,ScmSupplierGroupStandard,ScmSupplierRegInvitation 
+		WHERE scmsupplier.id=ScmSupplierGroupDetail.vendorId
+		AND ScmSupplierGroupDetail.classId=ScmSupplierGroup.id
+		AND ScmSupplierGroup.standardId=ScmSupplierGroupStandard.id
+		AND scmsupplier.controlUnitNo=#{controlUnitNo}
+		AND scmsupplier.status='A'
+		AND scmsupplier.id=ScmSupplierRegInvitation.vendorId
+		AND ScmSupplierRegInvitation.controlUnitNo=#{controlUnitNo}
+		AND ScmSupplierRegInvitation.platSupplierId &gt;0
+		ORDER BY scmsupplier.vendorNo ASC 
+	</select>  	
+	<select id="scmsupplier.selectById" resultType="Scmsupplier2" parameterType="Long">
+		SELECT * FROM scmsupplier WHERE id = #{value}
+	</select> 
+	<select id="scmsupplier.checkUse" resultType="Integer" parameterType="Long">
+		select count(distinct purorder.id)+count(distinct purprice.id)+count(distinct purquotation.id)+count(distinct purreceive.id)
+		+count(distinct purreceiveentry.id)+count(distinct purrequireentry.id)+count(distinct purinwarehsbillentry.id)+count(distinct purinwarehsbill.wrId)
+		from scmsupplier 
+		LEFT JOIN scmpurorder purorder on scmsupplier.id = purorder.vendorId
+		LEFT JOIN scmpurprice purprice on (scmsupplier.id = purprice.vendorId1 or scmsupplier.id = purprice.vendorId2 or scmsupplier.id = purprice.vendorId3)
+		LEFT JOIN scmpurquotation purquotation on scmsupplier.id = purquotation.vendorId
+		LEFT JOIN scmpurreceive purreceive on scmsupplier.id = purreceive.vendorId
+		LEFT JOIN scmpurreceiveentry purreceiveentry on scmsupplier.id = purreceiveentry.balanceSupplierId
+		LEFT JOIN scmpurrequireentry purrequireentry on scmsupplier.id = purrequireentry.vendorId
+		LEFT JOIN scminvpurinwarehsbillentry purinwarehsbillentry on scmsupplier.id = purinwarehsbillentry.balanceVendorId
+		LEFT JOIN scminvpurinwarehsbill purinwarehsbill on scmsupplier.id = purinwarehsbill.vendorId
+		WHERE scmsupplier.id = #{value}
+	</select>
+	<select id="scmsupplier.selectByName" resultType="Scmsupplier2" parameterType="Map">
+		SELECT vendorName FROM scmsupplier WHERE vendorName = #{vendorName} and controlUnitNo=#{controlUnitNo}
+	</select> 
+	<select id="scmsupplier.selectByIds" resultType="Scmsupplier2" parameterType="String">
+	    Select * from scmsupplier where id in (${item})
+	</select>
+	<select id="scmsupplier.selectForPushPage" resultType="Scmsupplier2" parameterType="Map">
+		SELECT * FROM scmsupplier WHERE controlUnitNo=#{controlUnitNo} ORDER BY updateTimeStamp ASC
+	</select>
+	<select id="scmsupplier.findByExternalCode" resultType="Scmsupplier2" parameterType="Map">
+		SELECT * FROM scmsupplier WHERE externalCode = #{externalCode} and controlUnitNo=#{controlUnitNo}
+	</select>
+	
+	<select id="scmsupplier.selectMaxId" resultType="Scmsupplier2" parameterType="Map">
+		SELECT * FROM scmsupplier 
+		WHERE controlUnitNo=#{controlUnitNo} Order BY vendorNo Desc Limit 1 
+	</select>
+	<select id="scmsupplier.selectByCode" resultType="Scmsupplier2" parameterType="Map">
+		SELECT * FROM scmsupplier WHERE vendorNo = #{vendorNo} and controlUnitNo=#{controlUnitNo}
+	</select>
+	<select id="scmsupplier.selectByIdAndGroup" resultType="Scmsupplier2" parameterType="Map"> 
+        SELECT scmsupplier.*, ScmSupplierGroup.classCode, ScmSupplierGroup.className 
+        FROM scmsupplier,ScmSupplierGroupDetail,ScmSupplierGroup,ScmSupplierGroupStandard 
+        WHERE scmsupplier.id=ScmSupplierGroupDetail.vendorId
+        AND ScmSupplierGroupDetail.classId=ScmSupplierGroup.id
+        AND ScmSupplierGroup.standardId=ScmSupplierGroupStandard.id
+        <if test="vendorId !=null and vendorId !=0">
+            AND scmsupplier.id = #{vendorId}
+        </if>
+        <if test="sbSupClass !=null and sbSupClass !=''">
+            AND ScmSupplierGroup.id in ${sbSupClass}
+        </if>
+        ORDER BY scmsupplier.id ASC 
+    </select> 
+    <select id="scmsupplier.findSameNameVendor" resultType="Scmsupplier2" parameterType="Map">
+		SELECT * FROM ScmSupplier WHERE controlUnitNo=#{controlUnitNo} and vendorName=#{vendorName} and id !=#{id} Limit 1
+	</select>  
+    <select id="scmsupplier.findVendorSupplyInfoPage" resultType="Scmsupplier2" parameterType="Map">
+		SELECT Distinct ScmSupplier.* FROM ScmSupplier,ScmPurSupplyInfo WHERE ScmSupplier.id=ScmPurSupplyInfo.vendorId 
+		And ScmPurSupplyInfo.orgUnitNo = #{orgUnitNo} ORDER BY ScmSupplier.vendorNo
+	</select>  
+	<select id="scmsupplier.findByControlAndGroup" resultType="Scmsupplier2" parameterType="Map">
+		SELECT ScmSupplier.id,ScmSupplier.vendorNo,ScmSupplier.vendorName,ScmSupplier.mnemonicCode,ScmSupplierGroup.longNo,ScmSupplier.role,
+		 	Case WHEN ScmSupplierPurChaseInfo.status is null Then ScmSupplier.status Else ScmSupplierPurChaseInfo.status end as status,
+			Case WHEN ScmSupplierPurChaseInfo.taxpayerType is null Then ScmSupplier.taxpayerType Else ScmSupplierPurChaseInfo.taxpayerType end as taxpayerType,
+			Case WHEN ScmSupplierPurChaseInfo.vatRate is null Then ScmSupplier.vatRate Else ScmSupplierPurChaseInfo.vatRate end as vatRate FROM
+			(Select ScmSupplier.id,ScmSupplier.vendorNo,ScmSupplier.vendorName,ScmSupplier.mnemonicCode,ScmSupplier.role,
+				Case WHEN ScmSupplierPurChaseInfo.status is null Then ScmSupplier.status Else ScmSupplierPurChaseInfo.status End as status,
+				ScmSupplierPurChaseInfo.taxpayerType,ScmSupplierPurChaseInfo.vatRate
+				From ScmSupplier
+					Join ScmSupplierPurChaseInfo
+					On ScmSupplier.id=ScmSupplierPurChaseInfo.vendorId and ScmSupplierPurChaseInfo.orgUnitNo=#{controlUnitNo}
+					And ScmSupplier.status in (${status})) ScmSupplier
+		Left Join ScmSupplierPurChaseInfo ON ScmSupplier.id=ScmSupplierPurChaseInfo.vendorId 
+		and ScmSupplierPurChaseInfo.orgUnitNo=#{orgUnitNo} and ScmSupplierPurChaseInfo.status in (${status}),
+		ScmSupplierGroupDetail,ScmSupplierGroup
+		WHERE scmsupplier.id=ScmSupplierGroupDetail.vendorId
+		and ScmSupplierGroupDetail.classId=ScmSupplierGroup.id
+		and LENGTH(ScmSupplierGroup.longNo) - LENGTH(REPLACE(ScmSupplierGroup.longNo,',','')) >= ${groupLevel}
+		ORDER BY ScmSupplier.vendorNo ASC
+	</select> 
+	<select id="scmsupplier.selectByTaxNo" resultType="Scmsupplier2" parameterType="Map">
+		SELECT  * FROM ScmSupplier WHERE controlUnitNo = #{controlUnitNo} and taxNo=#{taxNo}
+	</select>
+	<select id="scmsupplier.selectByIndustryGroupId" resultType="Scmsupplier2" parameterType="Map">
+		SELECT  * FROM ScmSupplier WHERE industryGroupId = #{industryGroupId}
+	</select>
+	<select id="scmsupplier.findRegInvitationPage" resultType="Scmsupplier2" parameterType="Map"> 
+		SELECT ScmSupplier.* FROM ScmSupplier,ScmSupplierRegInvitation
+		WHERE ScmSupplier.id=ScmSupplierRegInvitation.vendorId
+		AND ScmSupplierRegInvitation.uesed=1 AND ScmSupplier.controlUnitNo=#{controlUnitNo}
+		ORDER BY ScmSupplier.vendorNo ASC 
+	</select> 
+	<insert id="scmsupplier.add" parameterType="Scmsupplier"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmsupplier (
+        vendorNo,
+        vendorName,
+        simpleName,
+        mnemonicCode,
+        classId,
+        role,
+        orgUnitNo,
+        incorporator,
+        taxNo,
+        address,
+        email,
+        externalCode,
+        remarks,
+        sendOA,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        flag,
+        freezeOrgUnitNo,
+        status,
+        qualificationStatus,
+        industryGroupId,
+        businessAutoUpdate,
+        manageOrgUnitNo,
+        controlUnitNo        )
+		VALUES (
+        #{vendorNo},
+        #{vendorName},
+        #{simpleName},
+        #{mnemonicCode},
+        #{classId},
+        #{role},
+        #{orgUnitNo},
+        #{incorporator},
+        #{taxNo},
+        #{address},
+        #{email},
+        #{externalCode},
+        #{remarks},
+        #{sendOA},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{flag},
+        #{freezeOrgUnitNo},
+        #{status},
+        #{qualificationStatus},
+        #{industryGroupId},
+        #{businessAutoUpdate},
+        #{manageOrgUnitNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsupplier.update" parameterType="Scmsupplier">
+		UPDATE scmsupplier set
+        vendorNo=#{vendorNo},
+        vendorName=#{vendorName},
+        simpleName=#{simpleName},
+        mnemonicCode=#{mnemonicCode},
+        classId=#{classId},
+        role=#{role},
+        orgUnitNo=#{orgUnitNo},
+        incorporator=#{incorporator},
+        taxNo=#{taxNo},
+        address=#{address},
+        email=#{email},
+        externalCode=#{externalCode},
+        remarks=#{remarks},
+        sendOA=#{sendOA},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        flag=#{flag},
+        freezeOrgUnitNo=#{freezeOrgUnitNo},
+        status=#{status},
+        qualificationStatus=#{qualificationStatus},
+        industryGroupId=#{industryGroupId},
+        businessAutoUpdate=#{businessAutoUpdate},
+        manageOrgUnitNo=#{manageOrgUnitNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsupplier.delete" parameterType="String">
+		DELETE FROM scmsupplier WHERE id IN (${value})
+	</delete> 
+	
+	<select id="scmsupplier.querySupplierOA" resultType="Scmsupplier2" parameterType="Map">
+		SELECT scmsupplier.*,ScmSupplierBank.bankName,ScmSupplierBank.bankAccNo,
+		(SELECT className FROM scmsuppliergroup where id =(SELECT SUBSTRING_INDEX(scmsuppliergroup.longNo,',',1) FROM scmsuppliergroup where scmsuppliergroup.id=scmsupplier.classId)) as className,
+		ScmSupplierLinkMan.contactPerson,ScmSupplierPurchaseInfo.vatRate FROM scmsupplier
+		LEFT JOIN ScmSupplierBank on scmsupplier.id=scmsupplierbank.vendorId
+		LEFT JOIN ScmSupplierLinkMan on scmsupplier.id=ScmSupplierLinkMan.vendorId
+		LEFT JOIN ScmSupplierPurchaseInfo on scmsupplier.id=ScmSupplierPurchaseInfo.vendorId,
+		scmSupplierRegInvitation
+		where scmSupplierRegInvitation.vendorId=scmsupplier.id
+		and scmsupplier.status in(${supplierStatus})
+		and scmsupplier.qualificationStatus in(${qualificationStatus})
+	  	and scmsupplier.controlUnitNo=#{controlUnitNo}
+	  	and scmsupplier.sendOA=0
+	</select>
+	<select id="scmsupplier.queryByOrg" resultType="Scmsupplier2" parameterType="Map">
+		SELECT * FROM ScmSupplier where role='2' and orgUnitNo=#{orgUnitNo} and status='A' and controlUnitNo=#{controlUnitNo} limit 1
+	</select>
+	<select id="scmsupplier.queryByInvStockVendor" resultType="Scmsupplier2" parameterType="Map">
+		SELECT * FROM scmsupplier where id in(
+		select vendorId
+				from scminvstock
+				where scminvstock.orgUnitNo = #{orgUnitNo} and
+				    scminvstock.costOrgUnitNo = #{costOrgUnitNo} and 
+				    scminvstock.itemId = #{itemId} 
+		)
+	</select>
+</mapper>
+ 

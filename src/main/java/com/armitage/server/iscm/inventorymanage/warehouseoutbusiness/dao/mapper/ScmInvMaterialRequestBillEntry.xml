@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvmaterialrequestbillentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvmaterialrequestbillentry.findAll" resultType="ScmInvMaterialRequestBillEntry2" >
+	    SELECT * FROM scminvmaterialrequestbillentry WHERE  1=1  
+	</select>
+ 
+	<select id="scminvmaterialrequestbillentry.findAllPage" resultType="ScmInvMaterialRequestBillEntry2" parameterType="Map"> 
+		SELECT ScmInvMaterialRequestBillentry.*,scmmaterial.itemNo AS itemNo,ScmInvMaterialRequestBill.reqNo,
+		ScmInvMaterialRequestBill.bizDate,ScmInvMaterialRequestBill.creator,D.unitName as pieUnitName,
+		scmmaterial.itemName AS itemName,scmmaterial.spec AS spec,
+		A.unitName AS unitName,B.unitName AS baseUnitName,
+		ScmMaterialUnitRelation.convrate AS convrate,Case ScmInvMaterialRequestBillentry.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		C.className AS groupName
+		FROM ScmInvMaterialRequestBill,ScmInvMaterialRequestBillEntry
+		LEFT JOIN scmmaterial ON ScmInvMaterialRequestBillentry.itemId=scmmaterial.id
+		LEFT JOIN ScmMeasureUnit A ON ScmInvMaterialRequestBillentry.unit=A.id 
+		LEFT JOIN ScmMeasureUnit B ON ScmInvMaterialRequestBillentry.baseUnit=B.id
+		left join ScmMeasureUnit D on ScmInvMaterialRequestBillEntry.pieUnit=D.id
+		LEFT JOIN ScmMaterialUnitRelation ON ScmInvMaterialRequestBillentry.itemId=ScmMaterialUnitRelation.itemId
+		AND ScmInvMaterialRequestBillentry.unit=ScmMaterialUnitRelation.targetUnitId
+		LEFT JOIN (SELECT ScmMaterial.id,ScmMaterialGroup.className AS className 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+        and ScmMaterialGroupStandard.standardType='1') C ON ScmInvMaterialRequestBillentry.itemId=C.id
+		WHERE  ScmInvMaterialRequestBill.reqId=ScmInvMaterialRequestBillEntry.reqId ORDER BY ScmInvMaterialRequestBillentry.id ASC 
+	
+	</select> 
+	<select id="scminvmaterialrequestbillentry.selectById" resultType="ScmInvMaterialRequestBillEntry2" parameterType="Long">
+		SELECT ScmInvMaterialRequestBillEntry.*,scmmaterial.itemNo AS itemNo,
+		scmmaterial.itemName AS itemName,scmmaterial.spec AS spec,D.unitName as pieUnitName,
+		A.unitName AS unitName,B.unitName AS baseUnitName,
+		ScmMaterialUnitRelation.convrate AS convrate,Case ScmInvMaterialRequestBillentry.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		C.className AS groupName,(select group_concat(scmauditdetailhistory.oper,'^',scmauditdetailhistory.opinion,'^',date_format(scmauditdetailhistory.operDate,'%Y-%m-%d %T'),'^',scmauditdetailhistory.remarks)
+		from scmauditdetailhistory
+		where scmauditdetailhistory.billId = ScmInvMaterialRequestBillEntry.reqId
+		and scmauditdetailhistory.billType = 'InvMatReqBill'
+		and scmauditdetailhistory.lineId = ScmInvMaterialRequestBillEntry.lineId
+		and scmauditdetailhistory.flag=1
+		and ifnull(scmauditdetailhistory.remarks,'')!=''
+		group by scmauditdetailhistory.billId,scmauditdetailhistory.lineId
+		order by scmauditdetailhistory.billId,scmauditdetailhistory.lineId,scmauditdetailhistory.operDate asc) rowAuditRemarks
+		FROM ScmInvMaterialRequestBillEntry
+		LEFT JOIN scmmaterial ON ScmInvMaterialRequestBillEntry.itemId=scmmaterial.id
+		LEFT JOIN ScmMeasureUnit A ON ScmInvMaterialRequestBillEntry.unit=A.id 
+		LEFT JOIN ScmMeasureUnit B ON ScmInvMaterialRequestBillEntry.baseUnit=B.id
+		left join ScmMeasureUnit D on ScmInvMaterialRequestBillEntry.pieUnit=D.id
+		LEFT JOIN ScmMaterialUnitRelation ON ScmInvMaterialRequestBillEntry.itemId=ScmMaterialUnitRelation.itemId
+		AND ScmInvMaterialRequestBillEntry.unit=ScmMaterialUnitRelation.targetUnitId
+		LEFT JOIN (SELECT ScmMaterial.id,ScmMaterialGroup.className AS className 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+        and ScmMaterialGroupStandard.standardType='1') C ON ScmInvMaterialRequestBillEntry.itemId=C.id
+		WHERE ScmInvMaterialRequestBillEntry.id = #{value}
+	</select> 
+	<insert id="scminvmaterialrequestbillentry.add" parameterType="ScmInvMaterialRequestBillEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmInvMaterialRequestBillEntry (
+        reqId,
+        lineId,
+        itemId,
+        unit,
+        pieUnit,
+        baseUnit,
+        qty,
+        pieQty,
+        baseQty,
+        outQty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        rowStatus,
+        checker,
+        checkDate,
+        remarks,
+        costUseTypeId        )
+		VALUES (
+        #{reqId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{baseUnit},
+        #{qty},
+        #{pieQty},
+        #{baseQty},
+        #{outQty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{rowStatus},
+        #{checker},
+        #{checkDate},
+        #{remarks},
+        #{costUseTypeId}        )
+	</insert>
+ 
+	<update id="scminvmaterialrequestbillentry.update" parameterType="ScmInvMaterialRequestBillEntry">
+		UPDATE ScmInvMaterialRequestBillEntry set
+        reqId=#{reqId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        baseUnit=#{baseUnit},
+        qty=#{qty},
+        pieQty=#{pieQty},
+        baseQty=#{baseQty},
+        outQty=#{outQty},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        rowStatus=#{rowStatus},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        remarks=#{remarks},
+        costUseTypeId=#{costUseTypeId}		 WHERE id = #{id}
+	</update>
+ 
+ 	<update id="scminvmaterialrequestbillentry.updateRowStatusByReqId" parameterType="map">
+		UPDATE scminvmaterialrequestbillentry set
+        rowStatus=(case when rowStatus = 'N' then 'N' else #{rowStatus} end),
+        checker=#{checker},
+        checkDate=#{checkDate}	 WHERE reqId = #{reqId}
+	</update>
+	
+	<delete id="scminvmaterialrequestbillentry.delete" parameterType="String">
+		DELETE FROM scminvmaterialrequestbillentry WHERE id IN (${value})
+	</delete> 
+	
+	<delete id="scminvmaterialrequestbillentry.deleteByReqId" parameterType="Map">
+		DELETE FROM scminvmaterialrequestbillentry WHERE reqId=#{reqId}
+	</delete>
+	
+	<select id="scminvmaterialrequestbillentry.selectByReqId" resultType="ScmInvMaterialRequestBillEntry2" parameterType="Map"> 
+		SELECT sre.*,smm.itemNo AS itemNo,smm.itemName AS itemName,ScmMaterialGroup.classCode,ScmMaterialGroup.id as groupId,
+		Case sre.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		smm.spec AS spec,A.unitName AS unitName,B.unitName AS baseUnitName,(select group_concat(scmauditdetailhistory.oper,'^',scmauditdetailhistory.opinion,'^',date_format(scmauditdetailhistory.operDate,'%Y-%m-%d %T'),'^',scmauditdetailhistory.remarks)
+		from scmauditdetailhistory
+		where scmauditdetailhistory.billId = sre.reqId
+		and scmauditdetailhistory.billType = 'InvMatReqBill'
+		and scmauditdetailhistory.lineId = sre.lineId
+		and scmauditdetailhistory.flag=1
+		and ifnull(scmauditdetailhistory.remarks,'')!=''
+		group by scmauditdetailhistory.billId,scmauditdetailhistory.lineId
+		order by scmauditdetailhistory.billId,scmauditdetailhistory.lineId,scmauditdetailhistory.operDate asc) rowAuditRemarks,c.unitName as pieUnitName
+		FROM ScmInvMaterialRequestBillEntry sre 
+		left join ScmMaterial smm on sre.itemId=smm.id
+		left join ScmMeasureUnit A on sre.unit=A.id 
+		left join ScmMeasureUnit B on sre.baseUnit=B.id
+		left join ScmMeasureUnit C on sre.pieUnit=C.id
+		left join ScmMaterialUnitRelation R on sre.itemId=R.itemId AND sre.unit=R.targetUnitId,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE sre.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		And sre.reqId= #{reqId}
+		ORDER BY sre.lineId ASC
+	</select>
+	
+	<update id="scminvmaterialrequestbillentry.updateRowStatusByLineId" parameterType="map">
+		UPDATE ScmInvMaterialRequestBillEntry set
+			rowStatus = #{rowStatus},
+        	checker=#{checker},
+        	checkDate=#{checkDate}	 
+        WHERE reqId = #{reqId}
+        	AND lineId = #{lineId} 
+	</update>
+	
+</mapper>

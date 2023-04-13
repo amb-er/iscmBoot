@@ -1,0 +1,1265 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmmaterial">
+
+	<!-- default parameterType="HashMap" -->
+	<select id="scmmaterial.findAll" resultType="ScmMaterial2">
+		SELECT * FROM ScmMaterial WHERE 1=1
+	</select>
+
+	<select id="scmmaterial.findAllPage" resultType="ScmMaterial2"
+		parameterType="Map">
+		SELECT ScmMaterial.*,ScmMaterialGroup.id as groupId
+		FROM ScmMaterial,
+		ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		GROUP BY ScmMaterial.id ORDER BY ScmMaterial.id ASC
+	</select>
+	<select id="scmmaterial.findByGroupPage" resultType="ScmMaterial2"
+		parameterType="Map">
+		SELECT ScmMaterial.*,ScmMaterialGroup.id as groupId
+		FROM ScmMaterial,
+		ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		<if test="groupList!=null and groupList!='' and groupList!='@materialClassName'">
+			,(SELECT ScmMaterialGroup.longNo
+		FROM ScmMaterialGroup
+		WHERE ScmMaterialGroup.controlUnitNo=#{controlUnitNo}
+			AND ScmMaterialGroup.id IN (${groupList})
+		) AS ScmMaterialGroup2
+		</if>
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId AND ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		<if test="groupList!=null and groupList!='' and groupList!='@materialClassName'">
+			AND INSTR(ScmMaterialGroup.longNo,ScmMaterialGroup2.longNo)=1
+		</if>
+		AND ScmMaterialGroup.controlUnitNo=#{controlUnitNo}
+		GROUP BY ScmMaterial.id ORDER BY ScmMaterial.id ASC
+	</select>
+	<select id="scmmaterial.findByTypeMaterialAllPage" resultType="ScmMaterial2" parameterType="Map">
+	SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,ScmMaterial.baseUnitId as cstUnitId,ScmMaterial.status,
+		ScmMaterial.className,ScmMaterial.classCode,ScmMaterial.groupId
+	 	FROM(Select
+			ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.status,ScmMaterial.pieUnitId,scmmaterialcompanyinfo.type,
+			Case WHEN scmmaterialcompanyinfo.status is null Then 'I' Else scmmaterialcompanyinfo.status End as workStatus,
+			ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialGroup.className,ScmMaterialGroup.classCode,ScmMaterialGroup.id as groupId
+			From ScmMaterial 
+				Left Join scmmaterialcompanyinfo On ScmMaterial.id=scmmaterialcompanyinfo.itemId
+				LEFT JOIN scmmaterialgroupDetail ON scmmaterial.id = scmmaterialgroupdetail.ItemId
+				LEFT JOIN ScmMaterialGroup ON ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+					AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+			where scmmaterialcompanyinfo.orgUnitNo=#{controlUnitNo}
+				And ScmMaterial.status='A') ScmMaterial
+		Left Join scmmaterialcompanyinfo 
+			ON ScmMaterial.id=scmmaterialcompanyinfo.itemId
+			AND scmmaterialcompanyinfo.orgUnitNo=#{orgUnitNo}
+		WHERE Case WHEN scmmaterialcompanyinfo.status is null Then ScmMaterial.workStatus Else scmmaterialcompanyinfo.status end='A' 
+			AND Case WHEN scmmaterialcompanyinfo.type is null Then ScmMaterial.type Else scmmaterialcompanyinfo.type end IN (1,2)
+			ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByFinTypeInvUnitAllPage" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.status,
+		Case WHEN B.unitId is null Then A.unitId Else B.unitId End as unitId,
+		ScmMaterial.className,ScmMaterial.classCode,ScmMaterial.groupId
+	 	FROM(Select
+			ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.status,ScmMaterial.pieUnitId,scmmaterialcompanyinfo.type,
+			Case WHEN scmmaterialcompanyinfo.status is null Then 'I' Else scmmaterialcompanyinfo.status End as workStatus,
+			ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialGroup.className,ScmMaterialGroup.classCode,ScmMaterialGroup.id as groupId
+			From ScmMaterial 
+				Left Join scmmaterialcompanyinfo On ScmMaterial.id=scmmaterialcompanyinfo.itemId
+				LEFT JOIN scmmaterialgroupDetail ON scmmaterial.id = scmmaterialgroupdetail.ItemId
+				LEFT JOIN ScmMaterialGroup ON ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+					AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+			where scmmaterialcompanyinfo.orgUnitNo=#{controlUnitNo}
+				And ScmMaterial.status='A') ScmMaterial
+		Left Join scmmaterialcompanyinfo 
+			ON ScmMaterial.id=scmmaterialcompanyinfo.itemId
+			AND scmmaterialcompanyinfo.orgUnitNo=#{finOrgUnitNo}
+		LEFT JOIN ScmMaterialInventory A on scmmaterial.id=A.itemId and A.orgUnitNo=#{controlUnitNo}
+		LEFT JOIN ScmMaterialInventory B on scmmaterial.id=B.itemId and B.orgUnitNo=#{invOrgUnitNo}
+		WHERE Case WHEN scmmaterialcompanyinfo.status is null Then ScmMaterial.workStatus Else scmmaterialcompanyinfo.status end='A' 
+			AND Case WHEN scmmaterialcompanyinfo.type is null Then ScmMaterial.type Else scmmaterialcompanyinfo.type end IN (1,2)
+			ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByTypeAllPage" resultType="ScmMaterial2" parameterType="Map">
+	SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,ScmMaterial.baseUnitId,ScmMaterial.baseUnitId as cstUnitId,ScmMaterial.status,
+		ScmMaterial.className,ScmMaterial.classCode,ScmMaterial.groupId
+	 	FROM(Select
+			ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.status,ScmMaterial.pieUnitId,scmmaterialcompanyinfo.type,
+			Case WHEN scmmaterialcompanyinfo.status is null Then 'I' Else scmmaterialcompanyinfo.status End as workStatus,
+			ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialGroup.className,ScmMaterialGroup.classCode,ScmMaterialGroup.id as groupId
+			From ScmMaterial 
+				Left Join scmmaterialcompanyinfo On ScmMaterial.id=scmmaterialcompanyinfo.itemId
+				LEFT JOIN scmmaterialgroupDetail ON scmmaterial.id = scmmaterialgroupdetail.ItemId
+				LEFT JOIN ScmMaterialGroup ON ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+					AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId 
+			where scmmaterialcompanyinfo.orgUnitNo=#{controlUnitNo}
+			And ScmMaterial.status='A'
+	 			AND scmmaterialcompanyinfo.type = 3) ScmMaterial
+		Left Join scmmaterialcompanyinfo 
+			ON ScmMaterial.id=scmmaterialcompanyinfo.itemId
+			AND scmmaterialcompanyinfo.orgUnitNo=#{orgUnitNo}
+		WHERE Case WHEN scmmaterialcompanyinfo.status is null Then ScmMaterial.workStatus Else scmmaterialcompanyinfo.status end='A' 
+			 	AND (scmmaterialcompanyinfo.type NOT IN (1,2) 
+			 	OR scmmaterialcompanyinfo.type is null)
+			ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByPurAndInvAllPageForMaxqty" resultType="ScmMaterial2" parameterType="Map">
+	SELECT
+		C.className,
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		C.groupId,
+		Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit
+		Else ScmMaterialPurchase.purUnit end as
+		purUnitId,ScmMaterial.baseUnitId,
+		Case WHEN ScmMaterialPurchase.defaultRate is null Then
+		ScmMaterial.defaultRate Else ScmMaterialPurchase.defaultRate end as
+		purTaxRate,Case WHEN ScmMaterialInventory.unitId is null Then
+		ScmMaterial.unitId Else ScmMaterialInventory.unitId end as unitId,
+		ScmMaterial.status,
+		Case WHEN ScmMaterialPurchase.receiveTopRatio is null Then 
+        ScmMaterial.receiveTopRatio else ScmMaterialPurchase.receiveTopRatio end as receiveTopRatio
+        FROM 
+			(Select
+				ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialPurchase.purUnit,
+				ScmMaterialPurchase.defaultRate,ScmMaterialInventory.unitId,ScmMaterial.status,ScmMaterial.pieUnitId,	
+				ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialInventory.maxQty,
+				Case WHEN ScmMaterialPurchase.status is null Then 'I' Else ScmMaterialPurchase.status End as purStatus,
+				Case WHEN ScmMaterialInventory.status is null Then 'I' Else ScmMaterialInventory.status End as invStatus,
+				IFNULL(ScmMaterialPurchase.receiveTopRatio,0) as receiveTopRatio
+				from ScmMaterial
+				LEFT JOIN ScmMaterialPurchase On ScmMaterial.id=ScmMaterialPurchase.itemId and ScmMaterialPurchase.orgUnitNo=#{controlUnitNo} And ScmMaterial.status='A'
+				LEFT JOIN ScmMaterialInventory On ScmMaterial.id=ScmMaterialInventory.itemId and ScmMaterialInventory.orgUnitNo=#{controlUnitNo} And ScmMaterial.status='A') 
+			ScmMaterial
+			LEFT JOIN ScmMaterialPurchase ON ScmMaterial.id=ScmMaterialPurchase.itemId and ScmMaterialPurchase.orgUnitNo in (#{purOrgUnitNo}) and ScmMaterialPurchase.status='A'
+			LEFT JOIN ScmMaterialInventory ON ScmMaterial.id=ScmMaterialInventory.itemId and ScmMaterialInventory.orgUnitNo in (#{invOrgUnitNo}) and ScmMaterialInventory.status='A'
+			LEFT JOIN (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId,ScmMaterialGroup.className
+						FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+						WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+							AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+							AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId 
+							and ScmMaterialGroupStandard.standardType='1'
+        and ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id) 
+						C On C.id=ScmMaterial.id			
+		WHERE Case WHEN	ScmMaterialPurchase.status is null Then ScmMaterial.purStatus Else ScmMaterialPurchase.status end='A'
+			And Case WHEN ScmMaterialInventory.status is null Then scmMaterial.invStatus Else ScmMaterialInventory.status end='A'
+			AND case WHEN ScmMaterialInventory.maxQty is null then ScmMaterial.maxQty ELSE ScmMaterialInventory.maxQty end > 0
+		ORDER BY ScmMaterial.itemNo ASC	
+	</select>
+	<select id="scmmaterial.findByPurAllPage" resultType="ScmMaterial2"	parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId, C.groupId,C.classCode,
+		Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit
+		Else ScmMaterialPurchase.purUnit end as
+		purUnitId,ScmMaterial.baseUnitId,IFNULL(ScmMaterialPurchase.buyerId,ScmMaterial.buyerId) as buyerId,
+		Case WHEN ScmMaterialPurchase.defaultRate is null Then
+		ScmMaterial.defaultRate Else ScmMaterialPurchase.defaultRate end as
+		purTaxRate,Case WHEN ScmMaterialPurchase.supplyCycle is null Then ScmMaterial.supplyCycle Else ScmMaterialPurchase.supplyCycle end as purSupplyCycle,
+		ScmMaterial.status FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialPurchase.purUnit,ScmMaterialPurchase.defaultRate,ScmMaterial.pieUnitId,
+		ScmMaterial.status,Case WHEN ScmMaterialPurchase.status is null Then
+		'I' Else ScmMaterialPurchase.status End as purStatus,ScmMaterialPurchase.buyerId,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialPurchase.supplyCycle
+		from
+		ScmMaterial
+		Left Join ScmMaterialPurchase
+		On ScmMaterial.id=ScmMaterialPurchase.itemId and
+		ScmMaterialPurchase.orgUnitNo=#{controlUnitNo}
+		Where ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialPurchase ON
+		ScmMaterial.id=ScmMaterialPurchase.itemId
+		and ScmMaterialPurchase.orgUnitNo in (#{orgUnitNo}) and
+		ScmMaterialPurchase.status='A'
+        Left Join (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId,ScmMaterialGroup.classCode
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		and ScmMaterialGroupStandard.standardType='1'
+        and ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id ) C
+		On C.id=ScmMaterial.id
+		WHERE Case WHEN
+		ScmMaterialPurchase.status is null Then ScmMaterial.purStatus Else
+		ScmMaterialPurchase.status end='A' ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findBySinglePurAllPage" resultType="ScmMaterial2"	parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId, C.groupId,C.classCode,IFNULL(ScmMaterialPurchase.supplyCycle,ScmMaterial.supplyCycle) as purSupplyCycle,
+		Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit
+		Else ScmMaterialPurchase.purUnit end as
+		purUnitId,ScmMaterial.baseUnitId,
+		Case WHEN ScmMaterialPurchase.defaultRate is null Then
+		ScmMaterial.defaultRate Else ScmMaterialPurchase.defaultRate end as
+		purTaxRate,
+		ScmMaterial.status,IFNULL(ScmMaterialPurchase.buyerId,ScmMaterial.buyerId) as buyerId FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialPurchase.purUnit,ScmMaterialPurchase.defaultRate,ScmMaterial.pieUnitId,
+		ScmMaterial.status,Case WHEN ScmMaterialPurchase.status is null Then
+		'I' Else ScmMaterialPurchase.status End as purStatus,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialPurchase.supplyCycle,ScmMaterialPurchase.buyerId
+		from
+		ScmMaterial
+		Left Join ScmMaterialPurchase
+		On ScmMaterial.id=ScmMaterialPurchase.itemId and
+		ScmMaterialPurchase.orgUnitNo=#{controlUnitNo}
+		WHERE ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialPurchase ON
+		ScmMaterial.id=ScmMaterialPurchase.itemId
+		and ScmMaterialPurchase.orgUnitNo in (#{orgUnitNo})
+        Left Join (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId,ScmMaterialGroup.classCode
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		and ScmMaterialGroupStandard.standardType='1'
+        and ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id ) C
+		On C.id=ScmMaterial.id
+		WHERE Case WHEN
+		ScmMaterialPurchase.status is null Then ScmMaterial.purStatus Else
+		ScmMaterialPurchase.status end='A' ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByPurPriceAllPage" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId, C.groupId,
+		Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit
+		Else ScmMaterialPurchase.purUnit end as
+		purUnitId,ScmMaterial.baseUnitId,
+		Case WHEN ScmMaterialPurchase.defaultRate is null Then
+		ScmMaterial.defaultRate Else ScmMaterialPurchase.defaultRate end as
+		purTaxRate,
+		<if test="finOrgUnitNo != null and finOrgUnitNo !='null' and finOrgUnitNo != ''">
+			Case WHEN scmInvStock.stockQty is null Then 0 ELSE scmInvStock.stockQty END AS stockQty,
+			Case WHEN a.price is null Then 0 ELSE a.price END AS purInWarehsPrice,
+		</if>
+		ScmMaterial.status FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialPurchase.purUnit,ScmMaterialPurchase.defaultRate,ScmMaterial.pieUnitId,
+		ScmMaterial.status,Case WHEN ScmMaterialPurchase.status is null Then
+		'I' Else ScmMaterialPurchase.status End as purStatus,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode
+		from
+		ScmMaterial
+		Left Join ScmMaterialPurchase
+		On ScmMaterial.id=ScmMaterialPurchase.itemId and
+		ScmMaterialPurchase.orgUnitNo=#{controlUnitNo}
+		And ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialPurchase ON
+		ScmMaterial.id=ScmMaterialPurchase.itemId
+		and ScmMaterialPurchase.orgUnitNo in (#{orgUnitNo}) and
+		ScmMaterialPurchase.status='A'
+		Left Join (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup 
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId ) C
+		On C.id=ScmMaterial.id
+		<if test="finOrgUnitNo != null and finOrgUnitNo !='null' and finOrgUnitNo != ''">
+			LEFT JOIN (select sum(ScmInvStock.qty) as stockQty,ScmInvStock.itemId from ScmInvStock 
+			where ScmInvStock.finOrgUnitNo=#{finOrgUnitNo}
+			AND ScmInvStock.Qty &gt; 0
+			<if test="wareHouseId != null and wareHouseId > 0">
+				And ScmInvStock.wareHouseId=${wareHouseId}
+			</if>
+			<if test="vendorId != null and vendorId > 0">
+				And ScmInvStock.vendorId=${vendorId}
+			</if>
+			<if test="invOrgUnitNo!=null and invOrgUnitNo!='null' and invOrgUnitNo!=''">
+			 	And ScmInvStock.OrgUnitNo = #{invOrgUnitNo} 
+			</if>
+			group by ScmInvStock.itemId) scmInvStock ON ScmMaterial.id = scmInvStock.itemId 
+		</if>
+		<if test="finOrgUnitNo != null and finOrgUnitNo !='null' and finOrgUnitNo != ''">
+			LEFT JOIN ScmInvPurInWarehsBillEntry a
+			on a.id=(SELECT ScmInvPurInWarehsBillEntry.id from ScmInvPurInWarehsBill,ScmInvPurInWarehsBillEntry 
+			where ScmInvPurInWarehsBillEntry.wrId=ScmInvPurInWarehsBill.wrId 
+			and ScmInvPurInWarehsBillEntry.itemId=ScmMaterial.id and ScmInvPurInWarehsBillEntry.finOrgUnitNo=#{finOrgUnitNo}
+			and ScmInvPurInWarehsBill.purOrgUnitNo=#{orgUnitNo}
+			<if test="wareHouseId != null and wareHouseId > 0">
+				And ScmInvPurInWarehsBillEntry.wareHouseId=${wareHouseId}
+			</if>
+			<if test="vendorId != null and vendorId > 0">
+				And ScmInvPurInWarehsBill.vendorId=${vendorId}
+			</if>
+			<if test="invOrgUnitNo!=null and invOrgUnitNo!='null' and invOrgUnitNo!=''">
+			 	And ScmInvPurInWarehsBill.OrgUnitNo = #{invOrgUnitNo} 
+			</if>
+			and ScmInvPurInWarehsBill.status='E'
+			order by  ScmInvPurInWarehsBill.postDate desc
+			limit 1) and a.itemId=ScmMaterial.id
+		</if>
+		WHERE Case WHEN
+		ScmMaterialPurchase.status is null Then ScmMaterial.purStatus Else
+		ScmMaterialPurchase.status end='A' ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByInvAllPage" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,C.groupId,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.unitId is null Then ScmMaterial.unitId
+		Else ScmMaterialInventory.unitId end as unitId,ScmMaterial.baseUnitId,Case WHEN ScmMaterialInventory.saleTaxRate is null Then ScmMaterial.saleTaxRate
+		Else ScmMaterialInventory.saleTaxRate end as saleTaxRate,
+		ScmMaterial.status FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialInventory.unitId,ScmMaterial.status,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.status is null Then 'I' Else
+		ScmMaterialInventory.status End as
+		invStatus,ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialInventory.saleTaxRate
+		From ScmMaterial
+		Left Join ScmMaterialInventory
+		On ScmMaterial.id=ScmMaterialInventory.itemId and
+		ScmMaterialInventory.orgUnitNo=#{controlUnitNo}
+		And ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialInventory ON
+		ScmMaterial.id=ScmMaterialInventory.itemId
+		and ScmMaterialInventory.orgUnitNo=#{orgUnitNo} and
+		ScmMaterialInventory.status='A'
+		Left Join (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		and ScmMaterialGroupStandard.standardType='1'
+        and ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id ) C
+		On C.id=ScmMaterial.id
+		WHERE Case WHEN
+		ScmMaterialInventory.status is null Then ScmMaterial.invStatus Else
+		ScmMaterialInventory.status end='A' ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findBySingleInvAllPage" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,C.groupId,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.unitId is null Then ScmMaterial.unitId Else ScmMaterialInventory.unitId end as unitId,
+		Case WHEN ScmMaterialInventory.defaultWhId is null Then ScmMaterial.defaultWhId Else ScmMaterialInventory.defaultWhId end as wareHouseId,
+		ScmMaterial.baseUnitId,Case WHEN ScmMaterialInventory.saleTaxRate is null Then ScmMaterial.saleTaxRate
+		Else ScmMaterialInventory.saleTaxRate end as saleTaxRate,IFNULL(ScmMaterialInventory.periodValidDays,ScmMaterial.periodValidDays) as periodValidDays,
+				IFNULL(ScmMaterialInventory.periodValid,ScmMaterial.periodValid) as periodValid,
+		ScmMaterial.status FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialInventory.unitId,ScmMaterial.status,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.status is null Then 'I' Else	ScmMaterialInventory.status End as invStatus,ScmMaterialInventory.defaultWhId,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialInventory.saleTaxRate,
+		ScmMaterialInventory.periodValidDays,ScmMaterialInventory.periodValid
+		From ScmMaterial
+		<if test="classId != null and classId !=''">
+			inner JOIN ScmMaterialGroupDetail on ScmMaterialGroupDetail.itemId=ScmMaterial.id and ScmMaterialGroupDetail.classId in(${classId})
+		</if>
+		Left Join ScmMaterialInventory
+		On ScmMaterial.id=ScmMaterialInventory.itemId and
+		ScmMaterialInventory.orgUnitNo=#{controlUnitNo}
+		And ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialInventory ON
+		ScmMaterial.id=ScmMaterialInventory.itemId
+		and ScmMaterialInventory.orgUnitNo=#{orgUnitNo}
+		Left Join (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		and ScmMaterialGroupStandard.standardType='1'
+        and ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id ) C
+		On C.id=ScmMaterial.id
+		WHERE Case WHEN
+		ScmMaterialInventory.status is null Then ScmMaterial.invStatus Else
+		ScmMaterialInventory.status end='A' ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findBySingleInvByItemNo" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,C.groupId,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.unitId is null Then ScmMaterial.unitId
+		Else ScmMaterialInventory.unitId end as unitId,ScmMaterial.baseUnitId,Case WHEN ScmMaterialInventory.saleTaxRate is null Then ScmMaterial.saleTaxRate
+		Else ScmMaterialInventory.saleTaxRate end as saleTaxRate,IFNULL(ScmMaterialInventory.periodValidDays,ScmMaterial.periodValidDays) as periodValidDays,
+				IFNULL(ScmMaterialInventory.periodValid,ScmMaterial.periodValid) as periodValid,
+		ScmMaterial.status FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialInventory.unitId,ScmMaterial.status,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.status is null Then 'I' Else
+		ScmMaterialInventory.status End as
+		invStatus,ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialInventory.saleTaxRate,
+		ScmMaterialInventory.periodValidDays,ScmMaterialInventory.periodValid
+		From ScmMaterial
+		Left Join ScmMaterialInventory
+		On ScmMaterial.id=ScmMaterialInventory.itemId and
+		ScmMaterialInventory.orgUnitNo=#{controlUnitNo}
+		And ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialInventory ON
+		ScmMaterial.id=ScmMaterialInventory.itemId
+		and ScmMaterialInventory.orgUnitNo=#{orgUnitNo}
+		Left Join (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup 
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId ) C
+		On C.id=ScmMaterial.id
+		WHERE ScmMaterial.Id=#{itemId} and
+		Case WHEN
+		ScmMaterialInventory.status is null Then ScmMaterial.invStatus Else
+		ScmMaterialInventory.status end='A' ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByInvPriceAllPage" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,C.groupId,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.unitId is null Then ScmMaterial.unitId
+		Else ScmMaterialInventory.unitId end as unitId,ScmMaterial.baseUnitId,Case WHEN ScmMaterialInventory.saleTaxRate is null Then ScmMaterial.saleTaxRate
+		Else ScmMaterialInventory.saleTaxRate end as saleTaxRate,
+		<if test="(wareHouseId!=null and wareHouseId>=0) or (invOrgUnitNo!=null and invOrgUnitNo!='null' and invOrgUnitNo!='')">
+			ifnull(scmInvStock.stockQty,0) as stockQty,
+			ifnull(scmInvStock.price,0) as price,
+			ifnull(scmInvStock.taxPrice,0) as taxPrice,
+			ifnull(scmInvStock.wareHouseId,0) as wareHouseId,
+		</if>
+		ScmMaterial.status FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialInventory.unitId,ScmMaterial.status,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.status is null Then 'I' Else
+		ScmMaterialInventory.status End as
+		invStatus,ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialInventory.saleTaxRate
+		From ScmMaterial
+		Left Join ScmMaterialInventory
+		On ScmMaterial.id=ScmMaterialInventory.itemId and
+		ScmMaterialInventory.orgUnitNo=#{controlUnitNo}
+		And ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialInventory ON
+		ScmMaterial.id=ScmMaterialInventory.itemId
+		and ScmMaterialInventory.orgUnitNo=#{orgUnitNo} and
+		ScmMaterialInventory.status='A'
+		Left Join (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard  
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId and ScmMaterialGroupStandard.standardType='1'
+		and ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id) C
+		On C.id=ScmMaterial.id
+		<if test="(wareHouseId!=null and wareHouseId>=0) or (invOrgUnitNo!=null and invOrgUnitNo!='null' and invOrgUnitNo!='')">
+			Left Join (select sum(ScmInvStock.qty) as stockQty,Case When sum(ScmInvStock.qty)=0 Then 0 Else sum(ScmInvStock.amt)/sum(ScmInvStock.qty) End as price,
+			Case When sum(ScmInvStock.qty)=0 Then 0 Else sum(ScmInvStock.taxAmt)/sum(ScmInvStock.qty) End as taxPrice,ScmInvStock.itemId,ScmInvStock.wareHouseId as wareHouseId from ScmInvStock 
+			where ScmInvStock.OrgUnitNo = #{invOrgUnitNo} And scmInvStock.Qty &gt; 0
+			and (((ScmInvStock.WarehouseID = #{wareHouseId} or #{wareHouseId}=0) And
+			ScmInvStock.costCenter=#{costCenter}) or (#{wareHouseId}=0 And
+			ScmInvStock.costCenter=#{costCenter})) And (vendorId=#{vendorId} or #{vendorId}=0)
+			group by ScmInvStock.itemId) scminvstock On ScmMaterial.id=scminvstock.itemId
+		</if>
+		WHERE Case WHEN
+		ScmMaterialInventory.status is null Then ScmMaterial.invStatus Else
+		ScmMaterialInventory.status end='A' ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByFinAllPage" resultType="ScmMaterial2"	parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,ScmMaterial.baseUnitId,
+		Case WHEN ScmMaterialCompanyInfo.status is null Then ScmMaterial.status
+		Else ScmMaterialCompanyInfo.status end as status,
+		Case WHEN ScmMaterialCompanyInfo.costing is null Then ScmMaterial.costing
+		Else ScmMaterialCompanyInfo.costing end as costing,
+		Case WHEN ScmMaterialCompanyInfo.type is null Then ScmMaterial.type
+		Else ScmMaterialCompanyInfo.type end as type FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialCompanyInfo.status is null Then
+		ScmMaterial.status Else ScmMaterialCompanyInfo.status End as
+		status,ScmMaterial.baseUnitId, ScmMaterialCompanyInfo.costing,ScmMaterialCompanyInfo.type
+		From ScmMaterial
+		Left Join ScmMaterialCompanyInfo
+		On ScmMaterial.id=ScmMaterialCompanyInfo.itemId and
+		ScmMaterialCompanyInfo.orgUnitNo=#{controlUnitNo}
+		And ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialCompanyInfo
+		ON ScmMaterial.id=ScmMaterialCompanyInfo.itemId
+		and ScmMaterialCompanyInfo.orgUnitNo=#{orgUnitNo} and
+		ScmMaterialCompanyInfo.status='A'
+		WHERE Case WHEN
+		ScmMaterialCompanyInfo.status is null Then ScmMaterial.status Else
+		ScmMaterialCompanyInfo.status end='A' ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByFinAllListPage" resultType="ScmMaterial2"	parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialCompanyInfo.cstUnitId is null Then
+		ScmMaterial.cstUnitId Else ScmMaterialCompanyInfo.cstUnitId end as
+		cstUnitId,ScmMaterial.baseUnitId,
+		Case WHEN ScmMaterialCompanyInfo.status is null Then ScmMaterial.status
+		Else ScmMaterialCompanyInfo.status end as status,
+		Case WHEN ScmMaterialCompanyInfo.costing is null Then ScmMaterial.costing
+		Else ScmMaterialCompanyInfo.costing end as costing,
+		Case WHEN ScmMaterialCompanyInfo.type is null Then ScmMaterial.type
+		Else ScmMaterialCompanyInfo.type end as type FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialCompanyInfo.cstUnitId,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialCompanyInfo.status is null Then
+		ScmMaterial.status Else ScmMaterialCompanyInfo.status End as
+		status,ScmMaterial.baseUnitId, ScmMaterialCompanyInfo.costing,ScmMaterialCompanyInfo.type
+		From ScmMaterial
+		Left Join ScmMaterialCompanyInfo
+		On ScmMaterial.id=ScmMaterialCompanyInfo.itemId and
+		ScmMaterialCompanyInfo.orgUnitNo=#{controlUnitNo}
+		And ScmMaterial.status='A' WHERE ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialCompanyInfo
+		ON ScmMaterial.id=ScmMaterialCompanyInfo.itemId
+		and ScmMaterialCompanyInfo.orgUnitNo=#{orgUnitNo}
+		WHERE Case WHEN
+		ScmMaterialCompanyInfo.status is null Then ScmMaterial.status Else
+		ScmMaterialCompanyInfo.status end='A' ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findBySingleFinAllPage" resultType="ScmMaterial2"	parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialCompanyInfo.cstUnitId is null Then
+		ScmMaterial.cstUnitId Else ScmMaterialCompanyInfo.cstUnitId end as
+		cstUnitId,ScmMaterial.baseUnitId,
+		Case WHEN ScmMaterialCompanyInfo.status is null Then ScmMaterial.status
+		Else ScmMaterialCompanyInfo.status end as status,
+		Case WHEN ScmMaterialCompanyInfo.costing is null Then ScmMaterial.costing
+		Else ScmMaterialCompanyInfo.costing end as costing,
+		Case WHEN ScmMaterialCompanyInfo.type is null Then ScmMaterial.type
+		Else ScmMaterialCompanyInfo.type end as type FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialCompanyInfo.cstUnitId,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialCompanyInfo.status is null Then
+		ScmMaterial.status Else ScmMaterialCompanyInfo.status End as
+		status,ScmMaterial.baseUnitId, ScmMaterialCompanyInfo.costing, ScmMaterialCompanyInfo.type
+		From ScmMaterial
+		Left Join ScmMaterialCompanyInfo
+		On ScmMaterial.id=ScmMaterialCompanyInfo.itemId and
+		ScmMaterialCompanyInfo.orgUnitNo=#{controlUnitNo}) ScmMaterial
+		Left Join ScmMaterialCompanyInfo
+		ON ScmMaterial.id=ScmMaterialCompanyInfo.itemId
+		and ScmMaterialCompanyInfo.orgUnitNo=#{orgUnitNo}
+		WHERE Case WHEN
+    	ScmMaterialCompanyInfo.costing is null Then ScmMaterial.costing Else
+    	ScmMaterialCompanyInfo.costing end is not null ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByPurAndInvAllPage" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		C.groupId,
+		Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit
+		Else ScmMaterialPurchase.purUnit end as
+		purUnitId,ScmMaterial.baseUnitId,
+		Case WHEN ScmMaterialPurchase.defaultRate is null Then
+		ScmMaterial.defaultRate Else ScmMaterialPurchase.defaultRate end as
+		purTaxRate,Case WHEN ScmMaterialInventory.unitId is null Then
+		ScmMaterial.unitId Else ScmMaterialInventory.unitId end as unitId,
+		ScmMaterial.status,
+		Case WHEN ScmMaterialPurchase.receiveTopRatio is null Then 
+        ScmMaterial.receiveTopRatio else ScmMaterialPurchase.receiveTopRatio end as receiveTopRatio
+        FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialPurchase.purUnit,ScmMaterialPurchase.defaultRate,ScmMaterialInventory.unitId,
+		ScmMaterial.status,Case WHEN ScmMaterialPurchase.status is null Then
+		'I' Else ScmMaterialPurchase.status End as
+		purStatus,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.status is null Then 'I' Else
+		ScmMaterialInventory.status End as
+		invStatus,ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,
+		IFNULL(ScmMaterialPurchase.receiveTopRatio,0) as receiveTopRatio
+		from ScmMaterial
+		Left Join ScmMaterialPurchase
+		On ScmMaterial.id=ScmMaterialPurchase.itemId and
+		ScmMaterialPurchase.orgUnitNo=#{controlUnitNo} And
+		ScmMaterial.status='A'
+		Left Join ScmMaterialInventory
+		On ScmMaterial.id=ScmMaterialInventory.itemId and
+		ScmMaterialInventory.orgUnitNo=#{controlUnitNo} And
+		ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialPurchase ON
+		ScmMaterial.id=ScmMaterialPurchase.itemId
+		and ScmMaterialPurchase.orgUnitNo in (#{purOrgUnitNo}) and
+		ScmMaterialPurchase.status='A'
+		Left Join ScmMaterialInventory ON
+		ScmMaterial.id=ScmMaterialInventory.itemId
+		and ScmMaterialInventory.orgUnitNo in (#{invOrgUnitNo}) and
+		ScmMaterialInventory.status='A'
+		Left Join (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup 
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId ) C
+		On C.id=ScmMaterial.id 
+		WHERE Case WHEN
+		ScmMaterialPurchase.status is null Then ScmMaterial.purStatus Else
+		ScmMaterialPurchase.status end='A'
+		And Case WHEN ScmMaterialInventory.status is null Then
+		ScmMaterial.invStatus Else ScmMaterialInventory.status end='A'
+		ORDER BY
+		ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findBySinglePurAndInvAllPage" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		C.groupId,
+		Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit
+		Else ScmMaterialPurchase.purUnit end as
+		purUnitId,ScmMaterial.baseUnitId,
+		Case WHEN ScmMaterialPurchase.defaultRate is null Then
+		ScmMaterial.defaultRate Else ScmMaterialPurchase.defaultRate end as
+		purTaxRate,Case WHEN ScmMaterialInventory.unitId is null Then
+		ScmMaterial.unitId Else ScmMaterialInventory.unitId end as unitId,
+		ScmMaterial.status,
+		Case WHEN ScmMaterialPurchase.receiveTopRatio is null Then 
+        ScmMaterial.receiveTopRatio else ScmMaterialPurchase.receiveTopRatio end as receiveTopRatio,
+        IFNULL(ScmMaterialInventory.periodValidDays,ScmMaterial.periodValidDays) as periodValidDays,
+        IFNULL(ScmMaterialInventory.periodValid,ScmMaterial.periodValid) as periodValid
+        FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialPurchase.purUnit,ScmMaterialPurchase.defaultRate,ScmMaterialInventory.unitId,
+		ScmMaterial.status,Case WHEN ScmMaterialPurchase.status is null Then
+		'I' Else ScmMaterialPurchase.status End as
+		purStatus,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.status is null Then 'I' Else
+		ScmMaterialInventory.status End as
+		invStatus,ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,
+		IFNULL(ScmMaterialPurchase.receiveTopRatio,0) as receiveTopRatio,
+		ScmMaterialInventory.periodValidDays,ScmMaterialInventory.periodValid
+		from ScmMaterial
+		Left Join ScmMaterialPurchase
+		On ScmMaterial.id=ScmMaterialPurchase.itemId and
+		ScmMaterialPurchase.orgUnitNo=#{controlUnitNo} And
+		ScmMaterial.status='A'
+		Left Join ScmMaterialInventory
+		On ScmMaterial.id=ScmMaterialInventory.itemId and
+		ScmMaterialInventory.orgUnitNo=#{controlUnitNo} And
+		ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialPurchase ON
+		ScmMaterial.id=ScmMaterialPurchase.itemId
+		and ScmMaterialPurchase.orgUnitNo in (#{purOrgUnitNo}) 
+		Left Join ScmMaterialInventory ON
+		ScmMaterial.id=ScmMaterialInventory.itemId
+		and ScmMaterialInventory.orgUnitNo in (#{invOrgUnitNo})
+        Left Join (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId,ScmMaterialGroup.classCode
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		and ScmMaterialGroupStandard.standardType='1'
+        and ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id ) C
+		On C.id=ScmMaterial.id 
+		WHERE Case WHEN
+		ScmMaterialPurchase.status is null Then ScmMaterial.purStatus Else
+		ScmMaterialPurchase.status end='A'
+		And Case WHEN ScmMaterialInventory.status is null Then
+		ScmMaterial.invStatus Else ScmMaterialInventory.status end='A'
+		ORDER BY
+		ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByPurItemId" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit	Else ScmMaterialPurchase.purUnit end as	purUnitId,ScmMaterial.baseUnitId,
+		Case WHEN ScmMaterialPurchase.defaultRate is null Then ScmMaterial.defaultRate Else ScmMaterialPurchase.defaultRate end as purTaxRate,ScmMaterial.status,
+		Case WHEN ScmMaterialPurchase.receiveTopRatio is null Then ScmMaterial.receiveTopRatio Else ifnull(ScmMaterialPurchase.receiveTopRatio,0) end as receiveTopRatio,
+		Case WHEN ScmMaterialPurchase.buyerId is null Then ScmMaterial.buyerId Else ifnull(ScmMaterialPurchase.buyerId,0) end as buyerId,
+		Case WHEN ScmMaterialPurchase.supplyCycle is null Then ScmMaterial.supplyCycle Else ifnull(ScmMaterialPurchase.supplyCycle,0) end as purSupplyCycle,
+		Case WHEN ScmMaterialPurchase.status is null Then ScmMaterial.purStatus Else ifnull(ScmMaterialPurchase.status,0) end as purStatus FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialPurchase.purUnit,ScmMaterialPurchase.defaultRate,ScmMaterial.pieUnitId,
+		ScmMaterial.status,Case WHEN ScmMaterialPurchase.status is null Then 'I' Else ScmMaterialPurchase.status End as purStatus,ScmMaterialPurchase.buyerId,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ifnull(ScmMaterialPurchase.receiveTopRatio,0) as receiveTopRatio,ifnull(ScmMaterialPurchase.supplyCycle,0) as supplyCycle
+		from ScmMaterial Left Join ScmMaterialPurchase On ScmMaterial.id=ScmMaterialPurchase.itemId and
+		ScmMaterialPurchase.orgUnitNo=#{controlUnitNo}) ScmMaterial
+		Left Join ScmMaterialPurchase ON ScmMaterial.id=ScmMaterialPurchase.itemId
+		and ScmMaterialPurchase.orgUnitNo in (#{orgUnitNo})
+		WHERE ScmMaterial.id=#{itemId} ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findBySinglePurAndInvByItemNo" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		C.groupId,
+		Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit
+		Else ScmMaterialPurchase.purUnit end as
+		purUnitId,ScmMaterial.baseUnitId,
+		Case WHEN ScmMaterialPurchase.defaultRate is null Then
+		ScmMaterial.defaultRate Else ScmMaterialPurchase.defaultRate end as
+		purTaxRate,Case WHEN ScmMaterialInventory.unitId is null Then
+		ScmMaterial.unitId Else ScmMaterialInventory.unitId end as unitId,
+		ScmMaterial.status,
+		Case WHEN ScmMaterialPurchase.receiveTopRatio is null Then 
+        ScmMaterial.receiveTopRatio else ScmMaterialPurchase.receiveTopRatio end as receiveTopRatio,
+        IFNULL(ScmMaterialInventory.periodValidDays,ScmMaterial.periodValidDays) as periodValidDays,
+        IFNULL(ScmMaterialInventory.periodValid,ScmMaterial.periodValid) as periodValid
+        FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialPurchase.purUnit,ScmMaterialPurchase.defaultRate,ScmMaterialInventory.unitId,
+		ScmMaterial.status,Case WHEN ScmMaterialPurchase.status is null Then
+		'I' Else ScmMaterialPurchase.status End as
+		purStatus,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.status is null Then 'I' Else
+		ScmMaterialInventory.status End as
+		invStatus,ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,
+		IFNULL(ScmMaterialPurchase.receiveTopRatio,0) as receiveTopRatio,
+		ScmMaterialInventory.periodValidDays,ScmMaterialInventory.periodValid
+		from ScmMaterial
+		Left Join ScmMaterialPurchase
+		On ScmMaterial.id=ScmMaterialPurchase.itemId and
+		ScmMaterialPurchase.orgUnitNo=#{controlUnitNo} And
+		ScmMaterial.status='A'
+		Left Join ScmMaterialInventory
+		On ScmMaterial.id=ScmMaterialInventory.itemId and
+		ScmMaterialInventory.orgUnitNo=#{controlUnitNo} And
+		ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialPurchase ON
+		ScmMaterial.id=ScmMaterialPurchase.itemId
+		and ScmMaterialPurchase.orgUnitNo in (#{purOrgUnitNo}) 
+		Left Join ScmMaterialInventory ON
+		ScmMaterial.id=ScmMaterialInventory.itemId
+		and ScmMaterialInventory.orgUnitNo in (#{invOrgUnitNo})
+		Left Join (SELECT ScmMaterial.id as id,ScmMaterialGroup.id as groupId 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup 
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id 
+		AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId ) C
+		On C.id=ScmMaterial.id 
+		WHERE Case WHEN
+		ScmMaterialPurchase.status is null Then ScmMaterial.purStatus Else
+		ScmMaterialPurchase.status end='A'
+		And Case WHEN ScmMaterialInventory.status is null Then
+		ScmMaterial.invStatus Else ScmMaterialInventory.status end='A'
+		and itemNo=#{itemNo}
+		ORDER BY
+		ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByFinItemId" resultType="ScmMaterial2"	parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialCompanyInfo.cstUnitId is null Then
+		ScmMaterial.cstUnitId Else ScmMaterialCompanyInfo.cstUnitId end as
+		cstUnitId,ScmMaterial.baseUnitId,
+		Case WHEN ScmMaterialCompanyInfo.status is null Then ScmMaterial.status
+		Else ScmMaterialCompanyInfo.status end as status,
+		Case WHEN ScmMaterialCompanyInfo.costing is null Then ScmMaterial.costing
+		Else ScmMaterialCompanyInfo.costing end as costing,
+		Case WHEN ScmMaterialCompanyInfo.type is null Then ScmMaterial.type
+		Else ScmMaterialCompanyInfo.type end as type FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialCompanyInfo.cstUnitId,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialCompanyInfo.status is null Then
+		ScmMaterial.status Else ScmMaterialCompanyInfo.status End as
+		status,ScmMaterial.baseUnitId, ScmMaterialCompanyInfo.costing, ScmMaterialCompanyInfo.type
+		From ScmMaterial
+		Left Join ScmMaterialCompanyInfo
+		On ScmMaterial.id=ScmMaterialCompanyInfo.itemId and
+		ScmMaterialCompanyInfo.orgUnitNo=#{controlUnitNo}) ScmMaterial
+		Left Join ScmMaterialCompanyInfo
+		ON ScmMaterial.id=ScmMaterialCompanyInfo.itemId
+		and ScmMaterialCompanyInfo.orgUnitNo=#{orgUnitNo}
+		WHERE ScmMaterial.id=#{itemId} ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByInvItemId" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.unitId is null Then ScmMaterial.unitId
+		Else ScmMaterialInventory.unitId end as unitId,ScmMaterial.baseUnitId,Case WHEN ScmMaterialInventory.saleTaxRate is null Then ScmMaterial.saleTaxRate
+		Else ScmMaterialInventory.saleTaxRate end as saleTaxRate,ScmMaterial.status,
+		Case WHEN ScmMaterialInventory.status is null Then ScmMaterial.invStatus Else ScmMaterialInventory.status end as invStatus FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialInventory.unitId,ScmMaterial.status,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.status is null Then 'I' Else
+		ScmMaterialInventory.status End as invStatus,ScmMaterial.baseUnitId,ScmMaterialInventory.saleTaxRate
+		From ScmMaterial
+		Left Join ScmMaterialInventory
+		On ScmMaterial.id=ScmMaterialInventory.itemId and
+		ScmMaterialInventory.orgUnitNo=#{controlUnitNo}) ScmMaterial
+		Left Join
+		ScmMaterialInventory ON ScmMaterial.id=ScmMaterialInventory.itemId
+		and ScmMaterialInventory.orgUnitNo=#{orgUnitNo}
+		WHERE
+		ScmMaterial.id=#{itemId} ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByInvItemIds" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,ScmMaterialGroup.id as groupId,
+		Case WHEN ScmMaterialInventory.unitId is null Then ScmMaterial.unitId
+		Else ScmMaterialInventory.unitId end as unitId,ScmMaterial.baseUnitId,Case WHEN ScmMaterialInventory.saleTaxRate is null Then ScmMaterial.saleTaxRate
+		Else ScmMaterialInventory.saleTaxRate end as saleTaxRate,ScmMaterial.status,
+		Case WHEN ScmMaterialInventory.status is null Then ScmMaterial.invStatus Else ScmMaterialInventory.status end as invStatus,
+		IFNULL(ScmMaterialInventory.periodValidDays,ScmMaterial.periodValidDays) as periodValidDays,
+		IFNULL(ScmMaterialInventory.periodValid,ScmMaterial.periodValid) as periodValid	FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialInventory.unitId,ScmMaterial.status,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialInventory.status is null Then 'I' Else
+		ScmMaterialInventory.status End as invStatus,ScmMaterial.baseUnitId,ScmMaterialInventory.saleTaxRate,
+		ScmMaterialInventory.periodValidDays,ScmMaterialInventory.periodValid
+		From ScmMaterial
+		Left Join ScmMaterialInventory
+		On ScmMaterial.id=ScmMaterialInventory.itemId and
+		ScmMaterialInventory.orgUnitNo=#{controlUnitNo}) ScmMaterial
+		Left Join
+		ScmMaterialInventory ON ScmMaterial.id=ScmMaterialInventory.itemId
+		and ScmMaterialInventory.orgUnitNo=#{orgUnitNo}
+		LEFT JOIN ScmMaterialGroupDetail on scmmaterial.id= ScmMaterialGroupDetail.itemId
+		LEFT JOIN ScmMaterialGroup on ScmMaterialGroup.id=ScmMaterialGroupDetail.classId AND scmmaterialgroupdetail.standardId=scmmaterialgroup.standardId
+		WHERE
+		ScmMaterial.id in(${itemIds}) ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByPurItemIds" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit	Else ScmMaterialPurchase.purUnit end as	purUnitId,ScmMaterial.baseUnitId,
+		Case WHEN ScmMaterialPurchase.defaultRate is null Then ScmMaterial.defaultRate Else ScmMaterialPurchase.defaultRate end as purTaxRate,ScmMaterial.status,
+		Case WHEN ScmMaterialPurchase.receiveTopRatio is null Then ScmMaterial.receiveTopRatio Else ifnull(ScmMaterialPurchase.receiveTopRatio,0) end as receiveTopRatio,
+		Case WHEN ScmMaterialPurchase.buyerId is null Then ScmMaterial.buyerId Else ifnull(ScmMaterialPurchase.buyerId,0) end as buyerId,
+		Case WHEN ScmMaterialPurchase.supplyCycle is null Then ScmMaterial.supplyCycle Else ifnull(ScmMaterialPurchase.supplyCycle,0) end as purSupplyCycle,
+		Case WHEN ScmMaterialPurchase.status is null Then ScmMaterial.purStatus Else ifnull(ScmMaterialPurchase.status,0) end as purStatus FROM
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialPurchase.purUnit,ScmMaterialPurchase.defaultRate,ScmMaterial.pieUnitId,
+		ScmMaterial.status,Case WHEN ScmMaterialPurchase.status is null Then 'I' Else ScmMaterialPurchase.status End as purStatus,ScmMaterialPurchase.buyerId,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ifnull(ScmMaterialPurchase.receiveTopRatio,0) as receiveTopRatio,ifnull(ScmMaterialPurchase.supplyCycle,0) as supplyCycle
+		from ScmMaterial Left Join ScmMaterialPurchase On ScmMaterial.id=ScmMaterialPurchase.itemId and
+		ScmMaterialPurchase.orgUnitNo=#{controlUnitNo}) ScmMaterial
+		Left Join ScmMaterialPurchase ON ScmMaterial.id=ScmMaterialPurchase.itemId
+		and ScmMaterialPurchase.orgUnitNo in (#{orgUnitNo})
+		WHERE ScmMaterial.id in (${itemIds}) ORDER BY ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.findByFinAllList" resultType="ScmMaterial2"	parameterType="Map">
+		SELECT
+		ScmMaterial.id,
+		ScmMaterial.itemNo,
+		ScmMaterial.itemName,
+		ScmMaterial.spec,
+		ScmMaterial.pieUnitId,
+		ScmMaterial.classId,
+		Scmmaterial.longNo,
+		scmmaterialgroup.classCode,
+		scmmaterialgroup.className,
+		ScmMaterial.baseUnitId,
+		CASE WHEN ScmMaterialCompanyInfo.STATUS IS NULL THEN ScmMaterial.STATUS ELSE ScmMaterialCompanyInfo.STATUS END AS STATUS,
+		CASE WHEN ScmMaterialCompanyInfo.costing IS NULL THEN ScmMaterial.costing ELSE ScmMaterialCompanyInfo.costing END AS costing,
+		CASE WHEN ScmMaterialCompanyInfo.type IS NULL THEN ScmMaterial.type ELSE ScmMaterialCompanyInfo.type END AS type
+		FROM
+		(
+			SELECT
+				ScmMaterial.id,
+				ScmMaterial.itemNo,
+				ScmMaterial.itemName,
+				ScmMaterial.spec,
+				ScmMaterial.pieUnitId,
+				scmmaterialgroupdetail.classId,
+				scmmaterialgroup.longNo,
+				CASE WHEN ScmMaterialCompanyInfo.STATUS IS NULL THEN ScmMaterial.STATUS ELSE ScmMaterialCompanyInfo.STATUS END AS STATUS,
+				ScmMaterial.baseUnitId,
+				ScmMaterialCompanyInfo.costing,
+				ScmMaterialCompanyInfo.type
+			FROM
+			ScmMaterial
+			LEFT JOIN ScmMaterialCompanyInfo ON ScmMaterial.id = ScmMaterialCompanyInfo.itemId
+			AND ScmMaterialCompanyInfo.orgUnitNo=#{controlUnitNo}
+			AND ScmMaterial.STATUS = 'A',scmmaterialgroupdetail,scmmaterialgroup
+			where scmmaterialgroupdetail.itemId=scmmaterial.id
+			AND scmmaterialgroup.id=scmmaterialgroupdetail.classId
+			AND scmmaterialgroupdetail.standardId=scmmaterialgroup.standardId
+		) ScmMaterial
+		LEFT JOIN ScmMaterialCompanyInfo 
+		ON ScmMaterial.id = ScmMaterialCompanyInfo.itemId
+		AND ScmMaterialCompanyInfo.orgUnitNo=#{orgUnitNo}
+		AND ScmMaterialCompanyInfo. STATUS = 'A',
+		(select scmmaterialgroup.longNo,scmmaterialgroup.classCode,scmmaterialgroup.className
+		FROM scmmaterialgroup
+		where LENGTH(scmmaterialgroup.longNo) - LENGTH(REPLACE(scmmaterialgroup.longNo,',','')) = ${groupLevel})
+		scmmaterialgroup
+		WHERE
+		CASE WHEN ScmMaterialCompanyInfo.STATUS IS NULL THEN ScmMaterial.STATUS ELSE ScmMaterialCompanyInfo.STATUS END = 'A'
+		AND
+		LENGTH(ScmMaterial.longNo) - LENGTH(REPLACE(ScmMaterial.longNo,',','')) >= ${groupLevel}
+		AND instr(ScmMaterial.longNo,scmmaterialgroup.longNo)>0
+		ORDER BY
+		ScmMaterial.itemNo ASC
+	</select>
+	<select id="scmmaterial.selectById" resultType="ScmMaterial2" parameterType="Long">
+		SELECT * FROM ScmMaterial WHERE id = #{value}
+	</select>
+	<select id="scmmaterial.selectByItemId" resultType="ScmMaterial2" parameterType="Long">
+		SELECT ScmMaterial.*,ScmMaterialGroup.id as groupId
+		FROM
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmMaterial.id = #{value}	AND ScmMaterial.id=ScmMaterialGroupDetail.itemId
+		AND	ScmMaterialGroupDetail.classId=ScmMaterialGroup.id AND ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		AND	ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id And ScmMaterialGroupStandard.standardType='1'
+	</select>
+	<select id="scmmaterial.selectByStock" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmInvStock.unit as unitId,ScmMaterial.pieUnitId,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterialGroup.className,
+		ScmMaterial.barCode,Case When sum(ScmInvStock.qty)=0 Then 0 Else sum(ScmInvStock.amt)/sum(ScmInvStock.qty) End as price,
+		Case When sum(ScmInvStock.qty)=0 Then 0 Else sum(ScmInvStock.taxAmt)/sum(ScmInvStock.qty) end as taxPrice
+		FROM ScmInvStock,ScmMaterial,ScmMaterialGroup,ScmMaterialGroupDetail,ScmMaterialGroupStandard
+		WHERE ScmMaterial.id = ScmInvStock.itemId And ScmMaterial.id = ScmMaterialGroupDetail.itemid
+		And	ScmMaterialGroupDetail.standardid =	ScmMaterialGroupStandard.id	And	ScmMaterialGroupStandard.standardtype = '1'
+		And	ScmMaterialGroupDetail.classId=ScmMaterialGroup.id And ScmMaterialGroupDetail.StandardID=ScmMaterialGroup.StandardID
+		And ScmInvStock.OrgUnitNo = #{orgUnitNo} And scmInvStock.Qty &gt; 0
+		and (((ScmInvStock.WarehouseID = #{wareHouseId} or #{wareHouseId}=0) And
+		ScmInvStock.costCenter=#{costCenter}) or (#{wareHouseId}=0 And
+		ScmInvStock.costCenter=#{costCenter})) 
+		<if test="itemId!=null and itemId!=''">
+			And ScmMaterial.id=#{itemId}
+		</if>
+		GROUP BY ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialGroup.className
+		ORDER BY ScmMaterial.itemNo	ASC
+	</select>
+	<select id="scmmaterial.selectByStockPage" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmInvStock.unit as unitId,ScmMaterial.pieUnitId,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterialGroup.className,ScmMaterialGroup.id as groupId,min(ScmInvStock.wareHouseId) as wareHouseId,
+		ScmMaterial.barCode,Case When sum(ScmInvStock.qty)=0 Then 0 Else sum(ScmInvStock.amt)/sum(ScmInvStock.qty) End as price,
+		Case When sum(ScmInvStock.qty)=0 Then 0 Else sum(ScmInvStock.taxAmt)/sum(ScmInvStock.qty) end as taxPrice,
+		sum(ScmInvStock.qty) as stockQty
+		FROM ScmInvStock,ScmMaterial,ScmMaterialGroup,ScmMaterialGroupDetail,ScmMaterialGroupStandard
+		WHERE ScmMaterial.id = ScmInvStock.itemId And ScmMaterial.id = ScmMaterialGroupDetail.itemid
+		And	ScmMaterialGroupDetail.standardid =	ScmMaterialGroupStandard.id	And	ScmMaterialGroupStandard.standardtype = '1'
+		And	ScmMaterialGroupDetail.classId=ScmMaterialGroup.id And ScmMaterialGroupDetail.StandardID=ScmMaterialGroup.StandardID
+		And ScmInvStock.OrgUnitNo = #{orgUnitNo} And scmInvStock.Qty &gt; 0
+		and (((ScmInvStock.WarehouseID = #{wareHouseId} or #{wareHouseId}=0) And
+		ScmInvStock.costCenter=#{costCenter}) or (#{wareHouseId}=0 And
+		ScmInvStock.costCenter=#{costCenter})) And (vendorId=#{vendorId} or #{vendorId}=0)
+		GROUP BY ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialGroup.className
+		ORDER BY ScmMaterial.itemNo	ASC
+	</select>
+	<select id="scmmaterial.selectByCostWareStockPage" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmInvStock.unit as unitId,ScmMaterial.pieUnitId,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterialGroup.className,ScmMaterialGroup.id as groupId,max(ScmInvStock.wareHouseId) as wareHouseId,
+		ScmMaterial.barCode,Case When sum(ScmInvStock.qty)=0 Then 0 Else sum(ScmInvStock.amt)/sum(ScmInvStock.qty) End as price,
+		Case When sum(ScmInvStock.qty)=0 Then 0 Else sum(ScmInvStock.taxAmt)/sum(ScmInvStock.qty) end as taxPrice,
+		sum(ScmInvStock.qty) as stockQty,ScmInvStock.costOrgUnitNo,ScmInvStock.orgUnitNo as stockOrgUnitNo
+		FROM ScmInvStock,ScmMaterial,ScmMaterialGroup,ScmMaterialGroupDetail,ScmMaterialGroupStandard
+		WHERE ScmMaterial.id = ScmInvStock.itemId And ScmMaterial.id = ScmMaterialGroupDetail.itemid
+		And	ScmMaterialGroupDetail.standardid =	ScmMaterialGroupStandard.id	And	ScmMaterialGroupStandard.standardtype = '1'
+		And	ScmMaterialGroupDetail.classId=ScmMaterialGroup.id And ScmMaterialGroupDetail.StandardID=ScmMaterialGroup.StandardID
+		And ScmInvStock.OrgUnitNo in (${orgUnitNo}) And scmInvStock.Qty &gt; 0
+		GROUP BY ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialGroup.className
+		ORDER BY ScmMaterial.itemNo	ASC
+	</select>
+	<select id="scmmaterial.selectReturnByStockPage" resultType="ScmMaterial2" parameterType="Map">
+		SELECT
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmInvStock.unit as unitId,ScmMaterial.pieUnitId,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterialGroup.className,
+		ScmMaterial.barCode,Case When sum(ScmInvStock.qty)=0 Then 0 Else sum(ScmInvStock.amt)/sum(ScmInvStock.qty) End as price,
+		Case When sum(ScmInvStock.qty)=0 Then 0 Else sum(ScmInvStock.taxAmt)/sum(ScmInvStock.qty) end as taxPrice
+		FROM ScmInvStock,ScmMaterial,ScmMaterialGroup,ScmMaterialGroupDetail,ScmMaterialGroupStandard
+		WHERE ScmMaterial.id = ScmInvStock.itemId And ScmMaterial.id = ScmMaterialGroupDetail.itemid
+		And	ScmMaterialGroupDetail.standardid =	ScmMaterialGroupStandard.id	And	ScmMaterialGroupStandard.standardtype = '1'
+		And	ScmMaterialGroupDetail.classId=ScmMaterialGroup.id And ScmMaterialGroupDetail.StandardID=ScmMaterialGroup.StandardID
+		And ScmInvStock.finOrgUnitNo = #{finOrgUnitNo} And scmInvStock.Qty &gt; 0
+		GROUP BY ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterial.pieUnitId,
+		ScmMaterial.baseUnitId,ScmMaterial.pym,ScmMaterial.barCode,ScmMaterialGroup.className
+		ORDER BY ScmMaterial.itemNo	ASC
+	</select>
+	<select id="scmmaterial.checkUnitRelation" resultType="ScmMaterial2" parameterType="Map">
+		SELECT A.*,ScmMeasureUnit.unitName FROM(
+	    SELECT itemid,unitid,orgUnitNo as 'costOrgUnitNo','inv' as type FROM ScmMaterialInventory where itemid=${itemId} and unitid=${unitid} and controlunitno=#{controlUnitNo}
+		UNION ALL
+		SELECT itemid,purunit,orgUnitNo as 'costOrgUnitNo','pur' as type FROM ScmMaterialPurchase where itemid=${itemId} and purunit=${unitid} and controlunitno=#{controlUnitNo}
+		UNION ALL
+		SELECT id,baseUnitid,controlunitno as 'costOrgUnitNo','base' as type FROM scmmaterial where id=${itemId} and baseUnitid=${unitid} and controlunitno=#{controlUnitNo}
+		) A,ScmMeasureUnit
+		where A.unitid = ScmMeasureUnit.id
+	</select>
+	<select id="scmmaterial.selectByCost" resultType="ScmMaterial2"
+		parameterType="Map">
+		Select distinct
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,
+		Case WHEN ScmMaterialInventory.unitId is null Then ScmMaterial.unitId
+		Else ScmMaterialInventory.unitId end as unitId,ScmMaterial.baseUnitId
+		From
+		scmInvStock,ScmMaterialGroup,ScmMaterialGroupDetail,ScmMaterialGroupStandard,
+		(Select
+		ScmMaterial.id,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmMaterialInventory.unitId,
+		ScmMaterial.baseUnitId
+		From ScmMaterial
+		Left Join ScmMaterialInventory
+		On ScmMaterial.id=ScmMaterialInventory.itemId and
+		ScmMaterialInventory.orgUnitNo=#{controlUnitNo}
+		And ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialInventory ON
+		ScmMaterial.id=ScmMaterialInventory.itemId
+		and ScmMaterialInventory.orgUnitNo=#{orgUnitNo} and
+		ScmMaterialInventory.status='A'
+		WHERE scmInvStock.CostOrgUnitNo =
+		#{costOrgUnitNo}
+		And scmInvStock.OrgUnitNo = #{useOrgUnitNo}
+		And
+		scmInvStock.Qty > 0
+		And scmInvStock.ItemId = ScmMaterial.id
+		And
+		ScmMaterial.id = ScmMaterialGroupDetail.itemid
+		And
+		ScmMaterialGroupDetail.standardid =
+		ScmMaterialGroupStandard.id
+		And
+		ScmMaterialGroupStandard.standardtype = '1'
+		And
+		ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And
+		ScmMaterialGroupDetail.StandardID=ScmMaterialGroup.StandardID
+		ORDER BY
+		ScmMaterial.Id
+	</select>
+	<select id="scmmaterial.checkUse" resultType="Integer"
+		parameterType="Long">
+		select count(distinct purquotation.id)+count(distinct
+		purprice.id)+count(distinct purreq.id)+count(distinct purorder.id)
+		+count(distinct purreceive.id)+count(distinct
+		purreturn.id)+count(distinct invinitbill.id)+count(distinct
+		cstinitbill.id)
+		+count(distinct purinwarehs.id)+count(distinct
+		otherinwarehs.id)+count(distinct materialreqbill.id)+count(distinct
+		moveissuebill.id)
+		from scmmaterial
+		LEFT JOIN scmpurquotationentry purquotation on scmmaterial.id =
+		purquotation.itemId
+		LEFT JOIN scmpurpriceentry purprice on
+		scmmaterial.id = purprice.itemId
+		LEFT JOIN scmpurrequireentry purreq on
+		scmmaterial.id = purreq.itemId
+		LEFT JOIN scmpurorderentry purorder on
+		scmmaterial.id = purorder.itemId
+		LEFT JOIN scmpurreceiveentry
+		purreceive on scmmaterial.id = purreceive.itemId
+		LEFT JOIN
+		scmpurreturnsentry purreturn on scmmaterial.id = purreturn.itemId
+		LEFT
+		JOIN scminvinitbillentry invinitbill on scmmaterial.id =
+		invinitbill.itemId
+		LEFT JOIN scmcstinitbillentry cstinitbill on
+		scmmaterial.id = cstinitbill.itemId
+		LEFT JOIN
+		scminvpurinwarehsbillentry purinwarehs on scmmaterial.id =
+		purinwarehs.itemId
+		LEFT JOIN scminvotherinwarehsbillentry otherinwarehs
+		on scmmaterial.id = otherinwarehs.itemId
+		LEFT JOIN
+		scminvmaterialreqbillentry materialreqbill on scmmaterial.id =
+		materialreqbill.itemId
+		LEFT JOIN scminvmoveissuebillentry moveissuebill
+		on scmmaterial.id = moveissuebill.itemId
+		WHERE ScmMaterial.id =
+		#{value}
+	</select>
+	<select id="scmmaterial.checkAllUse" resultType="Integer"
+		parameterType="Long">
+		select count(distinct purquotation.id)+count(distinct
+		purprice.id)+count(distinct purreq.id)+count(distinct purorder.id)
+		+count(distinct purreceive.id)+count(distinct
+		purreturn.id)+count(distinct invinitbill.id)+count(distinct
+		cstinitbill.id)
+		+count(distinct purinwarehs.id)+count(distinct
+		otherinwarehs.id)+count(distinct materialreqbill.id)+count(distinct
+		moveissuebill.id)
+		from scmmaterial
+		LEFT JOIN (SELECT id,itemid from scmpurquotationentry WHERE itemid=#{value} GROUP BY itemid)purquotation on 
+		scmmaterial.id =purquotation.itemId
+		LEFT JOIN (select id,itemid from scmpurpriceentry WHERE itemid=#{value} GROUP BY itemid)purprice on
+		scmmaterial.id = purprice.itemId
+		LEFT JOIN (select id,itemid from scmpurrequireentry WHERE itemid=#{value} GROUP BY itemid)purreq on
+		scmmaterial.id = purreq.itemId
+		LEFT JOIN  (select id,itemid from scmpurorderentry WHERE itemid=#{value} GROUP BY itemid)purorder on
+		scmmaterial.id = purorder.itemId
+		LEFT JOIN (select id,itemid from scmpurreceiveentry WHERE itemid=#{value} GROUP BY itemid)purreceive on
+		scmmaterial.id = purreceive.itemId
+		LEFT JOIN
+		(select id,itemid from scmpurreturnsentry  WHERE itemid=#{value} GROUP BY itemid)purreturn on 
+		scmmaterial.id = purreturn.itemId
+		LEFT JOIN (select id,itemid from scminvinitbillentry WHERE itemid=#{value} GROUP BY itemid)invinitbill on 
+		scmmaterial.id =invinitbill.itemId
+		LEFT JOIN (select id,itemid from scmcstinitbillentry WHERE itemid=#{value} GROUP BY itemid)cstinitbill on
+		scmmaterial.id = cstinitbill.itemId
+		LEFT JOIN(select id,itemid from scminvpurinwarehsbillentry WHERE itemid=#{value} GROUP BY itemid)purinwarehs on 
+    	scmmaterial.id =purinwarehs.itemId
+		LEFT JOIN (select id,itemid from scminvotherinwarehsbillentry WHERE itemid=#{value} GROUP BY itemid)otherinwarehs 
+		on scmmaterial.id = otherinwarehs.itemId
+		LEFT JOIN
+		(select id,itemid from scminvmaterialreqbillentry WHERE itemid=#{value} GROUP BY itemid)materialreqbill on scmmaterial.id =
+		materialreqbill.itemId
+		LEFT JOIN (select id,itemid from scminvmoveissuebillentry  WHERE itemid=#{value} GROUP BY itemid)moveissuebill
+		on scmmaterial.id = moveissuebill.itemId
+		where scmmaterial.id=#{value}
+	</select>
+	<select id="scmmaterial.selectMaxId" resultType="ScmMaterial2">
+		SELECT * FROM
+		ScmMaterial Where controlUnitNo=#{controlUnitNo} Order BY itemNo Desc Limit 1 
+	</select>
+	<select id="scmmaterial.selectByOrgUnitNo" resultType="ScmMaterial2"
+		parameterType="Map">
+		SELECT ScmMaterial.* FROM ScmMaterial,ScmMaterialInventory
+		WHERE
+		ScmMaterial.id = ScmMaterialInventory.itemId
+		and
+		ScmMaterialInventory.status='A'
+		and ScmMaterialInventory.orgUnitNo =
+		#{orgUnitNo}
+		<if test="fromItemNo != null and fromItemNo != ''">
+			and ScmMaterial.itemNo &gt;= #{fromItemNo}
+		</if>
+		<if test="toItemNo != null and toItemNo != ''">
+			and ScmMaterial.itemNo &lt;= #{toItemNo}
+		</if>
+	</select>
+	<select id="scmmaterial.selectByItemNo" resultType="ScmMaterial2"
+		parameterType="Map">
+		SELECT * FROM ScmMaterial WHERE ScmMaterial.itemNo =
+		#{itemNo}
+		and ScmMaterial.controlUnitNo= #{controlUnitNo}
+	</select>
+	<select id="scmmaterial.selectByCostOrgUnitNo" resultType="ScmMaterial2"
+		parameterType="Map">
+		SELECT distinct ScmMaterial.* FROM ScmMaterial,scminvstock
+		WHERE
+		ScmMaterial.id = scminvstock.itemId
+		and scminvstock.CostOrgUnitNo =
+		#{orgUnitNo}
+		<if test="fromItemNo != null and fromItemNo != ''">
+			and ScmMaterial.itemNo &gt;= #{fromItemNo}
+		</if>
+		<if test="toItemNo != null and toItemNo != ''">
+			and ScmMaterial.itemNo &lt;= #{toItemNo}
+		</if>
+	</select>
+	<select id="scmmaterial.findCountingMaterial" resultType="ScmMaterial2"
+		parameterType="Map">
+		Select distinct ScmMaterial.*,ScmMaterialGroup.ClassName,ScmMaterialGroup.id as groupId,
+		scminvstock.orgUnitNo as stockOrgUnitNo,scminvstock.warehouseId as
+		stockWarehouseId
+		From
+		scminvstock,scminvaccreditwh,ScmMaterial,ScmMaterialGroup,ScmMaterialGroupDetail,ScmMaterialGroupStandard
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.ItemID
+		and
+		ScmMaterialGroupDetail.StandardID=ScmMaterialGroupStandard.id
+		and ScmMaterialGroupStandard.StandardType='1'
+		and
+		ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		and
+		ScmMaterialGroupDetail.StandardID=ScmMaterialGroup.StandardID
+		and
+		scminvstock.ItemId=ScmMaterial.id
+		<if test='type != null and type != "" and type == "TC"'>
+			and scminvstock.WareHouseID = scminvaccreditwh.WareHouseID
+			and scminvstock.OrgUnitNo = scminvaccreditwh.OrgUnitNo
+			and
+			scminvaccreditwh.MOrgUnitNo = #{orgUnitNo}
+		</if>
+		<if test='type != null and type != "" and type == "TW"'>
+			and scminvstock.costOrgUnitNo in (${orgUnitNo})
+		</if>
+		<if test="depts != null and depts != ''">
+			and scminvstock.orgUnitNo in (${depts}) and scminvstock.costCenter=1
+		</if>
+		<if test="fromItemNo != null and fromItemNo != ''">
+			and ScmMaterial.itemNo &gt;= #{fromItemNo}
+		</if>
+		<if test="toItemNo != null and toItemNo != ''">
+			and ScmMaterial.itemNo &lt;= #{toItemNo}
+		</if>
+		ORDER BY scminvstock.ItemId
+	</select>
+	
+	<select id="scmmaterial.findUnitPage" resultType="ScmMaterial2"	parameterType="Map">
+		SELECT ScmMaterial.baseUnitId,base.unitNo as baseUnitNo,base.unitName as baseUnitName
+		 ,ifnull(Inventory.unitId,ScmMaterialInventory.unitId) as unitId
+		 ,inv.unitNo ,inv.unitName
+		 , ifnull(Purchase.purUnit,ScmMaterialPurchase.purUnit) as purUnit
+		 ,pur.unitNo as purUnitNo,pur.unitName as purUnitName
+		 ,ScmMaterialGroup.classCode,ScmMaterialGroup.className
+		 ,ScmMaterial.*,
+		 ifnull(ScmMaterialCompanyInfo.costing,CompanyInfo.costing)
+		 FROM ScmMaterial
+		 LEFT JOIN ScmMaterialGroupDetail on ScmMaterial.id=ScmMaterialGroupDetail.itemId and ScmMaterialGroupDetail.standardId=1
+		 LEFT JOIN ScmMaterialGroup on ScmMaterialGroup.id=ScmMaterialGroupDetail.classId
+		 LEFT JOIN ScmMaterialInventory on ScmMaterialInventory.itemId=ScmMaterial.id and ScmMaterialInventory.orgUnitNo=#{orgUnitNo}
+		 LEFT JOIN ScmMaterialInventory Inventory on Inventory.itemId=ScmMaterial.id and Inventory.orgUnitNo=ScmMaterial.controlUnitNo
+		 LEFT JOIN ScmMaterialPurchase on ScmMaterialPurchase.itemId=ScmMaterial.id and ScmMaterialPurchase.orgUnitNo=#{orgUnitNo}
+		 LEFT JOIN ScmMaterialPurchase Purchase on Purchase.itemId=ScmMaterial.id and ScmMaterialPurchase.orgUnitNo=ScmMaterial.controlUnitNo
+		 LEFT JOIN ScmMeasureUnit base on ScmMaterial.baseUnitId = base.id
+		 LEFT JOIN ScmMeasureUnit inv on ifnull(Inventory.unitId,ScmMaterialInventory.unitId) = inv.id
+		 LEFT JOIN ScmMeasureUnit pur on ifnull(Purchase.purUnit,ScmMaterialPurchase.purUnit) = pur.id
+		 LEFT JOIN ScmMaterialCompanyInfo on ScmMaterialCompanyInfo.itemId=ScmMaterial.id and ScmMaterialCompanyInfo.orgUnitNo=#{orgUnitNo}
+		 LEFT JOIN ScmMaterialCompanyInfo CompanyInfo on CompanyInfo.itemId=ScmMaterial.id and CompanyInfo.orgUnitNo=ScmMaterial.controlUnitNo
+		 WHERE 1=1
+	</select>
+	
+	<select id="scmmaterial.findSameNameMaterial" resultType="ScmMaterial2"	parameterType="Map">
+		SELECT * FROM ScmMaterial WHERE controlUnitNo=#{controlUnitNo} and itemName=#{itemName} and id !=#{id} 
+		and spec = #{spec} Limit 1
+	</select>
+	<insert id="scmmaterial.add" parameterType="ScmMaterial"
+		keyProperty="id" useGeneratedKeys="true">
+		INSERT INTO ScmMaterial (
+		guId,
+		itemNo,
+		itemName,
+		spec,
+		simpleName,
+		brandId,
+		pym,
+		barCode,
+		baseUnitId,
+		pieUnitId,
+		fbcItem,
+		remarks,
+		creator,
+		createDate,
+		editor,
+		editDate,
+		status,
+		freezeOrgUnit,
+		freezeTime,
+		adminCuNo,
+		controlUnitNo )
+		VALUES (
+		#{guId},
+		#{itemNo},
+		#{itemName},
+		#{spec},
+		#{simpleName},
+		#{brandId},
+		#{pym},
+		#{barCode},
+		#{baseUnitId},
+		#{pieUnitId},
+		#{fbcItem},
+		#{remarks},
+		#{creator},
+		#{createDate},
+		#{editor},
+		#{editDate},
+		#{status},
+		#{freezeOrgUnit},
+		#{freezeTime},
+		#{adminCuNo},
+		#{controlUnitNo} )
+	</insert>
+
+	<update id="scmmaterial.update" parameterType="ScmMaterial">
+		UPDATE ScmMaterial
+		set
+		guId=#{guId},
+		itemNo=#{itemNo},
+		itemName=#{itemName},
+		spec=#{spec},
+		simpleName=#{simpleName},
+		brandId=#{brandId},
+		pym=#{pym},
+		barCode=#{barCode},
+		baseUnitId=#{baseUnitId},
+		pieUnitId=#{pieUnitId},
+		fbcItem=#{fbcItem},
+		remarks=#{remarks},
+		creator=#{creator},
+		createDate=#{createDate},
+		editor=#{editor},
+		editDate=#{editDate},
+		status=#{status},
+		freezeOrgUnit=#{freezeOrgUnit},
+		freezeTime=#{freezeTime},
+		adminCuNo=#{adminCuNo},
+		controlUnitNo=#{controlUnitNo} WHERE id = #{id}
+	</update>
+
+	<delete id="scmmaterial.delete" parameterType="String">
+		DELETE FROM
+		ScmMaterial WHERE id IN (${value})
+	</delete>
+
+</mapper>
+ 

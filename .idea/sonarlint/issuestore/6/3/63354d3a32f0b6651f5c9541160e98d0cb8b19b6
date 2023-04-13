@@ -1,0 +1,21 @@
+
+‰
+java:S1989"nHandle the following exceptions that could be thrown by "doPost": ServletException, IOException, AppException.(éöõ¦ùÿÿÿÿ
+W
+java:S1854-"<Remove this useless assignment to local variable "language".(Å¨÷ªÿÿÿÿÿ
+—
+java:S1130""|Remove the declaration of thrown exception 'com.armitage.server.common.exception.AppException' which is a runtime exception.(Ú™®úýÿÿÿÿ
+N
+java:S1197$"8Move the array designator from the variable to the type.(¦×ÿ¾
+S
+java:S1989&"=Handle the "AppException" thrown here in a "try/catch" block.(»‚Á×
+A
+java:S1874Q"+Remove this use of "put"; it is deprecated.(Å¨¬¯
+T
+java:S4719R"9Replace charset name argument with StandardCharsets.UTF_8(ì‰ŠÜýÿÿÿÿ
+S
+java:S1989W"=Handle the "AppException" thrown here in a "try/catch" block.(èï—í
+i
+java:S1989\"SHandle the following exception that could be thrown by "sendRedirect": IOException.(ðåÕï
+H
+java:S1481-"-Remove this unused "language" local variable.(Å¨÷ªÿÿÿÿÿ

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fbmdept">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="fbmdept.findAll" resultType="FbmDept" >
+	    SELECT * FROM FbmDept WHERE  1=1  
+	</select>
+ 
+	<select id="fbmdept.findAllPage" resultType="FbmDept" parameterType="Map"> 
+		SELECT * FROM FbmDept WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="fbmdept.selectById" resultType="FbmDept" parameterType="Long">
+		SELECT * FROM FbmDept WHERE id = #{value}
+	</select> 
+	<select id="fbmdept.selectByOrgUnitPage" resultType="FbmDept" parameterType="Map"> 
+		SELECT * FROM FbmDept WHERE permit=1 and orgUnitNo=#{orgUnitNo} and controlUnitNo=#{controlUnitNo} ORDER BY id ASC 
+	</select> 
+	<insert id="fbmdept.add" parameterType="FbmDept"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  FbmDept (
+        orgUnitNo,
+        pid,
+        code,
+        name,
+        mnemonic,
+        permit,
+        remarks,
+        iSyncModFlag,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{pid},
+        #{code},
+        #{name},
+        #{mnemonic},
+        #{permit},
+        #{remarks},
+        #{iSyncModFlag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="fbmdept.update" parameterType="FbmDept">
+		UPDATE FbmDept set
+        orgUnitNo=#{orgUnitNo},
+        pid=#{pid},
+        code=#{code},
+        name=#{name},
+        mnemonic=#{mnemonic},
+        permit=#{permit},
+        remarks=#{remarks},
+        iSyncModFlag=#{iSyncModFlag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="fbmdept.delete" parameterType="String">
+		DELETE FROM FbmDept WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fbmdishspec">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="fbmdishspec.findAll" resultType="FbmDishSpec" >
+	    SELECT * FROM fbmdishspec WHERE  1=1  
+	</select>
+ 
+	<select id="fbmdishspec.findAllPage" resultType="FbmDishSpec" parameterType="Map"> 
+		SELECT * FROM fbmdishspec WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="fbmdishspec.selectById" resultType="FbmDishSpec" parameterType="Long">
+		SELECT * FROM fbmdishspec WHERE id = #{value}
+	</select> 
+	<insert id="fbmdishspec.add" parameterType="FbmDishSpec"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  fbmdishspec (
+        code,
+        name,
+        mnemonic,
+        sort,
+        permit,
+        remarks,
+        iSyncModFlag,
+        controlUnitNo        )
+		VALUES (
+        #{code},
+        #{name},
+        #{mnemonic},
+        #{sort},
+        #{permit},
+        #{remarks},
+        #{iSyncModFlag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="fbmdishspec.update" parameterType="FbmDishSpec">
+		UPDATE fbmdishspec set
+        code=#{code},
+        name=#{name},
+        mnemonic=#{mnemonic},
+        sort=#{sort},
+        permit=#{permit},
+        remarks=#{remarks},
+        iSyncModFlag=#{iSyncModFlag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="fbmdishspec.delete" parameterType="String">
+		DELETE FROM fbmdishspec WHERE id IN (${value})
+	</delete> 
+
+</mapper>

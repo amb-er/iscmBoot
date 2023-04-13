@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmdishprofitrate">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmdishprofitrate.findAll" resultType="ScmDishProfitRate" >
+	    SELECT * FROM scmdishprofitrate WHERE  1=1  
+	</select>
+ 
+	<select id="scmdishprofitrate.findAllPage" resultType="ScmDishProfitRate" parameterType="Map"> 
+		SELECT * FROM scmdishprofitrate WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmdishprofitrate.selectById" resultType="ScmDishProfitRate" parameterType="Long">
+		SELECT * FROM scmdishprofitrate WHERE id = #{value}
+	</select> 
+	<select id="scmdishprofitrate.selectProfitRateByCostCard" resultType="ScmDishProfitRate" parameterType="Map"> 
+		SELECT * FROM scmdishprofitrate WHERE cardId=${cardId} 
+		and orgUnitNo=#{orgUnitNo} and dishCode=#{dishCode}
+	</select>
+	<insert id="scmdishprofitrate.add" parameterType="ScmDishProfitRate"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmdishprofitrate (
+        cardId,
+        orgUnitNo,
+        dishCode,
+        profitRate,
+        bottomRate,
+        topRate        )
+		VALUES (
+        #{cardId},
+        #{orgUnitNo},
+        #{dishCode},
+        #{profitRate},
+        #{bottomRate},
+        #{topRate}        )
+	</insert>
+ 
+	<update id="scmdishprofitrate.update" parameterType="ScmDishProfitRate">
+		UPDATE scmdishprofitrate set
+        cardId=#{cardId},
+        orgUnitNo=#{orgUnitNo},
+        dishCode=#{dishCode},
+        profitRate=#{profitRate},
+        bottomRate=#{bottomRate},
+        topRate=#{topRate}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmdishprofitrate.delete" parameterType="String">
+		DELETE FROM scmdishprofitrate WHERE id IN (${value})
+	</delete> 
+
+</mapper>

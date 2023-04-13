@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpursuppliersourceentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpursuppliersourceentry.findAll" resultType="ScmPurSupplierSourceEntry2" >
+	    SELECT * FROM ScmPurSupplierSourceEntry WHERE  1=1  
+	</select>
+ 
+	<select id="scmpursuppliersourceentry.findAllPage" resultType="ScmPurSupplierSourceEntry2" parameterType="Map"> 
+		SELECT * FROM ScmPurSupplierSourceEntry WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpursuppliersourceentry.selectById" resultType="ScmPurSupplierSourceEntry2" parameterType="Long">
+		SELECT * FROM ScmPurSupplierSourceEntry WHERE id = #{value}
+	</select> 
+	<select id="scmpursuppliersourceentry.selectByBillId" resultType="ScmPurSupplierSourceEntry2" parameterType="Map">
+		SELECT ScmPurSupplierSourceEntry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as purUnitName FROM ScmPurSupplierSourceEntry
+		left join scmmaterial on ScmPurSupplierSourceEntry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on ScmPurSupplierSourceEntry.purUnit=ScmMeasureUnit.id
+		WHERE billId = #{billId} order by lineId
+	</select> 
+	<insert id="scmpursuppliersourceentry.add" parameterType="ScmPurSupplierSourceEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurSupplierSourceEntry (
+        billId,
+        lineId,
+        itemId,
+        purUnit,
+        price,
+        taxRate,
+        taxPrice,
+        priceBillId,
+        priceBillNo,
+        refPriceStatus,
+        remarks        )
+		VALUES (
+        #{billId},
+        #{lineId},
+        #{itemId},
+        #{purUnit},
+        #{price},
+        #{taxRate},
+        #{taxPrice},
+        #{priceBillId},
+        #{priceBillNo},
+        #{refPriceStatus},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scmpursuppliersourceentry.update" parameterType="ScmPurSupplierSourceEntry">
+		UPDATE ScmPurSupplierSourceEntry set
+        billId=#{billId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        purUnit=#{purUnit},
+        price=#{price},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        priceBillId=#{priceBillId},
+        priceBillNo=#{priceBillNo},
+        refPriceStatus=#{refPriceStatus},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpursuppliersourceentry.delete" parameterType="String">
+		DELETE FROM ScmPurSupplierSourceEntry WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

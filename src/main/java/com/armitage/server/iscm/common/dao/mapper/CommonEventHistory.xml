@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="commoneventhistory">
+
+	<insert id="commoneventhistory.add" keyProperty="id" useGeneratedKeys="true" parameterType="String">
+		${value}
+	</insert>
+   <select id="commoneventhistory.loadEventHistoryBySql" resultType="CommonEventHistory2" parameterType="String">
+	    ${value} 
+	</select> 
+	<update id="commoneventhistory.updateInvalid" parameterType="String">
+		${value} 
+	</update>
+ 
+</mapper>

@@ -1,0 +1,856 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmfbcreport">
+
+	<!-- 出品部门损益表-->
+    <select id="scmfbcreport.selectProDuctDeptProfit" resultType="Map" parameterType="Map">
+		SELECT deptNo,deptName,sum(realConsumed) as realConsumed,sum(stdConsumed) as stdConsumed,sum(stdConsumed)-sum(realConsumed) as profitAmt,
+		case when sum(stdConsumed)=0 then 0 else (sum(stdConsumed)-sum(realConsumed))/sum(stdConsumed) end as profitRate FROM
+		(SELECT ScmProductionDept.code as deptNo,ScmProductionDept.name as deptName,sum(ScmUseOrgUnitItemSum.dsAmt+ScmUseOrgUnitItemSum.dcAmt) as realConsumed,0 as stdConsumed
+		FROM ScmUseOrgUnitItemSum,ScmProductionDept,ScmProductionDeptMapping
+		Where ScmUseOrgUnitItemSum.orgUnitNo=ScmProductionDeptMapping.deptNo And ScmProductionDept.orgUnitNo=#{reorgUnitNo}
+		And ScmProductionDeptMapping.productDeptId=ScmProductionDept.id And ScmUseOrgUnitItemSum.costType='1'
+		And ScmUseOrgUnitItemSum.ckeckPeriodId &gt;= #{begPeriodId} and ScmUseOrgUnitItemSum.ckeckPeriodId &lt;=#{endPeriodId}
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And ScmProductionDept.code in (${productDeptNo})
+		</if>
+		GROUP BY ScmProductionDept.code
+		UNION ALL
+		SELECT ScmProductionDept.code,ScmProductionDept.name,0 as realConsumed,sum(ScmDiskStdCostInfo.stdAmt) as stdConsumed 
+		FROM ScmFbmSellDetail,ScmDiskStdCostInfo,ScmProductionDept
+		Where ScmFbmSellDetail.dishId=ScmDiskStdCostInfo.dishId And ScmFbmSellDetail.dishSpecId=ScmDiskStdCostInfo.dishSpecId
+		And ScmFbmSellDetail.accDate=ScmDiskStdCostInfo.accDate	And ScmProductionDept.fbmDeptNo=ScmFbmSellDetail.deptCode
+		And ScmFbmSellDetail.deptCode=ScmDiskStdCostInfo.deptCode
+		And ScmFbmSellDetail.orgUnitNo=#{reorgUnitNo} And ScmDiskStdCostInfo.orgUnitNo=#{reorgUnitNo}
+		And ScmFbmSellDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		And ScmFbmSellDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And ScmProductionDept.code in (${productDeptNo})
+		</if>
+		GROUP BY ScmProductionDept.code
+		UNION ALL
+		SELECT ScmProductionDept.code,ScmProductionDept.name,0 as realConsumed,sum(ScmCookStdCostInfo.stdAmt) as stdConsumed
+		FROM ScmFbmSellCookDetail,ScmCookStdCostInfo,ScmProductionDept
+		Where ScmFbmSellCookDetail.dishId=ScmCookStdCostInfo.dishId and ScmFbmSellCookDetail.cookId=ScmCookStdCostInfo.cookId 
+		And ScmFbmSellCookDetail.accDate=ScmCookStdCostInfo.accDate and ScmFbmSellCookDetail.deptCode=ScmCookStdCostInfo.deptCode
+		And ScmProductionDept.fbmDeptNo=ScmFbmSellCookDetail.deptCode
+		And ScmFbmSellCookDetail.orgUnitNo=#{reorgUnitNo} And ScmCookStdCostInfo.orgUnitNo=#{reorgUnitNo}
+				And ScmFbmSellCookDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+				And ScmFbmSellCookDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And ScmProductionDept.code in (${productDeptNo})
+		</if>
+		GROUP BY ScmProductionDept.code) A
+		GROUP BY deptNo,deptName
+	</select>
+	<!-- 原料损益汇总表-->
+    <select id="scmfbcreport.selectItemProfit" resultType="Map" parameterType="Map">
+    	SELECT deptNo,deptName,itemid,itemNo,itemName,spec,unitName,sum(startQty) as startQty,sum(startAmt) as startAmt,
+		sum(wiQty) as wiQty,sum(wiAmt) as wiAmt,sum(diQty) as diQty,sum(diAmt) as diAmt,sum(miQty) as miQty,sum(miAmt) as miAmt,
+		sum(moQty) as moQty,sum(moAmt) as moAmt,sum(ilQty) as ilQty,sum(ilAmt) as ilAmt,sum(dsQty) as dsQty,sum(dsAmt) as dsAmt,
+		sum(dcQty) as dcQty,sum(dcAmt) as dcAmt,sum(stdQty) as stdQty,sum(stdAmt) as stdAmt,sum(dsQty)+sum(dcQty) as totalDcQty,sum(dsAmt)+sum(dcAmt) as totalDcAmt,
+		sum(startQty)+sum(wiQty)+ sum(diQty)+sum(miQty)-sum(moQty)-sum(ilQty)-sum(dsQty)-sum(dcQty) as endQty,
+		sum(startAmt)+sum(wiAmt)+ sum(diAmt)+sum(miAmt)-sum(moAmt)-sum(ilAmt)-sum(dsAmt)-sum(dcAmt) as endAmt,
+		sum(stdQty)-sum(dsQty)-sum(dcQty) as diffQty,sum(stdAmt)-sum(dsAmt)-sum(dcAmt) as diffAmt FROM
+		(SELECT ScmProductionDept.code as deptNo,ScmProductionDept.name as deptName,ScmMaterial.id as itemId,Scmmaterial.itemNo,Scmmaterial.itemName,
+		Scmmaterial.spec,ScmMeasureUnit.unitName,case when ckeckPeriodId = #{begPeriodId} then ScmUseOrgUnitItemSum.startQty else 0 end as startQty,
+		case when ckeckPeriodId = #{begPeriodId} then ScmUseOrgUnitItemSum.startAmt else 0 end as startAmt,
+		ScmUseOrgUnitItemSum.wiQty,ScmUseOrgUnitItemSum.wiAmt,ScmUseOrgUnitItemSum.diQty,ScmUseOrgUnitItemSum.diAmt,
+		ScmUseOrgUnitItemSum.miQty,ScmUseOrgUnitItemSum.miAmt,ScmUseOrgUnitItemSum.moQty,ScmUseOrgUnitItemSum.moAmt,
+		ScmUseOrgUnitItemSum.ilQty,ScmUseOrgUnitItemSum.ilAmt,ScmUseOrgUnitItemSum.dsQty,ScmUseOrgUnitItemSum.dsAmt,
+		ScmUseOrgUnitItemSum.dcQty,ScmUseOrgUnitItemSum.dcAmt,0 as stdQty,0 as stdAmt
+		FROM ScmUseOrgUnitItemSum,ScmProductionDept,ScmProductionDeptMapping,ScmMaterial,ScmMeasureUnit
+		Where ScmUseOrgUnitItemSum.orgUnitNo=ScmProductionDeptMapping.deptNo And ScmProductionDeptMapping.productDeptId=ScmProductionDept.id
+		And ScmUseOrgUnitItemSum.itemId=Scmmaterial.id and ScmUseOrgUnitItemSum.unitId=ScmMeasureUnit.id
+		And ScmProductionDept.orgUnitNo=#{reorgUnitNo} And ScmUseOrgUnitItemSum.costType='1'
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And ScmProductionDept.code in (${productDeptNo})
+		</if>
+		And ScmUseOrgUnitItemSum.ckeckPeriodId &gt;= #{begPeriodId} and ScmUseOrgUnitItemSum.ckeckPeriodId &lt;=#{endPeriodId}
+		UNION ALL
+		SELECT ScmProductionDept.code as deptNo,ScmProductionDept.name as deptName,ScmMaterial.id as itemId,Scmmaterial.itemNo,Scmmaterial.itemName,
+		Scmmaterial.spec,ScmMeasureUnit.unitName,0 as startQty,0 as startAmt,0 as wiQty,0 as wiAmt,0 as diQty,0 as diAmt,
+		0 as miQty,0 as miAmt,0 as moQty,0 as moAmt,0 as ilQty,0 as ilAmt,0 as dsQty,0 as dsAmt,0 as dcQty,0 as dcAmt,
+		sum(ScmDiskStdCostInfo.stdQty) as stdQty,sum(ScmDiskStdCostInfo.stdAmt) as stdAmt 
+		FROM ScmFbmSellDetail,ScmDiskStdCostInfo,ScmProductionDept,ScmMaterial,ScmMeasureUnit
+		Where ScmFbmSellDetail.dishId=ScmDiskStdCostInfo.dishId And ScmFbmSellDetail.dishSpecId=ScmDiskStdCostInfo.dishSpecId
+		And ScmFbmSellDetail.accDate=ScmDiskStdCostInfo.accDate	And ScmProductionDept.fbmDeptNo=ScmFbmSellDetail.deptCode 
+		And ScmFbmSellDetail.deptCode=ScmDiskStdCostInfo.deptCode
+		And Scmmaterial.id=ScmDiskStdCostInfo.itemId and ScmDiskStdCostInfo.unitId=ScmMeasureUnit.id
+		And ScmFbmSellDetail.orgUnitNo=#{reorgUnitNo} And ScmDiskStdCostInfo.orgUnitNo=#{reorgUnitNo}
+		And ScmFbmSellDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		And ScmFbmSellDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And ScmProductionDept.code in (${productDeptNo})
+		</if>
+		GROUP BY ScmProductionDept.code,ScmMaterial.id,Scmmaterial.itemNo
+		UNION ALL
+		SELECT ScmProductionDept.code as deptNo,ScmProductionDept.name as deptName,ScmMaterial.id as itemId,Scmmaterial.itemNo,Scmmaterial.itemName,
+		Scmmaterial.spec,ScmMeasureUnit.unitName,0 as startQty,0 as startAmt,0 as wiQty,0 as wiAmt,0 as diQty,0 as diAmt,
+		0 as miQty,0 as miAmt,0 as moQty,0 as moAmt,0 as ilQty,0 as ilAmt,0 as dsQty,0 as dsAmt,0 as dcQty,0 as dcAmt,
+		sum(ScmCookStdCostInfo.stdQty) as stdQty,sum(ScmCookStdCostInfo.stdAmt) as stdAmt 
+		FROM ScmFbmSellCookDetail,ScmCookStdCostInfo,ScmProductionDept,ScmMaterial,ScmMeasureUnit
+		Where ScmFbmSellCookDetail.dishId=ScmCookStdCostInfo.dishId and ScmFbmSellCookDetail.cookId=ScmCookStdCostInfo.cookId 
+		and ScmFbmSellCookDetail.deptCode=ScmCookStdCostInfo.deptCode And ScmFbmSellCookDetail.accDate=ScmCookStdCostInfo.accDate
+		And ScmProductionDept.fbmDeptNo=ScmFbmSellCookDetail.deptCode And Scmmaterial.id=ScmCookStdCostInfo.itemId
+		and ScmCookStdCostInfo.unitId=ScmMeasureUnit.id And ScmFbmSellCookDetail.orgUnitNo=#{reorgUnitNo} And ScmCookStdCostInfo.orgUnitNo=#{reorgUnitNo}
+		And ScmFbmSellCookDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		And ScmFbmSellCookDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And ScmProductionDept.code in (${productDeptNo})
+		</if>
+		GROUP BY ScmProductionDept.code,ScmMaterial.id,Scmmaterial.itemNo) A
+		GROUP BY deptNo,deptName,itemid,itemNo,itemName,spec,unitName
+    </select>
+    <!-- 原料损益明细表-->
+    <select id="scmfbcreport.selectItemProfitDetail" resultType="Map" parameterType="Map">
+    	SELECT deptNo,deptName,className,itemNo,itemName,spec,unitName,sum(startQty) as startQty,sum(startAmt) as startAmt,
+		sum(wiQty) as wiQty,sum(wiAmt) as wiAmt,sum(diQty) as diQty,sum(diAmt) as diAmt,sum(miQty) as miQty,sum(miAmt) as miAmt,
+		sum(moQty) as moQty,sum(moAmt) as moAmt,sum(ilQty) as ilQty,sum(ilAmt) as ilAmt,sum(dsQty) as dsQty,sum(dsAmt) as dsAmt,
+		sum(dcQty) as dcQty,sum(dcAmt) as dcAmt,sum(stdQty) as stdQty,sum(stdAmt) as stdAmt,sum(dsQty)+sum(dcQty) as totalDcQty,
+		sum(dsAmt)+sum(dcAmt) as totalDcAmt,sum(startQty)+sum(wiQty)+ sum(diQty)+sum(miQty)-sum(moQty)-sum(ilQty)-sum(dsQty)-sum(dcQty) as endQty,
+		sum(startAmt)+sum(wiAmt)+ sum(diAmt)+sum(miAmt)-sum(moAmt)-sum(ilAmt)-sum(dsAmt)-sum(dcAmt) as endAmt,ifnull(dishcode,'') as dishcode,
+		GROUP_CONCAT(distinct dishName) as dishName,sum(dishQty) as dishQty,sum(singleReferQty) as singleReferQty,sum(singleQty) as singleQty
+		FROM
+		(SELECT ScmProductionDept.code as deptNo,ScmProductionDept.name as deptName,ScmMaterialGroup.className,Scmmaterial.itemNo,Scmmaterial.itemName,
+		Scmmaterial.spec,ScmMeasureUnit.unitName,sum(case when ScmUseOrgUnitItemSum.ckeckPeriodId = #{begPeriodId} then ScmUseOrgUnitItemSum.startQty else 0 end) as startQty,
+		sum(case when ScmUseOrgUnitItemSum.ckeckPeriodId = #{begPeriodId} then ScmUseOrgUnitItemSum.startAmt else 0 end) as startAmt,
+		sum(ScmUseOrgUnitItemSum.wiQty) as wiQty,sum(ScmUseOrgUnitItemSum.wiAmt) as wiAmt,sum(ScmUseOrgUnitItemSum.diQty) as diQty,
+		sum(ScmUseOrgUnitItemSum.diAmt) as diAmt,sum(ScmUseOrgUnitItemSum.miQty) as miQty,sum(ScmUseOrgUnitItemSum.miAmt) as miAmt,
+		sum(ScmUseOrgUnitItemSum.moQty) as moQty,sum(ScmUseOrgUnitItemSum.moAmt) as moAmt,sum(ScmUseOrgUnitItemSum.ilQty) as ilQty,
+		sum(ScmUseOrgUnitItemSum.ilAmt) as ilAmt,sum(ScmUseOrgUnitItemSum.dsQty) as dsQty,sum(ScmUseOrgUnitItemSum.dsAmt) as dsAmt,
+		sum(dcQty) as dcQty,sum(dcAmt) as dcAmt,null as dishCode,null as dishName,0 as dishQty,0 as stdQty,0 as stdAmt,0 as singleReferQty,0 as singleQty
+		FROM ScmUseOrgUnitItemSum,ScmProductionDept,ScmProductionDeptMapping,ScmMaterial,ScmMeasureUnit,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		Where ScmUseOrgUnitItemSum.orgUnitNo=ScmProductionDeptMapping.deptNo And ScmProductionDeptMapping.productDeptId=ScmProductionDept.id
+		And ScmUseOrgUnitItemSum.itemId=Scmmaterial.id and ScmUseOrgUnitItemSum.unitId=ScmMeasureUnit.id
+		And ScmProductionDept.orgUnitNo=#{reorgUnitNo} And ScmUseOrgUnitItemSum.costType='1'
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId 
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		<if test="itemClass != null and itemClass !='' ">
+        	And ScmMaterialGroup.id in (select id from ScmMaterialGroup where controlUnitNo = #{controlUnitNo} and 
+			longNo like CONCAT( (select longNo  from ScmMaterialGroup  where id=${itemClass}), '%'))
+		</if>
+		<if test="itemCode != null and itemCode !='' ">
+			And ScmMaterial.id in (${itemCode})
+		</if>
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And ScmProductionDept.code in (${productDeptNo})
+		</if>
+		And ScmUseOrgUnitItemSum.ckeckPeriodId &gt;= #{begPeriodId} and ScmUseOrgUnitItemSum.ckeckPeriodId &lt;=#{endPeriodId}
+		GROUP BY ScmProductionDept.code,Scmmaterial.itemNo,ScmUseOrgUnitItemSum.unitId
+		UNION ALL
+		SELECT ScmProductionDept.code as deptNo,ScmProductionDept.name as deptName,ScmMaterialGroup.className,Scmmaterial.itemNo,Scmmaterial.itemName,
+		Scmmaterial.spec,ScmMeasureUnit.unitName,0 as startQty,0 as startAmt,0 as wiQty,0 as wiAmt,0 as diQty,0 as diAmt,
+		0 as miQty,0 as miAmt,0 as moQty,0 as moAmt,0 as ilQty,0 as ilAmt,0 as dsQty,0 as dsAmt,0 as dcQty,0 as dcAmt,ScmFbmSellDetail.dishCode,ScmFbmSellDetail.dishName,
+		sum(ScmFbmSellDetail.saleQty) as dishQty,sum(ScmDiskStdCostInfo.stdQty) as stdQty,sum(ScmDiskStdCostInfo.stdAmt) as stdAmt,
+		1 as singleReferQty,Case WHEN sum(ScmFbmSellDetail.saleQty)=0 Then 0 Else round((sum(ScmDiskStdCostInfo.stdQty))/(sum(ScmFbmSellDetail.saleQty)),2) end as singleQty 
+		FROM ScmFbmSellDetail,ScmDiskStdCostInfo,ScmProductionDept,ScmMaterial,ScmMeasureUnit,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		Where ScmFbmSellDetail.dishId=ScmDiskStdCostInfo.dishId And ScmFbmSellDetail.dishSpecId=ScmDiskStdCostInfo.dishSpecId
+		And ScmFbmSellDetail.accDate=ScmDiskStdCostInfo.accDate And ScmProductionDept.fbmDeptNo=ScmFbmSellDetail.deptCode 
+		And Scmmaterial.id=ScmDiskStdCostInfo.itemId and ScmDiskStdCostInfo.unitId=ScmMeasureUnit.id and ScmFbmSellDetail.deptCode=ScmDiskStdCostInfo.deptCode
+		And ScmFbmSellDetail.orgUnitNo=#{reorgUnitNo} And ScmDiskStdCostInfo.orgUnitNo=#{reorgUnitNo}
+		And ScmFbmSellDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		And ScmFbmSellDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		<if test="itemClass != null and itemClass !='' ">
+        	And ScmMaterialGroup.id in (select id from ScmMaterialGroup where controlUnitNo = #{controlUnitNo} and 
+			longNo like CONCAT( (select longNo  from ScmMaterialGroup  where id=${itemClass}), '%'))
+		</if>
+		<if test="itemCode != null and itemCode !='' ">
+			And ScmMaterial.id in (${itemCode})
+		</if>
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And ScmProductionDept.code in (${productDeptNo})
+		</if>
+		GROUP BY ScmProductionDept.code,Scmmaterial.itemNo,ScmFbmSellDetail.dishCode,ScmFbmSellDetail.dishName
+		UNION ALL
+		SELECT ScmProductionDept.code as deptNo,ScmProductionDept.name as deptName,ScmMaterialGroup.className,Scmmaterial.itemNo,Scmmaterial.itemName,
+		Scmmaterial.spec,ScmMeasureUnit.unitName,0 as startQty,0 as startAmt,0 as wiQty,0 as wiAmt,0 as diQty,0 as diAmt,
+		0 as miQty,0 as miAmt,0 as moQty,0 as moAmt,0 as ilQty,0 as ilAmt,0 as dsQty,0 as dsAmt,0 as dcQty,0 as dcAmt,ScmFbmSellCookDetail.dishCode,ScmFbmSellCookDetail.dishName,
+		sum(ScmFbmSellCookDetail.saleQty) as dishQty,sum(ScmCookStdCostInfo.stdQty) as stdQty,sum(ScmCookStdCostInfo.stdAmt) as stdAmt,
+		1 as singleReferQty,Case WHEN sum(ScmFbmSellCookDetail.saleQty)=0 Then 0 Else round((sum(ScmCookStdCostInfo.stdQty))/(sum(ScmFbmSellCookDetail.saleQty)),2) end as singleQty 
+		FROM ScmFbmSellCookDetail,ScmCookStdCostInfo,ScmProductionDept,ScmMaterial,ScmMeasureUnit,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		Where ScmFbmSellCookDetail.deptCode=ScmCookStdCostInfo.deptCode and ScmFbmSellCookDetail.dishId=ScmCookStdCostInfo.dishId
+		And ScmFbmSellCookDetail.cookId=ScmCookStdCostInfo.cookId And ScmFbmSellCookDetail.accDate=ScmCookStdCostInfo.accDate
+		And ScmProductionDept.fbmDeptNo=ScmFbmSellCookDetail.deptCode And Scmmaterial.id=ScmCookStdCostInfo.itemId
+		and ScmCookStdCostInfo.unitId=ScmMeasureUnit.id
+		And ScmFbmSellCookDetail.orgUnitNo=#{reorgUnitNo} And ScmCookStdCostInfo.orgUnitNo=#{reorgUnitNo}
+		And ScmFbmSellCookDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		And ScmFbmSellCookDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId 
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		<if test="itemClass != null and itemClass !='' ">
+        	And ScmMaterialGroup.id in (select id from ScmMaterialGroup where controlUnitNo = #{controlUnitNo} and 
+			longNo like CONCAT( (select longNo  from ScmMaterialGroup  where id=${itemClass}), '%'))
+		</if>
+		<if test="itemCode != null and itemCode !='' ">
+			And ScmMaterial.id in (${itemCode})
+		</if>
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And ScmProductionDept.code in (${productDeptNo})
+		</if>
+		GROUP BY ScmProductionDept.code,Scmmaterial.itemNo,ScmFbmSellCookDetail.dishCode,ScmFbmSellCookDetail.dishName) A
+		GROUP BY deptName,className,itemNo,itemName,spec,unitName,dishCode,dishName
+		Order By deptName,className,itemNo,unitName
+    </select>
+	<!-- 菜品物料耗用分析明细表 -->
+	<select id="scmfbcreport.selectDishItemAnalyseDetail" resultType="Map" parameterType="Map">
+		SELECT A.deptName,A.dishId,A.dishName
+		,CASE WHEN A.itemNo IS null THEN " " ELSE A.itemNo END AS itemNo
+		,CASE WHEN A.itemName IS null THEN " " ELSE A.itemName END AS itemName
+		,CASE WHEN A.spec IS null THEN " " ELSE A.spec END AS spec
+		,CASE WHEN A.unitName IS null THEN " " ELSE A.unitName END as unitName
+		,CASE WHEN A.type IS null THEN " " ELSE A.type END AS type
+		,CASE WHEN A.stdQty IS null THEN 0 ELSE A.stdQty END AS stdQty
+		,CASE WHEN A.stdAmt IS null THEN 0 ELSE A.stdAmt END AS stdAmt
+		,CASE WHEN A.dishSpecName IS null THEN " " ELSE A.dishSpecName END AS dishSpecName
+		,Case When stdQty=0 Then 0 Else stdAmt/stdQty End as price,B.saleQty,B.saleAmt,IFNULL(T2.profitRate,0) as profitRate FROM
+		(SELECT ScmFbmSellDetail.dishSpecId,ScmProductionDept.name as deptName,ScmFbmSellDetail.dishId,ScmFbmSellDetail.dishName,
+		CONCAT('#$fbmDishSpecBiz#$',ScmFbmSellDetail.dishSpecId) as dishSpecName
+		,Scmmaterial.itemNo,Scmmaterial.itemName,Scmmaterial.spec,ScmMeasureUnit.unitName,
+		ScmDiskStdCostInfo.type,SUM(ScmDiskStdCostInfo.stdQty) as stdQty,
+		SUM(ScmDiskStdCostInfo.stdAmt) as stdAmt,0 as price 
+		FROM ScmFbmSellDetail
+		
+		LEFT JOIN 
+			(SELECT MAX(CONCAT(ScmFbmSellDetail.id,'#',ScmDiskStdCostInfo.accDate)) AS id_date FROM ScmFbmSellDetail,ScmDiskStdCostInfo 
+				where 
+				ScmFbmSellDetail.dishId=ScmDiskStdCostInfo.dishId 
+				And ScmFbmSellDetail.dishSpecId=ScmDiskStdCostInfo.dishSpecId
+				And ScmFbmSellDetail.accDate >= ScmDiskStdCostInfo.accDate	
+				And ScmDiskStdCostInfo.orgUnitNo=#{reorgUnitNo}
+				AND ScmFbmSellDetail.deptCode=ScmDiskStdCostInfo.deptCode
+				<if test="dishTypes !=null and dishTypes !=''">
+					And ScmFbmSellDetail.fbmStatCode in (${dishTypes})
+				</if>
+				<if test="dishCodes !=null and dishCodes !=''">
+					And ScmFbmSellDetail.dishCode in (${dishCodes})
+				</if> 
+				GROUP BY ScmFbmSellDetail.id
+				ORDER BY ScmFbmSellDetail.id,ScmDiskStdCostInfo.accDate DESC ) a 
+				ON ScmFbmSellDetail.id = CAST(SUBSTRING_INDEX(a.id_date,'#',1) AS SIGNED)
+		<!-- 根据菜品和营业日期 查询标准卡 -->
+		LEFT JOIN ScmDiskStdCostInfo ON ScmFbmSellDetail.dishId=ScmDiskStdCostInfo.dishId
+			AND ScmDiskStdCostInfo.accDate = CAST(SUBSTRING_INDEX(a.id_date,'#',-1) AS DATE)		
+		LEFT JOIN ScmProductionDept ON 	ScmProductionDept.fbmDeptNo=ScmFbmSellDetail.deptCode
+		LEFT JOIN Scmmaterial ON	Scmmaterial.id=ScmDiskStdCostInfo.itemId
+		LEFT JOIN ScmMeasureUnit ON ScmDiskStdCostInfo.unitId=ScmMeasureUnit.id 
+		Where  1=1
+		And ScmFbmSellDetail.orgUnitNo=#{reorgUnitNo}
+		And ScmFbmSellDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		And ScmFbmSellDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And ScmProductionDept.code in (${productDeptNo})
+		</if>
+		<if test="dishTypes !=null and dishTypes !=''">
+			And ScmFbmSellDetail.fbmStatCode in (${dishTypes})
+		</if>
+		<if test="dishCodes !=null and dishCodes !=''">
+			And ScmFbmSellDetail.dishCode in (${dishCodes})
+		</if>
+		GROUP BY  ScmProductionDept.name,ScmFbmSellDetail.dishId,ScmFbmSellDetail.dishSpecId,Scmmaterial.itemNo
+		,Scmmaterial.spec,ScmMeasureUnit.unitName,ScmDiskStdCostInfo.type
+		
+		UNION ALL
+	
+		SELECT ScmFbmSellCookDetail.dishSpecId,ScmProductionDept.name as deptName,ScmFbmSellCookDetail.dishId,
+		ScmFbmSellCookDetail.dishName,CONCAT('#$fbmDishSpecBiz#$',ScmFbmSellCookDetail.dishSpecId) as dishSpecName
+		,Scmmaterial.itemNo,Scmmaterial.itemName,Scmmaterial.spec,ScmMeasureUnit.unitName,
+		ScmCookStdCostInfo.type,SUM(ScmCookStdCostInfo.stdQty) as stdQty,
+		SUM(ScmCookStdCostInfo.stdAmt) as stdAmt,0 as price 
+		FROM ScmFbmSellCookDetail
+		LEFT JOIN 
+			(SELECT MAX(CONCAT(ScmFbmSellCookDetail.id,'#',ScmCookStdCostInfo.accDate)) AS id_date FROM ScmFbmSellCookDetail,ScmCookStdCostInfo 
+				where ScmFbmSellCookDetail.cookId=ScmCookStdCostInfo.cookId
+				AND ScmFbmSellCookDetail.dishId=ScmCookStdCostInfo.dishId 
+				And ScmFbmSellCookDetail.accDate >= ScmCookStdCostInfo.accDate	
+				And ScmCookStdCostInfo.orgUnitNo=#{reorgUnitNo}
+				AND ScmFbmSellCookDetail.deptCode=ScmCookStdCostInfo.deptCode
+				<if test="dishTypes !=null and dishTypes !=''">
+					And ScmFbmSellCookDetail.fbmStatCode in (${dishTypes})
+				</if>
+				<if test="dishCodes !=null and dishCodes !=''">
+					And ScmFbmSellCookDetail.dishCode in (${dishCodes})
+				</if>
+				GROUP BY ScmFbmSellCookDetail.id
+				ORDER BY ScmFbmSellCookDetail.id,ScmCookStdCostInfo.accDate DESC ) a 
+				ON ScmFbmSellCookDetail.id = CAST(SUBSTRING_INDEX(a.id_date,'#',1) AS SIGNED)
+			LEFT JOIN ScmCookStdCostInfo ON ScmFbmSellCookDetail.dishId=ScmCookStdCostInfo.dishId AND ScmCookStdCostInfo.orgUnitNo=#{reorgUnitNo}
+			AND ScmCookStdCostInfo.accDate = CAST(SUBSTRING_INDEX(a.id_date,'#',-1) AS DATE)
+			LEFT JOIN ScmProductionDept ON ScmProductionDept.fbmDeptNo=ScmFbmSellCookDetail.deptCode
+			LEFT JOIN Scmmaterial ON Scmmaterial.id=ScmCookStdCostInfo.itemId
+			LEFT JOIN ScmMeasureUnit ON ScmCookStdCostInfo.unitId=ScmMeasureUnit.id
+		Where  1=1
+		And ScmFbmSellCookDetail.orgUnitNo=#{reorgUnitNo} And ScmCookStdCostInfo.orgUnitNo=#{reorgUnitNo}
+		And ScmFbmSellCookDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		And ScmFbmSellCookDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And ScmProductionDept.code in (${productDeptNo})
+		</if>
+		<if test="dishTypes !=null and dishTypes !=''">
+			And ScmFbmSellCookDetail.fbmStatCode in (${dishTypes})
+		</if>
+		<if test="dishCodes !=null and dishCodes !=''">
+			And ScmFbmSellCookDetail.dishCode in (${dishCodes})
+		</if>
+		GROUP BY  ScmProductionDept.name,ScmFbmSellCookDetail.dishId,ScmFbmSellCookDetail.dishSpecId,Scmmaterial.itemNo
+		,Scmmaterial.spec,ScmMeasureUnit.unitName,ScmCookStdCostInfo.type
+		) A 
+		<!-- 根据菜品规格 对应的数量 -->
+		LEFT JOIN	(
+		SELECT dishId,dishSpecId,SUM(saleQty) AS saleQty,SUM(saleAmt) AS  saleAmt
+			FROM (
+			SELECT ScmFbmSellDetail.dishId,ScmFbmSellDetail.dishSpecId,SUM(ScmFbmSellDetail.saleQty) AS saleQty
+			,SUM(ScmFbmSellDetail.realSaleAmt) AS  saleAmt
+			FROM ScmFbmSellDetail
+			LEFT JOIN ScmProductionDept ON ScmFbmSellDetail.deptCode = ScmProductionDept.`code`
+			WHERE ScmFbmSellDetail.orgUnitNo=#{reorgUnitNo}
+				<if test="productDeptNo !=null and productDeptNo !=''">
+					And ScmProductionDept.code in (${productDeptNo})
+				</if>
+				And ScmFbmSellDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+				And ScmFbmSellDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+				<if test="dishTypes !=null and dishTypes !=''">
+					And ScmFbmSellDetail.fbmStatCode in (${dishTypes})
+				</if>
+				<if test="dishCodes !=null and dishCodes !=''">
+					And ScmFbmSellDetail.dishCode in (${dishCodes})
+				</if>
+			GROUP BY ScmFbmSellDetail.dishId,ScmFbmSellDetail.dishSpecId
+			UNION 
+			SELECT ScmFbmSellCookDetail.dishId,ScmFbmSellCookDetail.dishSpecId,SUM(ScmFbmSellCookDetail.saleQty) AS saleQty
+			,SUM(ScmFbmSellCookDetail.realSaleAmt) AS  saleAmt 
+			FROM ScmFbmSellCookDetail
+			LEFT JOIN ScmProductionDept ON ScmFbmSellCookDetail.deptCode = ScmProductionDept.`code`  
+			WHERE ScmFbmSellCookDetail.orgUnitNo=#{reorgUnitNo}
+				<if test="productDeptNo !=null and productDeptNo !=''">
+					And ScmProductionDept.code in (${productDeptNo})
+				</if>
+				And ScmFbmSellCookDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+				And ScmFbmSellCookDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+				<if test="dishTypes !=null and dishTypes !=''">
+					And ScmFbmSellCookDetail.fbmStatCode in (${dishTypes})
+				</if>
+				<if test="dishCodes !=null and dishCodes !=''">
+					And ScmFbmSellCookDetail.dishCode in (${dishCodes})
+				</if>
+			GROUP BY ScmFbmSellCookDetail.dishId,ScmFbmSellCookDetail.dishSpecId
+			) A 
+			GROUP BY A.dishId,A.dishSpecId
+		)	B ON A.dishId = B.dishId AND A.dishSpecId = B.dishSpecId
+		left JOIN (SELECT B.dishId,A.profitRate,concat(round(A.profitRate-abs(A.bottomRate),2),'%-',round(A.profitRate+abs(A.topRate),2),'%') as profitRateSection 
+		FROM ScmDishProfitRate A,ScmCostCard B Where B.id=A.cardId and B.orgUnitNo=#{reorgUnitNo}) T2 on T2.dishId=A.dishId
+	ORDER BY A.deptName,A.dishName,A.dishSpecName,A.itemNo
+	</select>
+	<!-- 成本卡构成价格明细表 -->
+    <select id="scmfbcreport.selectCostCardDetailPrice" resultType="Map" parameterType="Map">
+ 		Select T1.fbmStatName,T1.dishId,T1.dishCode,T1.dishName,CONCAT('#$fbmDishSpecBiz#$',T1.dishSpecId) as dishSpecName,
+		date_format(T1.accDate,'%Y-%m-%d') as accDate,T1.salePrice,T1.profitRate,CONCAT('#$codeBiz#$','ScmFormulaType',';',T2.type) as typeName,
+		T2.itemNo,T2.itemName,CONCAT('#$scmMeasureUnitBiz#$',T2.cstUnit) as cstUnitName,T2.qty as stdQty,T2.price,T2.stdAmt From
+		(SELECT B.fbmStatName,A.dishId,B.dishCode,B.dishName,A.dishSpecId,A.accDate,A.salePrice,
+		case when A.salePrice=0 Then 0 else (A.salePrice-A.costPrice)/A.salePrice end as profitRate 
+		from ScmCostCardPrice A,ScmCostCard B 
+		Where A.dishId=B.dishId And A.orgUnitNo=#{orgUnitNo} and A.accDate &gt;=#{begDate} And A.accDate &lt;=#{endDate}
+				<if test="dishType !=null and dishType !=''">
+					And B.fbmStatCode in (${dishType})
+				</if>
+				<if test="dishCode !=null and dishCode !=''">
+					And B.dishCode in (${dishCode})
+				</if>
+		) T1
+		LEFT JOIN
+		(SELECT A.fbmStatName,A.accDate,A.dishId,A.dishCode,A.dishName,A.dishSpecId,A.type,A.itemNo,A.itemName,A.cstUnit,A.qty,D.price,round(A.qty*D.price,6) as stdAmt From
+		(SELECT #{orgUnitNo} as orgUnitNo,A.cardId,A.fbmStatName,B.accDate,A.dishId,A.dishCode,A.dishName,A.dishSpecId,A.type,A.itemId,A.itemNo,A.itemName,A.cstUnit,A.qty
+		FROM ScmCostCardDetailHistory A,ScmDateList B 
+		Where A.beginDate &lt;=B.accDate And A.endDate &gt;=B.accDate And (A.orgUnitNo=#{orgUnitNo} or A.orgUnitNo=#{controlUnitNo}) And B.accDate &gt;=#{begDate} And B.accDate &lt;=#{endDate}) A
+		left join ScmItemCostPriceHistory D on A.orgUnitNo=D.orgUnitNo and A.accDate=D.accDate And D.itemId=A.itemId
+		Where  1=1 
+		<if test="dishType !=null and dishType !=''">
+			And A.fbmStatCode in (${dishType})
+		</if>
+		<if test="dishCode !=null and dishCode !=''">
+			And A.dishCode in (${dishCode})
+		</if>
+		UNION ALL
+		SELECT A.fbmStatName,A.accDate,A.dishId,A.dishCode,A.dishName,C.dishSpecId,A.type,A.itemNo,A.itemName,A.cstUnit,A.qty*C.costRatio as qty,D.price,round(A.qty*C.costRatio*D.price,6) as stdAmt From 
+		(SELECT #{orgUnitNo} as orgUnitNo,A.cardId,A.fbmStatName,B.accDate,A.dishId,A.dishCode,A.dishName,A.dishSpecId,A.type,A.itemId,A.itemNo,A.itemName,A.cstUnit,A.qty
+		FROM ScmCostCardDetailHistory A,ScmDateList B 
+		Where A.beginDate &lt;=B.accDate And A.endDate &gt;=B.accDate And (A.orgUnitNo=#{orgUnitNo} or A.orgUnitNo=#{controlUnitNo}) And B.accDate &gt;=#{begDate} And B.accDate &lt;=#{endDate}) A
+		left join ScmItemCostPriceHistory D on A.orgUnitNo=D.orgUnitNo and A.accDate=D.accDate And D.itemId=A.itemId,ScmDishCostRatio C
+		Where  A.cardId=C.cardId
+		<if test="dishType !=null and dishType !=''">
+			And A.fbmStatCode in (${dishType})
+		</if>
+		<if test="dishCode !=null and dishCode !=''">
+			And A.dishCode in (${dishCode})
+		</if>
+		) T2
+		ON T1.accDate=T2.accDate And T1.dishId=T2.dishId And T1.dishSpecId=T2.dishSpecId
+	
+    </select>
+    <!-- 菜品含制法报表  -->
+    <select id="scmfbcreport.selectDishAndCookSales" resultType="Map" parameterType="Map">
+    	SELECT * FROM 
+		(SELECT T1.groupName,CONCAT(T1.dishCode,'_',T1.dishSpecId) as dishandspec,T1.dishCode,T1.dishName,CONCAT('#$fbmDishSpecBiz#$',T1.dishSpecId) as dishSpecName,T1.salePrice,
+		IFNULL(T2.stdAmt,0) as stdAmt,T1.saleQty,T1.saleAmt,T1.salePrice-IFNULL(T2.stdAmt,0) as stdProfitAmt,
+		case when IFNULL(T1.salePrice,0)=0 Then 0 Else (T1.salePrice-IFNULL(T2.stdAmt,0))/IFNULL(T1.salePrice,0) end as stdProfitRate
+		FROM
+		(SELECT case when #{statisticsType}='S' Then fbmStatName Else deptName end as groupName,dishId,dishCode,dishName,dishSpecId,
+		Case #{salePriceType} When '3' Then stdSalePrice When '1' Then case when sum(saleQty)=0 Then 0 else sum(saleAmt)/sum(saleQty) end Else case when sum(saleQty)=0 Then 0 else sum(realSaleAmt)/sum(saleQty) end end as salePrice,
+		sum(saleQty) as saleQty,sum(saleAmt) as saleAmt
+		FROM ScmFbmSellDetail WHERE orgUnitNo=#{orgUnitNo} and accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		and accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		<if test="classNo !=null and classNo !=''">
+			And case when #{statisticsType}='S' Then fbmStatCode Else deptCode end in (${classNo})
+		</if>
+		<if test="dishCodeparam !=null and dishCodeparam !=''">
+			And dishCode in (${dishCodeparam})
+		</if>
+		GROUP BY case when #{statisticsType}='S' Then fbmStatName Else deptName end,dishId,dishCode,dishName,dishSpecId
+		Having sum(saleQty)!=0) T1
+		<if test='showNoCard !=null and showNoCard =="1"'>
+			LEFT
+		</if>
+		JOIN
+		(SELECT dishId,dishSpecId,AVG(costPrice) as stdAmt FROM ScmCostCardPrice WHERE orgUnitNo=#{orgUnitNo} 
+		and accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId}) 
+		and accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		GROUP BY dishId,dishSpecId) T2 ON T1.dishId=T2.DishId and T1.dishSpecId=T2.dishSpecId
+		UNION ALL
+		SELECT T1.groupName,CONCAT(T1.dishCode,'_',T1.dishSpecId) as dishandspec,'' as dishCode,T1.cookName as dishName,CONCAT('#$fbmDishSpecBiz#$',T1.dishSpecId) as dishSpecName,T1.salePrice,
+		IFNULL(T2.stdAmt,0) as stdAmt,T1.saleQty,T1.saleAmt,T1.salePrice-IFNULL(T2.stdAmt,0) as stdProfitAmt,
+		case when IFNULL(T1.salePrice,0)=0 Then 0 Else (T1.salePrice-IFNULL(T2.stdAmt,0))/IFNULL(T1.salePrice,0) end as stdProfitRate
+		FROM
+		(SELECT case when #{statisticsType}='S' Then fbmStatName Else deptName end as groupName,dishCode,dishSpecId,cookId,cookCode,cookName,dishName,
+		Case #{salePriceType} When '3' Then stdSalePrice When '1' Then case when sum(saleQty)=0 Then 0 else sum(saleAmt)/sum(saleQty) end Else case when sum(saleQty)=0 Then 0 else sum(realSaleAmt)/sum(saleQty) end end as salePrice,
+		sum(saleQty) as saleQty,sum(saleAmt) as saleAmt
+		FROM ScmFbmSellCookDetail WHERE orgUnitNo=#{orgUnitNo} and accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		and accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		<if test="classNo !=null and classNo !=''">
+			And case when #{statisticsType}='S' Then fbmStatCode Else deptCode end in (${classNo})
+		</if>
+		<if test="dishCodeparam !=null and dishCodeparam !=''">
+			And dishCode in (${dishCodeparam})
+		</if>
+		GROUP BY case when #{statisticsType}='S' Then fbmStatName Else deptName end,dishId,dishSpecId,cookId,cookCode,cookName
+		Having sum(saleQty)!=0) T1
+		<if test='showNoCard !=null and showNoCard =="1"'>
+			LEFT
+		</if>
+		JOIN
+		(SELECT cookId,AVG(costPrice) as stdAmt FROM ScmCookCostCardPrice WHERE orgUnitNo=#{orgUnitNo} 
+		and accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId}) 
+		and accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		GROUP BY cookId) T2 ON T1.cookId=T2.cookId) A
+		ORDER BY groupName,dishandspec,dishCode desc,dishName
+    </select>
+    <!-- 菜品标准毛利率预警表  -->
+    <select id="scmfbcreport.selectDishProfitRateWarn" resultType="Map" parameterType="Map">
+    	Select T1.groupName,T1.dishCode,T1.dishName,CONCAT('#$fbmDishSpecBiz#$',T1.dishSpecId) as dishSpecName,T1.salePrice,T2.profitRateSection,
+		case when IFNULL(T1.saleAmt,0)=0 Then 0 Else (T1.saleAmt-IFNULL(T3.stdAmt,0))/IFNULL(T1.saleAmt,0) end as stdProfitRate,
+		ifnull(T2.bprofitRate,0) as bprofitRate,ifnull(T2.tprofitRate,0) as tprofitRate FROM
+		(SELECT case when #{statisticsType}='S' Then fbmStatName Else deptName end as groupName,dishId,dishCode,dishName,dishSpecId,
+				Case #{salePriceType} When '1' Then case when sum(saleQty)=0 Then 0 else sum(saleAmt)/sum(saleQty) end Else case when sum(saleQty)=0 Then 0 else sum(realSaleAmt)/sum(saleQty) end end as salePrice,
+				Case #{salePriceType} When '1' Then sum(saleAmt) else sum(realSaleAmt) end as saleAmt
+				FROM ScmFbmSellDetail WHERE orgUnitNo=#{orgUnitNo} and accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+				and accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+				<if test="classNo !=null and classNo !=''">
+					And case when #{statisticsType}='S' Then fbmStatCode Else deptCode end in (${classNo})
+				</if>
+				<if test="dishCode !=null and dishCode !=''">
+					And dishCode in (${dishCode})
+				</if>
+				GROUP BY case when #{statisticsType}='S' Then fbmStatName Else deptName end,dishId,dishCode,dishName,dishSpecId
+				Having sum(saleQty)!=0) T1
+		Left Join
+		(SELECT B.dishId,round((A.profitRate-abs(A.bottomRate))/100,2) as bprofitRate,round((A.profitRate+abs(A.topRate))/100,2) as tprofitRate,
+		concat(round(A.profitRate-abs(A.bottomRate),2),'%-',round(A.profitRate+abs(A.topRate),2),'%') as profitRateSection  
+		FROM ScmDishProfitRate A,ScmCostCard B Where B.id=A.cardId and (B.orgUnitNo=#{controlUnitNo} or B.orgUnitNo=#{orgUnitNo})) T2
+		On T1.dishId=T2.dishId
+		LEFT JOIN
+		(Select dishId,dishSpecId,sum(stdAmt) as stdAmt FROM ScmDiskStdCostinfo WHERE orgUnitNo=#{orgUnitNo} 
+		and accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		and accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		GROUP BY dishId,dishSpecId) T3 ON T1.dishId=T3.dishId and T1.dishSpecId=T3.dishSpecId
+    </select>
+    <!-- 点单毛利率表  -->
+    <select id="scmfbcreport.selectDishProfitRate" resultType="Map" parameterType="Map">
+		SELECT T1.groupName,T1.dishCode,T1.dishName,CONCAT('#$fbmDishSpecBiz#$',T1.dishSpecId) as dishSpecName,T1.salePrice,
+		IFNULL(T2.stdAmt,0) as stdAmt,T1.saleQty,T1.saleAmt,T1.saleAmt-IFNULL(T2.stdAmt,0) as stdProfitAmt,
+		case when IFNULL(T1.saleAmt,0)=0 Then 0 Else (T1.saleAmt-IFNULL(T2.stdAmt,0))/IFNULL(T1.saleAmt,0) end as stdProfitRate
+		FROM
+		(SELECT case when #{statisticsType}='S' Then fbmStatName Else deptName end as groupName,dishId,dishCode,dishName,dishSpecId,
+		Case #{salePriceType} When '3' Then stdSalePrice When '1' Then case when sum(saleQty)=0 Then 0 else sum(saleAmt)/sum(saleQty) end Else case when sum(saleQty)=0 Then 0 else sum(realSaleAmt)/sum(saleQty) end end as salePrice,
+		sum(saleQty) as saleQty,
+		Case #{salePriceType} When '3' Then sum(stdSalePrice*saleQty) When '1' Then sum(saleAmt) else sum(realSaleAmt) end as saleAmt
+		FROM ScmFbmSellDetail WHERE orgUnitNo=#{orgUnitNo} and accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		and accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		<if test="classNo !=null and classNo !=''">
+			And case when #{statisticsType}='S' Then fbmStatCode Else deptCode end in (${classNo})
+		</if>
+		<if test="dishCode !=null and dishCode !=''">
+			And dishCode in (${dishCode})
+		</if>
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And deptCode in (${productDeptNo})
+		</if>
+		GROUP BY case when #{statisticsType}='S' Then fbmStatName Else deptName end,dishId,dishCode,dishName,dishSpecId
+		Having sum(saleQty)!=0) T1
+		<if test='showNoCard !=null and showNoCard =="1"'>
+			LEFT
+		</if>
+		JOIN
+		(SELECT dishId,dishSpecId,sum(stdamt) as stdAmt FROM scmdiskstdcostinfo WHERE orgUnitNo=#{orgUnitNo} 
+		and accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		and accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		GROUP BY dishId,dishSpecId) T2 ON T1.dishId=T2.DishId and T1.dishSpecId=T2.dishSpecId
+		GROUP BY T1.groupName,T1.dishCode
+    </select>
+    <!-- 菜品毛利率分析表 -->
+    <select id="scmfbcreport.selectGrossProfitMargin" resultType="Map" parameterType="Map">
+    	select * from(
+		SELECT T1.groupName,T1.dishCode,T1.dishName,CONCAT('#$fbmDishSpecBiz#$',T1.dishSpecId) as dishSpecName,T1.salePrice,
+		IFNULL(T2.stdAmt,0) as stdAmt,T1.saleQty,T1.saleAmt,T1.salePrice-IFNULL(T2.stdAmt,0) as stdProfitAmt,T1.dishId,T1.deptCode,
+		case when IFNULL(T1.salePrice,0)=0 Then 0 Else (T1.salePrice-IFNULL(T2.stdAmt,0))/IFNULL(T1.salePrice,0) end as stdProfitRate
+		FROM
+		(SELECT case when #{statisticsType}='S' Then fbmStatName Else deptName end as groupName,dishId,dishCode,dishName,dishSpecId,deptCode,
+		Case #{salePriceType} When '3' Then stdSalePrice When '1' Then case when sum(saleQty)=0 Then 0 else sum(saleAmt)/sum(saleQty) end Else case when sum(saleQty)=0 Then 0 else sum(realSaleAmt)/sum(saleQty) end end as salePrice,
+		sum(saleQty) as saleQty,
+		Case #{salePriceType} When '3' Then sum(stdSalePrice*saleQty) When '1' Then sum(saleAmt) else sum(realSaleAmt) end as saleAmt
+		FROM ScmFbmSellDetail WHERE orgUnitNo=#{orgUnitNo} and accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		and accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		<if test="dishCodes !=null and dishCodes !=''">
+			And dishCode in (${dishCodes})
+		</if>
+		<if test="productDeptNo !=null and productDeptNo !=''">
+			And deptCode in (${productDeptNo})
+		</if>
+		GROUP BY case when #{statisticsType}='S' Then fbmStatName Else deptName end,dishId,dishCode,dishName,dishSpecId
+		Having sum(saleQty)!=0) T1
+		<if test='showNoCard !=null and showNoCard =="1"'>
+			LEFT
+		</if>
+		JOIN
+		(SELECT dishId,dishSpecId,sum(stdamt) as stdamt FROM scmdiskstdcostinfo where orgUnitNo=#{orgUnitNo} 
+		and accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		and accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		GROUP BY dishId,dishSpecId) T2 ON T1.dishId=T2.DishId and T1.dishSpecId=T2.dishSpecId
+		GROUP BY T1.groupName,T1.dishCode
+		)A LEFT JOIN (SELECT B.dishId,A.profitRate,concat(round(A.profitRate-abs(A.bottomRate),2),'%-',round(A.profitRate+abs(A.topRate),2),'%') as profitRateSection 
+		FROM ScmDishProfitRate A,ScmCostCard B Where B.id=A.cardId and B.orgUnitNo=#{orgUnitNo}) T2 on T2.dishId=A.dishId where 1=1
+		<if test='wine !=null and wine =="1"'>
+			and A.dishCode not in(SELECT dishCode FROM scmcostcard where wine=1 and orgUnitNo=#{orgUnitNo})
+		</if>
+    </select>
+    <!--  制法毛利率表  -->
+    <select id="scmfbcreport.selectCookProfitRate" resultType="Map" parameterType="Map">
+    	SELECT T1.groupName,T1.cookCode,T1.cookName,T1.salePrice,
+		IFNULL(T2.stdAmt,0) as stdAmt,T1.saleQty,T1.saleAmt,T1.salePrice-IFNULL(T2.stdAmt,0) as stdProfitAmt,
+		case when IFNULL(T1.salePrice,0)=0 Then 0 Else (T1.salePrice-IFNULL(T2.stdAmt,0))/IFNULL(T1.salePrice,0) end as stdProfitRate
+		FROM
+		(SELECT case when #{statisticsType}='S' Then fbmStatName Else deptName end as groupName,cookId,cookCode,cookName,
+		Case #{salePriceType} When '3' Then stdSalePrice When '1' Then case when sum(saleQty)=0 Then 0 else sum(saleAmt)/sum(saleQty) end Else case when sum(saleQty)=0 Then 0 else sum(realSaleAmt)/sum(saleQty) end end as salePrice,
+		sum(saleQty) as saleQty,
+		Case #{salePriceType} When '3' Then sum(stdSalePrice*saleQty) When '1' Then sum(saleAmt) else sum(realSaleAmt) end as saleAmt
+		FROM ScmFbmSellCookDetail WHERE orgUnitNo=#{orgUnitNo} and accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		and accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		<if test="classNo !=null and classNo !=''">
+			And case when #{statisticsType}='S' Then fbmStatCode Else deptCode end in (${classNo})
+		</if>
+		<if test="cookCode !=null and cookCode !=''">
+			And cookCode in (${cookCode})
+		</if>
+		GROUP BY case when #{statisticsType}='S' Then fbmStatName Else deptName end,cookId,cookCode,cookName
+		Having sum(saleQty)!=0) T1
+		<if test='showNoCard !=null and showNoCard =="1"'>
+			LEFT
+		</if>
+		JOIN
+		(SELECT cookId,AVG(costPrice) as stdAmt FROM ScmCookCostCardPrice WHERE orgUnitNo=#{orgUnitNo} 
+		and accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		and accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		GROUP BY cookId) T2 ON T1.cookId=T2.cookId
+    </select>
+	<!-- 门店损益汇总表-->
+    <select id="scmfbcreport.selectStoreProfit" resultType="Map" parameterType="Map">
+		SELECT orgUnitNo,CONCAT('#$orgBaseUnitBiz#$',orgUnitNo) as orgUnitName,sum(realConsumed) as realConsumed,sum(stdConsumed) as stdConsumed,sum(stdConsumed)-sum(realConsumed) as profitAmt,
+		case when sum(stdConsumed)=0 then 0 else (sum(stdConsumed)-sum(realConsumed))/sum(stdConsumed) end as profitRate FROM
+		(SELECT ScmProductionDept.orgUnitNo,sum(ScmUseOrgUnitItemSum.dsAmt+ScmUseOrgUnitItemSum.dcAmt) as realConsumed,0 as stdConsumed
+		FROM ScmUseOrgUnitItemSum,ScmProductionDept,ScmProductionDeptMapping
+		Where ScmUseOrgUnitItemSum.orgUnitNo=ScmProductionDeptMapping.deptNo And ScmProductionDept.orgUnitNo in (${orgUnitNo})
+		And ScmProductionDeptMapping.productDeptId=ScmProductionDept.id And ScmUseOrgUnitItemSum.costType='1'
+		And ScmUseOrgUnitItemSum.ckeckPeriodId &gt;= #{begPeriodId} and ScmUseOrgUnitItemSum.ckeckPeriodId &lt;=#{endPeriodId}
+		GROUP BY ScmProductionDept.orgUnitNo
+		UNION ALL
+		SELECT ScmDiskStdCostInfo.orgUnitNo,0 as realConsumed,sum(ScmDiskStdCostInfo.stdAmt) as stdConsumed 
+		FROM ScmFbmSellDetail,ScmDiskStdCostInfo,ScmProductionDept
+		Where ScmFbmSellDetail.deptCode=ScmDiskStdCostInfo.deptCode And ScmFbmSellDetail.dishId=ScmDiskStdCostInfo.dishId And ScmFbmSellDetail.dishSpecId=ScmDiskStdCostInfo.dishSpecId
+		And ScmFbmSellDetail.accDate=ScmDiskStdCostInfo.accDate	And ScmProductionDept.fbmDeptNo=ScmFbmSellDetail.deptCode
+		And ScmFbmSellDetail.orgUnitNo in (${orgUnitNo}) And ScmDiskStdCostInfo.orgUnitNo in (${orgUnitNo})
+		And ScmFbmSellDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		And ScmFbmSellDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		GROUP BY ScmDiskStdCostInfo.orgUnitNo
+		UNION ALL
+		SELECT ScmCookStdCostInfo.orgUnitNo,0 as realConsumed,sum(ScmCookStdCostInfo.stdAmt) as stdConsumed
+		FROM ScmFbmSellCookDetail,ScmCookStdCostInfo,ScmProductionDept
+		Where ScmFbmSellCookDetail.deptCode=ScmCookStdCostInfo.deptCode And ScmFbmSellCookDetail.dishId=ScmCookStdCostInfo.dishId
+		And ScmFbmSellCookDetail.cookId=ScmCookStdCostInfo.cookId And ScmFbmSellCookDetail.accDate=ScmCookStdCostInfo.accDate
+		And ScmProductionDept.fbmDeptNo=ScmFbmSellCookDetail.deptCode
+		And ScmFbmSellCookDetail.orgUnitNo in (${orgUnitNo}) And ScmCookStdCostInfo.orgUnitNo in (${orgUnitNo})
+		And ScmFbmSellCookDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+		And ScmFbmSellCookDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+		GROUP BY ScmCookStdCostInfo.orgUnitNo) A
+		GROUP BY orgUnitNo
+	</select>
+	<!-- 毛利率分析表-->
+    <select id="scmfbcreport.selectOrgAndOutltProfit" resultType="ScmDeptAndOutltProfit" parameterType="Map">
+		SELECT ScmFbmSellDetail.orgUnitNo,ScmFbmSellDetail.accDate,ScmFbmSellDetail.dishId,ScmFbmSellDetail.dishName
+			,ScmProductionDept.`name`,ScmProductionDept.outletId,ScmProductionDept.id
+			,ScmFbmSellDetail.dishCode,ScmFbmSellDetail.dishSpecId,ScmFbmSellDetail.saleQty,ScmFbmSellDetail.realSaleAmt
+			,ScmDiskStdCostInfo.orgUnitNo,ScmDiskStdCostInfo.deptCode,ScmDiskStdCostInfo.type,ScmDiskStdCostInfo.itemId 
+			,ScmDiskStdCostInfo.unitId,ScmDiskStdCostInfo.stdQty,SUM(ScmDiskStdCostInfo.stdAmt) AS stdAmt
+			,ScmUseOrgUnitItemSum.realAmt
+		FROM ScmProductionDept
+		LEFT JOIN ScmFbmSellDetail ON ScmFbmSellDetail.deptCode = ScmProductionDept.`code`
+			And ScmFbmSellDetail.orgUnitNo in (${resOrgUnitNo})
+			And ScmFbmSellDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+			And ScmFbmSellDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+			<if test='wine !=null and wine =="1"'>
+				and ScmFbmSellDetail.dishCode not in(SELECT dishCode FROM scmcostcard where wine=1 and orgUnitNo=#{orgUnitNo})
+			</if>
+		<!-- 查询对应的标准卡的营业日期 -->
+		LEFT JOIN 
+			(SELECT MAX(CONCAT(ScmFbmSellDetail.id,'#',ScmDiskStdCostInfo.accDate)) AS id_date FROM ScmFbmSellDetail,ScmDiskStdCostInfo 
+			where ScmFbmSellDetail.dishId=ScmDiskStdCostInfo.dishId 
+				And ScmFbmSellDetail.dishSpecId=ScmDiskStdCostInfo.dishSpecId
+				And ScmFbmSellDetail.accDate >= ScmDiskStdCostInfo.accDate	
+				AND ScmFbmSellDetail.orgUnitNo in (${resOrgUnitNo})
+				And ScmDiskStdCostInfo.orgUnitNo in (${resOrgUnitNo})
+				AND ScmFbmSellDetail.deptCode=ScmDiskStdCostInfo.deptCode 
+			GROUP BY ScmFbmSellDetail.id
+			ORDER BY ScmFbmSellDetail.id DESC,ScmDiskStdCostInfo.accDate DESC) a 
+			ON ScmFbmSellDetail.id = CAST(SUBSTRING_INDEX(a.id_date,'#',1) AS SIGNED)
+		LEFT JOIN ScmDiskStdCostInfo ON ScmFbmSellDetail.dishId=ScmDiskStdCostInfo.dishId
+			AND ScmFbmSellDetail.deptCode=ScmDiskStdCostInfo.deptCode
+			And ScmFbmSellDetail.dishSpecId=ScmDiskStdCostInfo.dishSpecId 
+			AND ScmDiskStdCostInfo.accDate = CAST(SUBSTRING_INDEX(a.id_date,'#',-1) AS DATE)
+		LEFT JOIN 
+			(SELECT ScmProductionDept.id,ScmProductionDept.outletId,sum(ScmUseOrgUnitItemSum.dsAmt+ScmUseOrgUnitItemSum.dcAmt) AS realAmt
+			FROM ScmUseOrgUnitItemSum,ScmProductionDeptMapping,ScmProductionDept
+			WHERE ScmUseOrgUnitItemSum.orgUnitNo = ScmProductionDeptMapping.deptNo 
+			AND ScmProductionDeptMapping.productDeptId = ScmProductionDept.id
+			And ScmUseOrgUnitItemSum.ckeckPeriodId &gt;= #{begPeriodId} and ScmUseOrgUnitItemSum.ckeckPeriodId &lt;=#{endPeriodId}
+			<if test="deptIds != null and deptIds != ''">
+				And ScmProductionDept.id in (${deptIds})
+			</if>
+			<if test="ouletIds != null and ouletIds != ''">
+				And ScmProductionDept.outletId in (${ouletIds})
+			</if>
+			<if test="deptIds ==null and ouletIds ==null">
+				And ScmProductionDept.resOrgUnitNo in (${resOrgUnitNo})
+			</if>
+			AND ScmUseOrgUnitItemSum.costType='1'
+			GROUP BY CASE WHEN #{stockType} = "0" THEN ScmProductionDept.id ELSE ScmProductionDept.outletId END) ScmUseOrgUnitItemSum 
+				ON CASE WHEN #{stockType} = "0" THEN ScmProductionDept.id = ScmUseOrgUnitItemSum.id ELSE ScmProductionDept.outletId=ScmUseOrgUnitItemSum.outletId END
+		WHERE 1=1
+			<if test="deptIds != null and deptIds != ''">
+				And ScmProductionDept.id in (${deptIds})
+			</if>
+			<if test="ouletIds != null and ouletIds != ''">
+				And ScmProductionDept.outletId in (${ouletIds})
+			</if>
+			<if test="deptIds ==null and ouletIds ==null">
+				And ScmProductionDept.resOrgUnitNo in (${resOrgUnitNo})
+			</if>
+		GROUP BY ScmFbmSellDetail.id,CASE WHEN #{stockType} = "0" THEN ScmProductionDept.id ELSE ScmProductionDept.outletId END
+		UNION ALL
+		SELECT ScmFbmSellCookDetail.orgUnitNo,ScmFbmSellCookDetail.accDate,ScmFbmSellCookDetail.dishId,ScmFbmSellCookDetail.dishName
+			,ScmProductionDept.`name`,ScmProductionDept.outletId,ScmProductionDept.id
+			,ScmFbmSellCookDetail.dishCode,ScmFbmSellCookDetail.dishSpecId,ScmFbmSellCookDetail.saleQty,ScmFbmSellCookDetail.realSaleAmt
+			,scmcookstdcostinfo.orgUnitNo,scmcookstdcostinfo.deptCode,scmcookstdcostinfo.type,scmcookstdcostinfo.itemId 
+			,scmcookstdcostinfo.unitId,scmcookstdcostinfo.stdQty,SUM(scmcookstdcostinfo.stdAmt) AS stdAmt
+			,ScmUseOrgUnitItemSum.realAmt
+		FROM ScmProductionDept
+		LEFT JOIN ScmFbmSellCookDetail ON ScmFbmSellCookDetail.deptCode = ScmProductionDept.`code`
+			and ScmFbmSellCookDetail.orgUnitNo in (${resOrgUnitNo})
+			And ScmFbmSellCookDetail.accDate &gt;=(Select startDate From ScmAccountingCycle WHERE id=#{begPeriodId})
+			And ScmFbmSellCookDetail.accDate &lt;=(Select endDate From ScmAccountingCycle WHERE id=#{endPeriodId})
+			<if test='wine !=null and wine =="1"'>
+				And ScmFbmSellCookDetail.dishCode not in(SELECT dishCode FROM scmcostcard where wine=1 and orgUnitNo=#{orgUnitNo})
+			</if>
+		<!-- 查询对应的标准卡的营业日期 -->
+		LEFT JOIN 
+			(SELECT MAX(CONCAT(ScmFbmSellCookDetail.id,'#',scmcookstdcostinfo.accDate)) AS id_date FROM ScmFbmSellCookDetail,scmcookstdcostinfo 
+			where ScmFbmSellCookDetail.dishId=scmcookstdcostinfo.dishId 
+				And ScmFbmSellCookDetail.cookId=scmcookstdcostinfo.cookId
+				And ScmFbmSellCookDetail.accDate >= scmcookstdcostinfo.accDate	
+				AND ScmFbmSellCookDetail.orgUnitNo in (${resOrgUnitNo})
+				And scmcookstdcostinfo.orgUnitNo in (${resOrgUnitNo})
+				AND ScmFbmSellCookDetail.deptCode=scmcookstdcostinfo.deptCode 
+			GROUP BY ScmFbmSellCookDetail.id
+			ORDER BY ScmFbmSellCookDetail.id DESC,scmcookstdcostinfo.accDate DESC) a 
+			ON ScmFbmSellCookDetail.id = CAST(SUBSTRING_INDEX(a.id_date,'#',1) AS SIGNED)
+		LEFT JOIN scmcookstdcostinfo ON ScmFbmSellCookDetail.dishId=scmcookstdcostinfo.dishId
+			And ScmFbmSellCookDetail.cookId=scmcookstdcostinfo.cookId
+			AND ScmFbmSellCookDetail.deptCode=scmcookstdcostinfo.deptCode
+			AND scmcookstdcostinfo.accDate = CAST(SUBSTRING_INDEX(a.id_date,'#',-1) AS DATE)
+		LEFT JOIN 
+			(SELECT ScmProductionDept.id,ScmProductionDept.outletId,sum(ScmUseOrgUnitItemSum.dsAmt+ScmUseOrgUnitItemSum.dcAmt) AS realAmt
+			FROM ScmUseOrgUnitItemSum,ScmProductionDeptMapping,ScmProductionDept
+			WHERE ScmUseOrgUnitItemSum.orgUnitNo = ScmProductionDeptMapping.deptNo 
+			AND ScmProductionDeptMapping.productDeptId = ScmProductionDept.id
+			And ScmUseOrgUnitItemSum.ckeckPeriodId &gt;= #{begPeriodId} and ScmUseOrgUnitItemSum.ckeckPeriodId &lt;=#{endPeriodId}
+			<if test="deptIds != null and deptIds != ''">
+				And ScmProductionDept.id in (${deptIds})
+			</if>
+			<if test="ouletIds != null and ouletIds != ''">
+				And ScmProductionDept.outletId in (${ouletIds})
+			</if>
+			<if test="deptIds ==null and ouletIds ==null">
+				And ScmProductionDept.resOrgUnitNo in (${resOrgUnitNo})
+			</if>
+			AND ScmUseOrgUnitItemSum.costType='1'
+			GROUP BY CASE WHEN #{stockType} = "0" THEN ScmProductionDept.id ELSE ScmProductionDept.outletId END) ScmUseOrgUnitItemSum 
+				ON CASE WHEN #{stockType} = "0" THEN ScmProductionDept.id = ScmUseOrgUnitItemSum.id ELSE ScmProductionDept.outletId=ScmUseOrgUnitItemSum.outletId END
+		WHERE 1=1
+			<if test="deptIds != null and deptIds != ''">
+				And ScmProductionDept.id in (${deptIds})
+			</if>
+			<if test="ouletIds != null and ouletIds != ''">
+				And ScmProductionDept.outletId in (${ouletIds})
+			</if>
+			<if test="deptIds ==null and ouletIds ==null">
+				And ScmProductionDept.resOrgUnitNo in (${resOrgUnitNo})
+			</if>
+		GROUP BY ScmFbmSellCookDetail.id,CASE WHEN #{stockType} = "0" THEN ScmProductionDept.id ELSE ScmProductionDept.outletId END
+	</select>
+	
+	
+	<select id="scmfbcreport.selectDishSaleStructureAnalysis" resultType="ScmDishSaleStructureAnalysis" parameterType="Map">
+	SELECT A.orgUnitNo,A.dishId,A.dishName,A.dishCode,A.deptName,A.deptCode,A.dishSpecId,
+	IFNULL(SUM(A.saleQty),0) AS saleQty,
+	IFNULL(SUM(A.realSaleAmt),0) AS realSaleAmt,
+	IFNULL(SUM(A.stdAmt),0) AS stdAmt,
+	CONCAT(ROUND(profitRate+bottomRate,2),'%-',ROUND(profitRate+topRate,2),'%') as profit,
+	6 as dishType 
+	FROM
+	(
+	
+    SELECT ScmFbmSellDetail.orgUnitNo,ScmFbmSellDetail.dishId,ScmFbmSellDetail.dishName
+      , ScmFbmSellDetail.deptName,ScmFbmSellDetail.deptCode
+      ,ScmFbmSellDetail.dishCode,ScmFbmSellDetail.dishSpecId,IFNULL(ScmFbmSellDetail.saleQty,0)AS saleQty,IFNULL(ScmFbmSellDetail.realSaleAmt,0)AS realSaleAmt
+    ,IFNULL(SUM(ScmDiskStdCostInfo.stdAmt),0) AS stdAmt
+    FROM ScmFbmSellDetail
+
+         LEFT JOIN 
+			(SELECT MAX(CONCAT(ScmFbmSellDetail.id,'#',ScmDiskStdCostInfo.accDate)) AS id_date FROM ScmFbmSellDetail,ScmDiskStdCostInfo 
+			where ScmFbmSellDetail.dishId=ScmDiskStdCostInfo.dishId 
+				And ScmFbmSellDetail.dishSpecId=ScmDiskStdCostInfo.dishSpecId
+				And ScmFbmSellDetail.accDate >= ScmDiskStdCostInfo.accDate	
+				AND ScmFbmSellDetail.orgUnitNo in (${resOrgUnitNo})
+				And ScmDiskStdCostInfo.orgUnitNo in (${resOrgUnitNo})
+				AND ScmFbmSellDetail.deptCode=ScmDiskStdCostInfo.deptCode 
+			GROUP BY ScmFbmSellDetail.id
+			ORDER BY ScmFbmSellDetail.id DESC,ScmDiskStdCostInfo.accDate DESC) a 
+			ON ScmFbmSellDetail.id = CAST(SUBSTRING_INDEX(a.id_date,'#',1) AS SIGNED)
+		LEFT JOIN ScmDiskStdCostInfo ON ScmFbmSellDetail.dishId=ScmDiskStdCostInfo.dishId
+			AND ScmFbmSellDetail.deptCode=ScmDiskStdCostInfo.deptCode
+			And ScmFbmSellDetail.dishSpecId=ScmDiskStdCostInfo.dishSpecId 
+			AND ScmDiskStdCostInfo.accDate = CAST(SUBSTRING_INDEX(a.id_date,'#',-1) AS DATE)
+      
+    
+	 LEFT JOIN ScmProductionDept on scmproductiondept.code=ScmFbmSellDetail.deptCode		
+    WHERE 1=1
+      And ScmFbmSellDetail.orgUnitNo in (${resOrgUnitNo})
+       <if test="begDate != null and begDate != ''">
+      And ScmFbmSellDetail.accDate &gt;=#{begDate}
+       </if>
+        <if test="endDate != null and endDate != ''">
+      And ScmFbmSellDetail.accDate &lt;=#{endDate}
+       </if>
+      <if test="deptIds != null and deptIds != ''">
+        And ScmFbmSellDetail.deptCode in (${deptIds})
+      </if>
+      <if test="ouletIds != null and ouletIds != ''">
+        And ScmProductionDept.outletId in (${ouletIds})
+      </if>
+      <if test="deptIds ==null and ouletIds ==null">
+        And ScmProductionDept.resOrgUnitNo in (${resOrgUnitNo})
+      </if>
+       <if test="dishCodes != null and dishCodes != ''">
+         and ScmFbmSellDetail.dishCode in (${dishCodes})
+      </if>
+      <if test="outlet != null and outlet != ''">
+         and ScmProductionDept.outletId in (${outlet})
+      </if>
+      <if test="dishTypes != null and dishTypes != ''">
+         and ScmFbmSellDetail.fbmStatCode in (${dishTypes})
+      </if>
+    GROUP BY ScmFbmSellDetail.id
+
+    UNION ALL
+
+    SELECT ScmFbmSellCookDetail.orgUnitNo,ScmFbmSellCookDetail.dishId,ScmFbmSellCookDetail.dishName
+      , ScmFbmSellCookDetail.deptName,ScmFbmSellCookDetail.deptCode
+      ,ScmFbmSellCookDetail.dishCode,ScmFbmSellCookDetail.dishSpecId,IFNULL(ScmFbmSellCookDetail.saleQty,0)AS saleQty
+			,IFNULL(ScmFbmSellCookDetail.realSaleAmt,0)AS realSaleAmt
+     ,IFNULL(SUM(scmcookstdcostinfo.stdAmt),0) AS stdAmt
+    FROM ScmFbmSellCookDetail
+		LEFT JOIN 
+			(SELECT MAX(CONCAT(ScmFbmSellCookDetail.id,'#',scmcookstdcostinfo.accDate)) AS id_date FROM ScmFbmSellCookDetail,scmcookstdcostinfo 
+			where ScmFbmSellCookDetail.dishId=scmcookstdcostinfo.dishId 
+				And ScmFbmSellCookDetail.cookId=scmcookstdcostinfo.cookId
+				And ScmFbmSellCookDetail.accDate >= scmcookstdcostinfo.accDate	
+				AND ScmFbmSellCookDetail.orgUnitNo in (${resOrgUnitNo})
+				And scmcookstdcostinfo.orgUnitNo in (${resOrgUnitNo})
+				AND ScmFbmSellCookDetail.deptCode=scmcookstdcostinfo.deptCode 
+			GROUP BY ScmFbmSellCookDetail.id
+			ORDER BY ScmFbmSellCookDetail.id DESC,scmcookstdcostinfo.accDate DESC) a 
+			ON ScmFbmSellCookDetail.id = CAST(SUBSTRING_INDEX(a.id_date,'#',1) AS SIGNED)
+
+		LEFT JOIN scmcookstdcostinfo ON ScmFbmSellCookDetail.dishId=scmcookstdcostinfo.dishId
+			And ScmFbmSellCookDetail.cookId=scmcookstdcostinfo.cookId
+			AND ScmFbmSellCookDetail.deptCode=scmcookstdcostinfo.deptCode
+			AND scmcookstdcostinfo.accDate = CAST(SUBSTRING_INDEX(a.id_date,'#',-1) AS DATE)
+			
+	LEFT JOIN ScmProductionDept on scmproductiondept.code=ScmFbmSellCookDetail.deptCode
+		WHERE 1=1
+      and ScmFbmSellCookDetail.orgUnitNo in (${resOrgUnitNo})
+         <if test="begDate != null and begDate != ''">
+      And ScmFbmSellCookDetail.accDate &gt;=#{begDate}
+       </if>
+        <if test="endDate != null and endDate != ''">
+      And ScmFbmSellCookDetail.accDate &lt;=#{endDate}
+       </if>
+             <if test="deptIds != null and deptIds != ''">
+        And ScmFbmSellCookDetail.deptCode in (${deptIds})
+      </if>
+      <if test="ouletIds != null and ouletIds != ''">
+        And ScmProductionDept.outletId in (${ouletIds})
+      </if>
+      <if test="deptIds ==null and ouletIds ==null">
+        And ScmProductionDept.resOrgUnitNo in (${resOrgUnitNo})
+      </if>
+      <if test="dishCodes != null and dishCodes != ''">
+         and ScmFbmSellCookDetail.dishCode in (${dishCodes})
+      </if>	     GROUP BY ScmFbmSellCookDetail.id
+      <if test="outlet != null and outlet != ''">
+         and ScmProductionDept.outletId in (${outlet})
+      </if>
+        <if test="dishTypes != null and dishTypes != ''">
+         and ScmFbmSellCookDetail.fbmStatCode in (${dishTypes})
+      </if>
+    		) AS  A  				
+    		    LEFT JOIN ScmDishProfitRate on a.dishCode=ScmDishProfitRate.dishCode 
+				and a.orgUnitNo=ScmDishProfitRate.orgUnitNo
+       <if test="noCost == 0 ">   
+       WHERE 
+        EXISTS(SELECT id FROM ScmCostCard bb WHERE bb.dishId=a.dishId )  
+       </if>
+    	GROUP BY orgUnitNo,dishId,deptName,dishSpecId
+	</select>
+	
+</mapper>

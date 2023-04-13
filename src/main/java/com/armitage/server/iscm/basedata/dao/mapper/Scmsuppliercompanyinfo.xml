@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsuppliercompanyinfo">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsuppliercompanyinfo.findAll" resultType="Scmsuppliercompanyinfo2" >
+	    SELECT * FROM scmsuppliercompanyinfo WHERE  1=1  
+	</select>
+ 
+	<select id="scmsuppliercompanyinfo.findAllPage" resultType="Scmsuppliercompanyinfo2" parameterType="Map"> 
+		SELECT * FROM scmsuppliercompanyinfo WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmsuppliercompanyinfo.selectById" resultType="Scmsuppliercompanyinfo2" parameterType="Long">
+		SELECT * FROM scmsuppliercompanyinfo WHERE id = #{value}
+	</select> 
+	<select id="scmsuppliercompanyinfo.selectByVendorIdAndOrgUnitNo" resultType="Scmsuppliercompanyinfo2" parameterType="Map">
+		SELECT * FROM scmsuppliercompanyinfo 
+		WHERE 1=1 and vendorId = #{vendorId}
+			and orgUnitNo = #{orgUnitNo}
+	</select>
+	<select id="scmsuppliercompanyinfo.selectByVendorStatusPage" resultType="Scmsuppliercompanyinfo2" parameterType="Map">
+		SELECT * FROM ScmSuppliercompanyinfo WHERE vendorId = #{vendorId}	and status = #{status}
+	</select> 
+	<insert id="scmsuppliercompanyinfo.add" parameterType="Scmsuppliercompanyinfo"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmsuppliercompanyinfo (
+        vendorId,
+        orgUnitNo,
+        kaClassId,
+        settleCycle,
+        days,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        flag,
+        freezeOrgUnitNo,
+        status,
+        controlUnitNo        )
+		VALUES (
+        #{vendorId},
+        #{orgUnitNo},
+        #{kaClassId},
+        #{settleCycle},
+        #{days},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{flag},
+        #{freezeOrgUnitNo},
+        #{status},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsuppliercompanyinfo.update" parameterType="Scmsuppliercompanyinfo">
+		UPDATE scmsuppliercompanyinfo set
+        vendorId=#{vendorId},
+        orgUnitNo=#{orgUnitNo},
+        kaClassId=#{kaClassId},
+        settleCycle=#{settleCycle},
+        days=#{days},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        flag=#{flag},
+        freezeOrgUnitNo=#{freezeOrgUnitNo},
+        status=#{status},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsuppliercompanyinfo.delete" parameterType="String">
+		DELETE FROM scmsuppliercompanyinfo WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

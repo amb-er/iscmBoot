@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpursuppliersourcerecorg">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpursuppliersourcerecorg.findAll" resultType="ScmPurSupplierSourceRecOrg2" >
+	    SELECT * FROM ScmPurSupplierSourceRecOrg WHERE  1=1  
+	</select>
+ 
+	<select id="scmpursuppliersourcerecorg.findAllPage" resultType="ScmPurSupplierSourceRecOrg2" parameterType="Map"> 
+		SELECT * FROM ScmPurSupplierSourceRecOrg WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpursuppliersourcerecorg.selectById" resultType="ScmPurSupplierSourceRecOrg2" parameterType="Long">
+		SELECT * FROM ScmPurSupplierSourceRecOrg WHERE id = #{value}
+	</select> 
+	<select id="scmpursuppliersourcerecorg.selectByBillId" resultType="ScmPurSupplierSourceRecOrg2" parameterType="Map">
+		SELECT * FROM ScmPurSupplierSourceRecOrg WHERE billId = #{billId}
+	</select> 
+	<insert id="scmpursuppliersourcerecorg.add" parameterType="ScmPurSupplierSourceRecOrg"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurSupplierSourceRecOrg (
+        billId,
+        receiveOrgUnitNo        )
+		VALUES (
+        #{billId},
+        #{receiveOrgUnitNo}        )
+	</insert>
+ 
+	<update id="scmpursuppliersourcerecorg.update" parameterType="ScmPurSupplierSourceRecOrg">
+		UPDATE ScmPurSupplierSourceRecOrg set
+        billId=#{billId},
+        receiveOrgUnitNo=#{receiveOrgUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpursuppliersourcerecorg.delete" parameterType="String">
+		DELETE FROM ScmPurSupplierSourceRecOrg WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

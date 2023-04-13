@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsupplierdemander">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsupplierdemander.findAll" resultType="ScmSupplierDemander" >
+	    SELECT * FROM scmsupplierdemander WHERE  1=1  
+	</select>
+ 
+	<select id="scmsupplierdemander.findAllPage" resultType="ScmSupplierDemander" parameterType="Map"> 
+		SELECT * FROM scmsupplierdemander WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmsupplierdemander.selectById" resultType="ScmSupplierDemander" parameterType="Long">
+		SELECT * FROM scmsupplierdemander WHERE id = #{value}
+	</select> 
+	<select id="scmsupplierdemander.selectByCtrl" resultType="ScmSupplierDemander" parameterType="Map">
+		SELECT * FROM ScmSupplierDemander 
+		WHERE 1=1 and controlUnitNo = #{controlUnitNo}
+		Limit 1
+	</select>
+	<select id="scmsupplierdemander.selectByDemanderId" resultType="ScmSupplierDemander" parameterType="Map">
+		SELECT * FROM ScmSupplierDemander 
+		WHERE 1=1 and demanderId = #{demanderId}
+		Limit 1
+	</select>
+	<insert id="scmsupplierdemander.add" parameterType="ScmSupplierDemander"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmsupplierdemander (
+        demanderId,
+        uniqueNo,
+        controlUnitNo        )
+		VALUES (
+        #{demanderId},
+        #{uniqueNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsupplierdemander.update" parameterType="ScmSupplierDemander">
+		UPDATE scmsupplierdemander set
+        demanderId=#{demanderId},
+        uniqueNo=#{uniqueNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsupplierdemander.delete" parameterType="String">
+		DELETE FROM scmsupplierdemander WHERE id IN (${value})
+	</delete> 
+
+</mapper>

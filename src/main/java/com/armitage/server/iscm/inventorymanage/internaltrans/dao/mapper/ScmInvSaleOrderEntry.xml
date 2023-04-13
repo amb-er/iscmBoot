@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvsaleorderentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvsaleorderentry.findAll" resultType="ScmInvSaleOrderEntry2" >
+	    SELECT * FROM scminvsaleorderentry WHERE  1=1  
+	</select>
+ 
+	<select id="scminvsaleorderentry.findAllPage" resultType="ScmInvSaleOrderEntry2" parameterType="Map"> 
+		SELECT * FROM scminvsaleorderentry WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scminvsaleorderentry.selectById" resultType="ScmInvSaleOrderEntry2" parameterType="Long">
+        SELECT scminvsaleorderentry.*, scmmaterial.itemNo as itemNo,
+        scmmaterial.itemName as itemName, scmmaterial.spec as spec, 
+        B.unitName as unitName,
+        C.unitName as baseUnitName,
+        A.unitName as pieUnitName,
+        scmmaterialunitrelation.convrate as convrate
+        FROM scminvsaleorderentry 
+        left join scmmaterial on scminvsaleorderentry.itemId=scmmaterial.id
+        left join ScmMeasureUnit B on scminvsaleorderentry.unit=B.id
+        left join ScmMeasureUnit C on scminvsaleorderentry.baseUnit=C.id
+        left join ScmMeasureUnit A on scminvsaleorderentry.pieUnit=A.id
+        left join ScmMaterialUnitRelation on scminvsaleorderentry.itemId=ScmMaterialUnitRelation.itemId
+        AND scminvsaleorderentry.unit=ScmMaterialUnitRelation.targetUnitId
+		WHERE scminvsaleorderentry.id = #{value}
+	</select> 
+	
+    <select id="scminvsaleorderentry.selectByOtId" resultType="ScmInvSaleOrderEntry2" parameterType="Map"> 
+		SELECT scminvsaleorderentry.*, scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName, scmmaterial.spec as spec,A.unitName as pieUnitName, 
+		B.unitName as unitName,C.unitName as baseUnitName,ScmMaterialGroup.classCode,
+		scmmaterialunitrelation.convrate as convrate
+		FROM scminvsaleorderentry 
+		left join ScmMeasureUnit B on scminvsaleorderentry.unit=B.id
+		left join ScmMeasureUnit C on scminvsaleorderentry.baseUnit=C.id
+		left join ScmMeasureUnit A on scminvsaleorderentry.pieUnit=A.id
+		left join ScmMaterialUnitRelation on scminvsaleorderentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scminvsaleorderentry.unit=ScmMaterialUnitRelation.targetUnitId,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE scminvsaleorderentry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		And scminvsaleorderentry.otId = #{otId}
+		<if test="notout!=null and notout!=''">
+			And scminvsaleorderentry.baseQty &gt; scminvsaleorderentry.outQty
+		</if>
+		ORDER BY scminvsaleorderentry.lineId ASC
+    </select>
+	
+	<insert id="scminvsaleorderentry.add" parameterType="ScmInvSaleOrderEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvsaleorderentry (
+        otId,
+        lineId,
+        itemId,
+        unit,
+        baseUnit,
+        qty,
+        baseQty,
+        saleTaxPrice,
+        saleTaxAmt,
+        outQty,
+        priceBillId,
+        refPriceStatus,
+        sourceBillDtlId,
+        remarks,
+        pieQty,
+        pieUnit        )
+		VALUES (
+        #{otId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{baseUnit},
+        #{qty},
+        #{baseQty},
+        #{saleTaxPrice},
+        #{saleTaxAmt},
+        #{outQty},
+        #{priceBillId},
+        #{refPriceStatus},
+        #{sourceBillDtlId},
+        #{remarks},
+        #{pieQty},
+        #{pieUnit}        )
+	</insert>
+ 
+	<update id="scminvsaleorderentry.update" parameterType="ScmInvSaleOrderEntry">
+		UPDATE scminvsaleorderentry set
+        otId=#{otId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        baseUnit=#{baseUnit},
+        qty=#{qty},
+        baseQty=#{baseQty},
+        saleTaxPrice=#{saleTaxPrice},
+        saleTaxAmt=#{saleTaxAmt},
+        outQty=#{outQty},
+        priceBillId=#{priceBillId},
+        refPriceStatus=#{refPriceStatus},
+        sourceBillDtlId=#{sourceBillDtlId},
+        remarks=#{remarks},
+        pieUnit=#{pieUnit},
+        pieQty=#{pieQty}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvsaleorderentry.delete" parameterType="String">
+		DELETE FROM scminvsaleorderentry WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

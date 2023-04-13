@@ -1,0 +1,2735 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcommonreport">
+
+	<!-- 供应商交易明细表-->
+    <select id="scmcommonreport.selectSupTransDetails" resultType="Map" parameterType="Map">
+         select scmsupplier.vendorName,CONCAT('#$orgBaseUnitBiz#$',a.purOrgUnitNo) AS purOrgUnitName,
+         CONCAT('#$orgBaseUnitBiz#$',a.storageOrgUnitNo) AS storageOrgUnitName,
+         DATE_FORMAT(a.bizDate,'%Y-%m-%d') as bizDate,b.itemNo,b.itemName,scmmeasureunit.unitName as purUnitName,
+	 	sum(a.qty) as qty,case When sum(a.qty)=0 Then 0 Else sum(a.amt)/sum(a.qty) end as price,sum(a.amt) as amt,
+	 	case When sum(a.qty)=0 Then 0 Else sum(a.taxAmt)/sum(a.qty) end as taxPrice,sum(a.taxAmt) as taxAmt,
+	 	sum(a.receiveQty)as receiveQty,sum(a.receiveAmt) as receiveAmt,sum(a.receiveTaxAmt) as receiveTaxAmt,
+	 	case When sum(a.receiveQty)=0 Then 0 Else sum(a.receiveTaxAmt)/sum(a.receiveQty) end as receiveTaxPrice,
+	 	sum(a.addInQty) as addInQty,sum(a.addInAmt) as addInAmt,sum(a.addInTaxAmt) as addInTaxAmt,
+	 	sum(a.returnQty) as returnQty,sum(a.returnAmt) as returnAmt,sum(a.returnTaxAmt) as returnTaxAmt,
+ 		sum(a.outQty) as outQty,sum(a.outAmt)as outAmt,sum(a.outTaxAmt) as outTaxAmt,
+        sum(a.receiveQty)-sum(a.addInQty) as notAddInQty,
+        sum(a.receiveAmt)-sum(a.addInAmt) as notAddInAmt,
+        sum(a.receiveTaxAmt)-sum(a.addInTaxAmt) as notAddInTaxAmt,
+        sum(a.addInQty)-sum(a.outQty) as realAddInQty,
+        case when sum(a.addInQty)-sum(a.outQty) =0 then 0 else (sum(a.addInAmt)-sum(a.outAmt))/(sum(a.addInQty)-sum(a.outQty)) end as realAddInPrice ,
+        sum(a.addInAmt)-sum(a.outAmt) as realAddInAmt,
+        case when sum(a.addInQty)-sum(a.outQty) =0 then 0 else (sum(a.addInTaxAmt)-sum(a.outTaxAmt))/(sum(a.addInQty)-sum(a.outQty)) end as realAddInTaxPrice ,
+       sum(a.addInTaxAmt)-sum(a.outTaxAmt) as realAddInTaxAmt 
+       FROM
+			(SELECT A.vendorId,A.orgUnitNo as purOrgUnitNo,B.itemId,B.receiveOrgUnitNo as storageOrgUnitNo,
+			sum(B.qty) as qty,sum(B.amt) as amt,sum(B.taxAmt) as taxAmt,0 as receiveQty,0 as  receiveAmt,0 as  receiveTaxAmt,
+			0 as addInQty,0 as  addInAmt,0 as  addInTaxAmt,0 as returnQty,0 as  returnAmt,0 as  returnTaxAmt,0 as outQty,0 as  outAmt,0 as  outTaxAmt,B.reqDate as bizDate
+			FROM scmpurorder A,scmpurorderentry B 
+			where A.id=B.poId And A.status in ('A','E','C','F') And A.vendorId &gt; 0
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.orgunitno = #{purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.receiveorgunitno in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND B.reqDate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND B.reqDate &lt;= #{maxOrderDate}
+				</if>
+			GROUP BY A.vendorId,A.orgUnitNo,B.itemId,B.purUnit,B.receiveOrgUnitNo,B.reqDate 
+			UNION
+			SELECT A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo as storageOrgUnitNo,0 as qty,0 as  amt,0 as  taxAmt,
+			0 as receiveQty,0 as  receiveAmt,0 as  receiveTaxAmt,IFNULL(sum(B.qty),0) as addInQty,IFNULL(sum(B.amt),0) as addInAmt,IFNULL(sum(B.taxAmt),0) as addInTaxAmt,
+			0 as returnQty,0 as  returnAmt,0 as  returnTaxAmt,0 as outQty,0 as  outAmt,0 as  outTaxAmt ,A.bizDate
+	        FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+			Where A.wrId=B.wrId And A.status = 'E' AND A.vendorId &gt; 0
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND B.purOrgUnitNo = #{purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test='self !=null and self =="0"'>
+					And A.bizType in ('1')
+				</if>
+				<if test='self !=null and self =="1"'>
+					And A.bizType in ('1','3')
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.bizDate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.bizDate &lt;= #{maxOrderDate}
+				</if>
+			GROUP BY A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo,A.bizDate
+			UNION
+			SELECT A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo as storageOrgUnitNo,0 as qty,0 as  qmt,0 as  taxAmt,
+			0 as receiveQty,0 as  receiveAmt,0 as  receiveTaxAmt,0 as addInQty,0 as  addInAmt,0 as  addInTaxAmt,
+			IFNULL(sum(B.Qty),0) as returnQty,IFNULL(sum(B.amt),0) as returnAmt,IFNULL(sum(B.taxAmt),0) as returnTaxAmt,
+			0 as outQty,0 as  outAmt,0 as  outTaxAmt ,A.bizDate
+			FROM scmpurreturns A,scmpurreturnsentry B 
+			where A.id=B.rtId And A.status in ('E','C','F') AND A.vendorId &gt; 0
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND B.purOrgUnitNo = #{purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.bizDate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.bizDate &lt;= #{maxOrderDate}
+				</if>
+			GROUP BY A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo,A.bizDate
+			UNION
+			SELECT A.vendorId,A.purOrgUnitNo,B.itemId,A.orgUnitNo as storageOrgUnitNo,0 as qty,0 as  amt,0 as  taxAmt,
+			case when #{flag}='1' then IFNULL(CASE When A.unified=1 THEN sum(B.deliveryQty) Else sum(B.qty) End,0)
+			else case when IFNULL(CASE When A.unified=1 THEN sum(B.deliveryQty) Else sum(B.qty) End,0)-sum(IFNULL(C.unConfirmQty,0)) &lt; 0 then 0 
+			else IFNULL(CASE When A.unified=1 THEN sum(B.deliveryQty) Else sum(B.qty) End,0)-sum(IFNULL(C.unConfirmQty,0)) end end as receiveQty,
+			case when #{flag}='1' then IFNULL(sum(B.amt),0) else case when IFNULL(sum(B.amt),0)-sum(IFNULL(C.unConfirmAmt,0)) &lt; 0 then 0 
+			else IFNULL(sum(B.amt),0)-sum(IFNULL(C.unConfirmAmt,0)) end end as receiveAmt,
+			case when #{flag}='1' then IFNULL(sum(B.taxAmt),0) else case when IFNULL(sum(B.taxAmt),0)-sum(IFNULL(C.unConfirmTaxAmt,0)) &lt; 0 then 0 
+			else IFNULL(sum(B.taxAmt),0)-sum(IFNULL(C.unConfirmTaxAmt,0)) end end as receiveTaxAmt,
+			0 as addInQty,0 as  addInAmt,0 as  addInTaxAmt,0 as returnQty,0 as  returnAmt,0 as  returnTaxAmt,0 as outQty,0 as  outAmt,0 as  outTaxAmt ,A.receiveDate as bizDate
+			FROM scmpurreceive A left join (SELECT ScmPurReceive.id as pvId,sum(case when scmpurcheck.flag=1 then scmpurreceiveentry.deliveryQty else 0 end) as confirmQty,
+			sum(case when scmpurcheck.flag=1 then scmpurreceiveentry.deliveryQty*scmpurreceiveentry.price else 0 end) as confirmAmt,
+			sum(case when scmpurcheck.flag=1 then scmpurreceiveentry.deliveryQty*scmpurreceiveentry.taxPrice else 0 end) as confirmTaxAmt,
+			sum(case when scmpurcheck.flag=0 then scmpurreceiveentry.deliveryQty else 0 end) as unConfirmQty,
+			sum(case when scmpurcheck.flag=0 then scmpurreceiveentry.deliveryQty*scmpurreceiveentry.price else 0 end) as unConfirmAmt,
+			sum(case when scmpurcheck.flag=0 then scmpurreceiveentry.deliveryQty*scmpurreceiveentry.taxPrice else 0 end) as unConfirmTaxAmt
+			FROM scmpurreceive,scmpurreceiveentry,scmpurcheck
+			WHERE scmpurreceive.id = scmpurreceiveentry.pvId And scmpurreceive.ckId=scmpurcheck.id
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND scmpurreceive.purOrgUnitNo = #{purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND scmpurreceive.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND scmpurreceive.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND scmpurreceive.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND scmpurreceive.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND scmpurreceive.receiveDate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND scmpurreceive.receiveDate &lt;= #{maxOrderDate}
+				</if>
+			group by scmpurreceive.id) C on A.id=C.pvId,scmpurreceiveentry B
+			Where A.id=B.pvId AND A.vendorId &gt; 0
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND A.purOrgUnitNo = #{purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.receiveDate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.receiveDate &lt;= #{maxOrderDate}
+				</if>
+			GROUP BY A.vendorId,A.purOrgUnitNo,B.itemId,A.orgUnitNo,A.receiveDate 
+			UNION
+			SELECT A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo as storageOrgUnitNo,
+	    0 as qty,0 as amt,0 as taxAmt,0 as receiveqty,0 as receiveamt  ,0 as receivetaxamt,
+	    0 as addinqty,0 as addinamt,0 as addintaxamt,0 as returnqty,0 as retureamt,0 as  returntaxamt ,
+	    IFNULL(sum(b.Qty),0) as outQty,
+		  IFNULL(sum(b.Amt),0) as outAmt,IFNULL(sum(b.TaxAmt),0) as outTaxAmt,A.bizDate
+	     FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+			Where A.wrId=B.wrId And A.status = 'E' AND A.vendorId &gt; 0
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+					AND B.purOrgUnitNo = #{purOrgUnitNo}
+				</if>
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId = #{vendorName}
+				</if>
+				<if test='unified !=null and unified =="1"'>
+					AND A.unified = 1
+				</if>
+				<if test='unified !=null and unified =="0"'>
+					AND A.unified = 0
+				</if>
+				<if test='self !=null and self =="0"'>
+					And A.bizType in ('6')
+				</if>
+				<if test='self !=null and self =="1"'>
+					And A.bizType in ('6','8')
+				</if>
+				<if test="minOrderDate !=null and minOrderDate !=''">
+					AND A.bizDate &gt;= #{minOrderDate}
+				</if>
+				<if test="maxOrderDate !=null and maxOrderDate !=''">
+					AND A.bizDate &lt;= #{maxOrderDate}
+				</if>
+			GROUP BY A.vendorId,B.purOrgUnitNo,B.itemId,A.orgUnitNo,A.bizDate
+	) a 
+                left join scmsupplier on scmsupplier.id=a.vendorId,
+	(SELECT ScmMaterial.id,ScmMaterial.itemName,ScmMaterial.itemNo,Case WHEN ScmMaterialPurchase.purUnit is null Then ScmMaterial.purUnit
+		Else ScmMaterialPurchase.purUnit end as	purUnit From
+		(Select ScmMaterial.id,ScmMaterial.itemName,ScmMaterial.itemNo,ScmMaterialPurchase.purUnit  FROM ScmMaterial,ScmMaterialPurchase 
+		where ScmMaterialPurchase.itemId=ScmMaterial.id and ScmMaterialPurchase.orgUnitNo=#{controlUnitNo}) ScmMaterial
+		LEFT JOIN ScmMaterialPurchase On ScmMaterialPurchase.itemId=ScmMaterial.id and ScmMaterialPurchase.orgUnitNo = #{purOrgUnitNo}) b
+                                LEFT JOIN scmmeasureunit on scmmeasureunit.id=b.purUnit
+	Where a.itemId=b.id
+	GROUP BY a.vendorId,a.purOrgUnitNo,a.bizDate,a.itemId,a.storageOrgUnitNo,b.purUnit
+	ORDER BY a.purOrgUnitNo,a.vendorId,a.storageOrgUnitNo,a.bizDate,a.itemId
+	</select>
+    <!-- 入库事务汇总-供应商*物资-->
+	<select id="scmcommonreport.selectScmInvItemSupplierWrSum" resultType="Map" parameterType="Map">
+		select B.itemId, C.itemNo, C.itemName, C.Spec, E.className,
+		A.vendorId, G.vendorName, B.unit, H.unitName,
+                                CONCAT('#$orgBaseUnitBiz#$',B.orgUnitNo) AS orgUnitName,
+		B.taxRate as addInTaxRate,
+		SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end) as addInQty,
+		SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) as addInAmt,
+		 SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end) as addInTaxAmt,
+   		case when SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end)=0 then 0
+      		else SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) /SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end) end as addInPrice,
+    		case when SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end)=0 then 0
+      		else SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end) /SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end) end as addInTaxPrice
+		from ScmInvPurInWarehsBill as A, ScmInvPurInWarehsBillEntry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,
+		scmsupplier G, scmMeasureUnit H
+		Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+		And A.vendorId = G.id And B.unit = H.id
+	    <if test="invOrgUnitNo != null and invOrgUnitNo!='' ">
+            and B.orgUnitNo in (${invOrgUnitNo})
+        </if> 
+	    <if test="begDate != null and begDate !='' ">
+            and A.bizDate &gt;= #{begDate}
+         </if>
+	    <if test="endDate != null and endDate !='' ">
+            and A.bizDate &lt;= #{endDate}
+         </if>
+	    <if test="materialClassName!= null and materialClassName !='' ">
+           And E.id in (${materialClassName})
+        </if>
+        <if test="materialName != null and materialName !='' ">
+           And B.itemId in (${materialName})
+        </if>
+        <if test="vendorName != null and vendorName !='' ">
+            And A.vendorId in (${vendorName})
+        </if>
+         <if test='noPost != null and noPost =="0" '>
+             And A.status = 'E'
+         </if> 
+         <if test='stockType != null and stockType == 0'>
+         	And B.wareHouseId &gt; 0
+         </if>
+    	<if test="wareHouseId != null and wareHouseId == 0 and whOrDept != null">
+            And B.wareHouseId = #{whOrDept}
+         </if> 
+        <if test='stockType != null and stockType == 1'>
+         	And IFNULL(B.useOrgUnitNo,'')!=''
+        </if>
+	    <if test='stockType != null and stockType == 1 and whOrDept != null'>
+            And B.useOrgUnitNo = #{whOrDept}
+        </if> 
+	    <if test="taxRate != null and taxRate !='' ">
+            And B.taxRate in (${taxRate})
+        </if> 
+		group by B.itemId, A.vendorId, B.unit, B.orgUnitNo,B.taxRate
+		<if test='type != null and type =="V"'>
+			Order By A.vendorId,C.itemNo
+		</if>
+		<if test='type != null and type =="M"'>
+			Order By C.itemNo,A.vendorId
+		</if>
+    </select>
+	
+	<!-- 入库事务汇总表 - 物资汇总-->
+	<select id="scmcommonreport.selectScmInvItemWrSumMaterials" resultType="Map" parameterType="Map">
+		select E.className, B.itemId, C.itemNo, C.itemName, C.spec, G.unitName,
+		    SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end) as addInQty,
+		    SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) as addInAmt,
+		    SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end) as addInTaxAmt,
+		 case when SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end)=0 then 0
+      		else ROUND((SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) /SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end)),2) end as addInPrice,
+    		case when SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end)=0 then 0
+      		else ROUND((SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end) /SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end)),2) end as addInTaxPrice
+		from ScmInvPurInWarehsBill as A, ScmInvPurInWarehsBillEntry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,scmmeasureunit G
+		Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+                               And  B.unit=G.id
+	    <if test="invOrgUnitNo != null and invOrgUnitNo !='' ">
+            and B.orgUnitNo in (${invOrgUnitNo})
+        </if> 
+	    <if test="begDate != null and begDate !='' ">
+            and A.bizDate &gt;= #{begDate}
+         </if>
+	    <if test="endDate != null and endDate !='' ">
+            and A.bizDate &lt;= #{endDate}
+         </if>
+	    <if test="materialClassName != null and materialClassName !='' ">
+           And E.id in (${materialClassName})
+        </if>
+        <if test="materialName != null and materialName !='' ">
+           And B.itemId in (${materialName})
+        </if>
+        <if test="vendorName != null and vendorName !='' ">
+            And A.vendorId in (${vendorName})
+        </if>
+         <if test='noPost != null and noPost =="0" '>
+             And A.status = 'E'
+         </if> 
+         <if test='stockType != null and stockType =="0"'>
+         	And B.wareHouseId &gt; 0
+         </if>
+    	<if test="whOrDept != null and whOrDept !='' ">
+              And (B.wareHouseId in (${whOrDept}) or  B.useOrgUnitNo in (${whOrDept}) )
+         </if> 
+        <if test='stockType != null and stockType =="1"'>
+         	And IFNULL(B.useOrgUnitNo,'')!=''
+        </if>
+	    <if test="useOrgUnitNo != null and useOrgUnitNo !='' ">
+            And B.useOrgUnitNo = #{useOrgUnitNo}
+        </if> 
+	    <if test="taxRate != null and taxRate !='' ">
+            And B.taxRate in (${taxRate})
+        </if> 
+		group by E.classCode, B.itemId, C.itemName, C.spec, B.unit
+		<if test='type != null and type =="V"'>
+			Order By A.vendorId,C.itemNo,B.wareHouseId,B.useOrgUnitNo
+		</if>
+		<if test='type != null and type =="M"'>
+			Order By C.itemNo,A.vendorId,B.wareHouseId,B.useOrgUnitNo
+		</if>
+    </select>
+    <!-- 销售定价信息表  -->
+    <select id="scmcommonreport.scmInvSalePriceDetail" resultType = "Map" parameterType = "Map">
+    	SELECT itemName,itemNo,spec, CONCAT('#$scmMeasureUnitBiz#$',scminvsalepriceentry.unit) AS unitName,CONCAT('#$orgBaseUnitBiz#$',scminvsaleprice.orgUnitNo) AS invOrgUnitNo,scminvsaleprice.pmNo as billNo,scminvsalepriceentry.saleTaxPrice,begDate,endDate 
+		FROM scminvsalepriceentry,scminvsaleprice,scmmaterialgroup,scmmaterial,scmmaterialGroupdetail,ScmMaterialGroupStandard  
+		where scminvsaleprice.pmId = scminvsalepriceentry.pmId 
+			and scminvsaleprice.`status` = 'E' 
+			and scminvsaleprice.begDate &lt;= #{endDate} 
+			and scminvsaleprice.endDate &gt;= #{endDate} 
+			and scminvsaleprice.orgUnitNo in (${invOrgUnitNo}) 
+			
+			and scminvsalepriceentry.itemId = scmmaterial.id
+			and scmmaterialgroupdetail.itemId = scmmaterial.id
+			and scmmaterialgroupdetail.classId = scmmaterialgroup.id
+			and scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			and ScmMaterialGroupStandard.standardType='1'
+			
+		    <if test="materialClassName != null and materialClassName !='' ">
+	           And scmmaterialgroup.id in (${materialClassName})
+	        </if>
+	        <if test="materialName != null and materialName !='' ">
+	           And scminvsalepriceentry.itemId in (${materialName})
+	        </if>
+    </select>
+ 	
+ 	<!-- 供应商供货汇总表 -->
+ 	<select id="scmcommonreport.scmSupSupplyOfMaterialSummary" resultType="Map" parameterType="Map">
+		select vendorId, scmsupplier.vendorNo, scmsupplier.vendorName,sum(numOfIn) as numOfIn,
+	 		sum(addInAmt - returnAmt) as addInAmt, 
+	 		sum((addInTaxAmt - returnTaxAmt) - (addInAmt - returnAmt)) as addInTax,
+	 		sum(addInTaxAmt - returnTaxAmt) as addInTaxAmt 
+ 		from (
+			SELECT A.vendorId, count(distinct A.WRNO)  as numOfIn,IFNULL(sum(B.amt),0) as addInAmt, IFNULL(sum(B.taxAmt),0) as addInTaxAmt,
+			0 as returnAmt,0 as returnTaxAmt
+			FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+			Where A.wrId=B.wrId And A.bizType in ('1','3') AND A.vendorId &gt; 0
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="whOrDept != null and whOrDept !='' ">
+	              And (B.wareHouseId in (${whOrDept}) or  B.useOrgUnitNo in (${whOrDept}))
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId in (${vendorName})
+				</if>	
+				<if test="purBizType !=null and purBizType !=''">
+	                and A.bizType = #{purBizType}
+	            </if>
+				<if test="begDate !=null and begDate !=''">
+					AND A.bizDate &gt;= #{begDate}
+				</if>
+				<if test="endDate !=null and endDate !=''">
+					AND A.bizDate &lt;= #{endDate}
+				</if>
+				<choose>
+					<when test='noPost != null and noPost =="0" '>
+		 				And A.status = 'E'
+		 			</when>
+		 			<otherwise>
+		 				and A.status != 'N'
+		 			</otherwise>
+		 		</choose>
+			GROUP BY A.vendorId
+			UNION ALL
+			SELECT  A.vendorId, count(distinct A.WRNO)  as numOfIn, 0 as addinamt,0 as addintaxamt,IFNULL(sum(B.amt),0) as returnamt,IFNULL(sum(B.taxAmt),0) as returntaxamt
+			FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+			Where A.wrId=B.wrId And A.bizType in ('6','8') AND A.vendorId &gt; 0
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="whOrDept != null and whOrDept !='' ">
+	              And (B.wareHouseId in (${whOrDept}) or  B.useOrgUnitNo in (${whOrDept}))
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId in (${vendorName})
+				</if>
+				<if test="begDate !=null and begDate !=''">
+					AND A.bizDate &gt;= #{begDate}
+				</if>
+				<if test="endDate !=null and endDate !=''">
+					AND A.bizDate &lt;= #{endDate}
+				</if>
+				<if test="purBizType !=null and purBizType !=''">
+	                and A.bizType = #{purBizType}
+	            </if>
+         		<choose>
+					<when test='noPost != null and noPost =="0" '>
+		 				And A.status = 'E'
+		 			</when>
+		 			<otherwise>
+		 				and A.status != 'N'
+		 			</otherwise>
+		 		</choose>
+			GROUP BY A.vendorId
+		) a
+		left join scmsupplier on scmsupplier.id=a.vendorId
+    	GROUP BY vendorId
+		ORDER BY vendorId
+ 	</select>
+ 	
+ 	<!-- 供应商供货汇总-按部门/仓库汇总表 -->
+ 	<select id="scmcommonreport.scmSupSupplyOfMaterialSummary2" resultType="Map" parameterType="Map">
+		select vendorId, scmsupplier.vendorNo, scmsupplier.vendorName,
+	 		sum(addInAmt - returnAmt) as addInAmt, 
+	 		sum((addInTaxAmt - returnTaxAmt) - (addInAmt - returnAmt)) as addInTax,
+	 		sum(addInTaxAmt - returnTaxAmt) as addInTaxAmt,useOrgUnitNo,a.itemId,scmmaterialgroup.className,
+	 		(case when a.useOrgUnitNo is not null then a.useOrgUnitNo  else a.wareHouseId end)  AS useOrgUnitNos, 	
+	 		(case when scminvwarehouse.whName is not null then scminvwarehouse.whName  else CONCAT('#$orgBaseUnitBiz#$',useOrgUnitNo) end)  AS orgUnitName 		  
+ 		from (
+			SELECT A.vendorId, IFNULL(sum(B.amt),0) as addInAmt, IFNULL(sum(B.taxAmt),0) as addInTaxAmt,
+			0 as returnAmt,0 as returnTaxAmt,B.useOrgUnitNo,B.wareHouseId,B.itemId
+			FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+			Where A.wrId=B.wrId And A.bizType in ('1','3') AND A.vendorId &gt; 0
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="whOrDept != null and whOrDept !=0 ">
+	              And (B.wareHouseId in (${whOrDept}) or  B.useOrgUnitNo in (${whOrDept}))
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId in (${vendorName})
+				</if>	
+				<if test="purBizType !=null and purBizType !=''">
+	                and A.bizType = #{purBizType}
+	            </if>
+				<if test="begDate !=null and begDate !=''">
+					AND A.bizDate &gt;= #{begDate}
+				</if>
+				<if test="endDate !=null and endDate !=''">
+					AND A.bizDate &lt;= #{endDate}
+				</if>
+				<choose>
+					<when test='noPost != null and noPost =="0" '>
+		 				And A.status = 'E'
+		 			</when>
+		 			<otherwise>
+		 				and A.status != 'N'
+		 			</otherwise>
+		 		</choose>
+			GROUP BY A.vendorId,case when B.wareHouseId=0 then B.useOrgUnitNo else B.wareHouseId end
+			UNION ALL
+			SELECT  A.vendorId,  0 as addinamt,0 as addintaxamt,IFNULL(sum(B.amt),0) as returnamt,IFNULL(sum(B.taxAmt),0) as returntaxamt,B.useOrgUnitNo,B.wareHouseId,B.itemId
+			FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+			Where A.wrId=B.wrId And A.bizType in ('6','8') AND A.vendorId &gt; 0
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="whOrDept != null and whOrDept !=0 ">
+	              And (B.wareHouseId in (${whOrDept}) or  B.useOrgUnitNo in (${whOrDept}))
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId in (${vendorName})
+				</if>
+				<if test="begDate !=null and begDate !=''">
+					AND A.bizDate &gt;= #{begDate}
+				</if>
+				<if test="endDate !=null and endDate !=''">
+					AND A.bizDate &lt;= #{endDate}
+				</if>
+				<if test="purBizType !=null and purBizType !=''">
+	                and A.bizType = #{purBizType}
+	            </if>
+         		<choose>
+					<when test='noPost != null and noPost =="0" '>
+		 				And A.status = 'E'
+		 			</when>
+		 			<otherwise>
+		 				and A.status != 'N'
+		 			</otherwise>
+		 		</choose>
+			GROUP BY A.vendorId,case when B.wareHouseId=0 then B.useOrgUnitNo else B.wareHouseId end
+		) a
+		left join scmsupplier on scmsupplier.id=a.vendorId
+		left join scmmaterial on a.ItemId=scmmaterial.id
+		left join scmmaterialgroupdetail on scmmaterial.id=scmmaterialgroupdetail.itemId
+		left join scmmaterialgroup on scmmaterialgroup.id=scmmaterialgroupdetail.classId
+		left join scmmaterialgroupstandard on scmmaterialgroupdetail.standardId=scmmaterialgroupstandard.id 
+		and scmmaterialgroup.standardId=scmmaterialgroupdetail.standardId
+		left join scminvwarehouse on scminvwarehouse.id=a.wareHouseId
+		where ScmMaterialGroupStandard.standardType='1'
+    	GROUP BY vendorId,case when a.wareHouseId=0 then a.useOrgUnitNo else a.wareHouseId end,scmmaterialgroup.id
+		ORDER BY vendorId
+ 	</select>
+ 	
+ 		<!-- 供应商供货明细表-->
+    <select id="scmcommonreport.scmSupSupplyOfMaterialDetails" resultType="Map" parameterType="Map">
+        select scmsupplier.vendorNo,scmsupplier.vendorName, IfNull(scminvwarehouse.whName, CONCAT('#$orgBaseUnitBiz#$',a.useOrgUnitNo)) as wareHouseName,
+	        DATE_FORMAT(a.bizDate,'%Y-%m-%d') as bizDate, CONCAT('#$codeBiz#$',a.bizType) as bizType, a.wrNo, b.itemNo as itemNo,b.itemName, b.spec, scmmeasureunit.unitName as unitName,
+		 	sum(a.addInQty - a.returnQty) as qty,
+			case When sum(a.addInqty - returnQty)=0 Then 0 Else sum(a.addInAmt - a.returnAmt)/sum(a.addInQty - a.returnQty) end as price,
+			sum(a.addInAmt - a.returnAmt) as amt,
+			a.taxRate,
+		 	case When sum(a.addInqty - returnQty)=0 Then 0 Else sum(a.addInTaxAmt - a.returnTaxAmt)/sum(a.addInqty - returnQty) end as taxPrice,
+			sum(a.addInTaxAmt - a.returnTaxAmt) as taxAmt,
+			sum((a.addInTaxAmt - a.returnTaxAmt) - (a.addInAmt - a.returnAmt)) as taxAmount,
+			a.remarks
+        FROM
+			(SELECT A.vendorId, A.bizDate, concat('wareHouseBizType;', bizType) as bizType, B.wareHouseId, B.useOrgUnitNo,  
+				A.wrNo, B.itemId, sum(B.qty) as addInQty, B.price as addInPrice, sum(B.amt) as addInAmt, 
+				B.taxRate, B.taxPrice as addInTaxPrice, sum(B.taxAmt) as addInTaxAmt, 
+				0 as returnqty, 0 as returnPrice, 0 as returnAmt, 
+				0 as returnTaxPrice, 0 as returnTaxAmt, B.remarks
+	        FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+			Where A.wrId=B.wrId And A.bizType in ('1','3') AND A.vendorId &gt; 0
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="whOrDept != null and whOrDept !='' ">
+	              And (B.wareHouseId in (${whOrDept}) or  B.useOrgUnitNo in (${whOrDept}))
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId in (${vendorName})
+				</if>	
+				<if test="purBizType !=null and purBizType !=''">
+	                and A.bizType = #{purBizType}
+	            </if>
+				<if test="begDate !=null and begDate !=''">
+					AND A.bizDate &gt;= #{begDate}
+				</if>
+				<if test="endDate !=null and endDate !=''">
+					AND A.bizDate &lt;= #{endDate}
+				</if>
+				<choose>
+					<when test='noPost != null and noPost =="0" '>
+		 				And A.status = 'E'
+		 			</when>
+		 			<otherwise>
+		 				and A.status != 'N'
+		 			</otherwise>
+		 		</choose>
+			GROUP BY A.vendorId,B.wareHouseId, B.useOrgUnitNo, A.wrNo, B.itemId,A.orgUnitNo,A.bizDate
+			UNION ALL
+			SELECT A.vendorId, A.bizDate, concat('wareHouseBizType;', bizType) as bizType, B.wareHouseId, B.useOrgUnitNo,  
+				A.wrNo, B.itemId, 0 as addinQty, 0 as addinPrice, 0 as addinAmt, 
+				B.taxRate, 0 as addinTaxPrice, 0 as addinTaxAmt, 
+				sum(B.qty) as returnqty, B.price as returnPrice, sum(B.amt) as returnAmt, 
+				B.taxPrice as returnTaxPrice, sum(B.taxAmt) as returnTaxAmt, B.remarks
+	     FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+			Where A.wrId=B.wrId And A.bizType in ('6','8') AND A.vendorId &gt; 0
+				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="whOrDept != null and whOrDept !='' ">
+	              And (B.wareHouseId in (${whOrDept}) or  B.useOrgUnitNo in (${whOrDept}))
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId in (${vendorName})
+				</if>	
+				<if test="purBizType !=null and purBizType !=''">
+	                and A.bizType = #{purBizType}
+	            </if>
+				<if test="begDate !=null and begDate !=''">
+					AND A.bizDate &gt;= #{begDate}
+				</if>
+				<if test="endDate !=null and endDate !=''">
+					AND A.bizDate &lt;= #{endDate}
+				</if>
+				<choose>
+					<when test='noPost != null and noPost =="0" '>
+		 				And A.status = 'E'
+		 			</when>
+		 			<otherwise>
+		 				and A.status != 'N'
+		 			</otherwise>
+		 		</choose>
+			GROUP BY A.vendorId,B.wareHouseId, B.useOrgUnitNo, A.wrNo, B.itemId,A.orgUnitNo,A.bizDate) a 
+                left join scmsupplier on scmsupplier.id=a.vendorId
+				left join scminvwarehouse on a.wareHouseId = scminvwarehouse.id,
+	(SELECT ScmMaterial.id,ScmMaterial.itemName,ScmMaterial.itemno,Case WHEN ScmMaterialInventory.unitId is null Then ScmMaterial.unitId
+		Else ScmMaterialInventory.unitId end as	unitId, ScmMaterial.spec From
+		(Select ScmMaterial.id,ScmMaterial.itemName,ScmMaterial.itemno,ScmMaterialInventory.unitId, ScmMaterial.spec  FROM ScmMaterial,ScmMaterialInventory 
+		where ScmMaterialInventory.itemId=ScmMaterial.id and ScmMaterialInventory.orgUnitNo=#{controlUnitNo}) ScmMaterial
+		LEFT JOIN ScmMaterialInventory On ScmMaterialInventory.itemId=ScmMaterial.id and ScmMaterialInventory.orgUnitNo = #{invOrgUnitNo}) b
+                                LEFT JOIN scmmeasureunit on scmmeasureunit.id=b.unitId
+	Where a.itemId=b.id
+	GROUP BY a.vendorId,a.bizDate,a.WrNo,a.wareHouseId,a.useOrgUnitNo,b.itemNo
+	ORDER BY a.vendorId,a.wareHouseId,a.useOrgUnitNo,a.bizDate,a.WrNo,b.itemNo
+	</select>
+	
+	<!-- 保质期分析报表-->
+    <select id="scmcommonreport.scminvexpirationdateanalysis" resultType="Map" parameterType="Map">
+	  Select scmmaterialgroup.className,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,scmmeasureunit.unitName,
+		scminvstock.lot,scminvwarehouse.whName,scmsupplier.vendorName,
+		case when scminvstock.costCenter=1 Then CONCAT('#$orgBaseUnitBiz#$',scminvstock.orgUnitNo) Else '' end as orgUnitNo,
+		case when B.periodValidDays is null Then A.periodValidDays Else B.periodValidDays end as Durability,
+		DATE_FORMAT(DATE_ADD(scminvstock.expDate,INTERVAL -(case when B.periodValidDays is null Then A.periodValidDays Else B.periodValidDays end+1) DAY),'%Y-%m-%d') as productDate, 
+		DATE_FORMAT(scminvstock.expDate,'%Y-%m-%d') as expDate,datediff(scminvstock.expDate,now()) as expirydate,sum(qty) as qty 
+		From ScmInvstock 
+		left join scmmeasureunit on scmmeasureunit.id=scminvstock.unit
+		left join scminvwarehouse on scminvwarehouse.id=scminvstock.wareHouseId
+		left join scmsupplier on scmsupplier.id=scminvstock.vendorId
+		left join ScmMaterialInventory A on scminvstock.itemId=A.itemId and A.orgUnitNo=#{controlUnitNo}
+		left join ScmMaterialInventory B on scminvstock.itemId=B.itemId and B.orgUnitNo=scminvstock.finOrgUnitNo,
+		scmmaterial,scmmaterialgroup,scmmaterialgroupdetail,scmmaterialgroupstandard
+		Where scminvstock.finOrgUnitNo in (${invOrgUnitNo}) and scminvstock.qty &gt; 0 and IFNULL(scminvstock.expDate,'') !=''
+		And scminvstock.itemId=scmmaterial.id And scmmaterial.id=scmmaterialgroupdetail.itemId
+		and scmmaterialgroupdetail.classId=scmmaterialgroup.id and scmmaterialgroupdetail.standardId=scmmaterialgroupstandard.id
+		And scmmaterialgroupstandard.standardType='1' 
+		<if test='materialName != null and materialName !=""' >
+				And scminvstock.itemId in (${materialName})
+		</if>
+		<if test='costOrgUnitNo != null and costOrgUnitNo !="" and costOrgUnitNo !="0"'>
+			And scminvstock.orgUnitNo in(${costOrgUnitNo}) 
+		</if>
+		<if test='whName != null and whName !=""' >
+			And scminvstock.wareHouseId in (${whName})
+		</if>
+		<if test="begdurability != null and begdurability !='' ">
+				And case when B.periodValidDays is null Then A.periodValidDays Else B.periodValidDays end &gt;= #{begdurability}
+		 </if>
+		<if test="enddurability != null and enddurability !='' ">
+				And case when B.periodValidDays is null Then A.periodValidDays Else B.periodValidDays end &lt;=#{enddurability}
+		 </if>
+		 <if test="begexpirydate != null and begexpirydate !='' ">
+				And datediff(scminvstock.expDate,now()) &gt;= #{begexpirydate}
+		 </if>
+		<if test="endexpirydate != null and endexpirydate !='' ">
+				And datediff(scminvstock.expDate,now()) &lt;=#{endexpirydate}
+		 </if>
+		GROUP BY scminvstock.itemId,scminvstock.unit,scminvstock.lot,scminvstock.wareHouseId,
+		case when scminvstock.costCenter=1 Then scminvstock.orgUnitNo Else '' end,scminvstock.vendorId,scminvstock.expDate
+		ORDER BY scminvstock.expDate
+    </select>
+	
+	<!-- 仓库事务发生明细表-->
+    <select id="scmcommonreport.scminvttransferoccurDetails" resultType="Map" parameterType="Map">
+	 <choose>
+	  <when test="scmactiontype == 1 and scmactiontype !='' ">	
+       select  G.className,i.whName, H.vendorName as variable,'采购入库' as billtype,c.itemNo,
+			c.itemName,c.spec,j.unitName,B.remarks,
+			sum(case when A.biztype &lt; '6' then B.qty else - B.qty end) qty,
+			sum(case when A.biztype &lt; '6' then B.Amt else - B.Amt end) as amt,
+            sum(case when A.biztype &lt; '6' then B.Amt else - B.Amt end)/case when sum(case when A.biztype &lt; '6' then B.qty else - B.qty end)=0 
+            THEN 1 else sum(case when A.biztype &lt; '6' then B.qty else - B.qty end) end as price,  
+   		    sum(case when A.biztype &lt; '6' then B.TaxAmt else - B.TaxAmt end) as taxAmt,
+            sum(case when A.biztype &lt; '6' then B.TaxAmt else - B.TaxAmt end) / case when sum(case when A.biztype &lt; '6' then B.qty else - B.qty end)=0 
+            THEN 1 else sum(case when A.biztype &lt; '6' then B.qty else - B.qty end) end  as taxPrice,
+			'供应商' as variablename
+		from ScmInvPurInWarehsBill as A, ScmInvPurInWarehsBillEntry as B,ScmMaterial C,scmsupplier H,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+		And A.vendorId = H.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND B.wareHouseId=i.id
+    and B.wareHouseId &gt; '0' 
+	<if test="whName != null and whName !='' ">
+                     And B.wareHouseId in (${whName})
+    </if>
+	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and B.orgUnitNo in (${invOrgUnitNo})
+	</if>
+	<if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="vendorName !=null and vendorName !=''">
+	and A.vendorId in (${vendorName})
+	</if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+   <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose> 
+		group by G.className, H.vendorName,i.whName,c.itemNo,c.itemName,c.spec,j.unitName
+		Order By G.classcode,i.whName,c.itemNo
+    </when>
+	
+	<when test="scmactiontype == 2 and scmactiontype !='' ">	
+       select  G.className,i.whName,  '' as variable,'调拨入库' as billtype,c.itemNo,
+	  c.itemName,c.spec,j.unitName,B.remarks,
+	  sum(B.qty) qty,
+	  sum(B.Amt) as amt,
+      sum(B.Amt)/case when sum(B.qty)=0 THEN 1 else sum(B.qty) end as price,  
+      sum(B.TaxAmt) as taxAmt,
+      sum(B.TaxAmt) / case when sum(B.qty)=0 THEN 1 else sum(B.qty) end  as taxPrice,
+	  '' as variablename
+		from ScmInvMoveInWarehsBill as A, scminvmoveinwarehsbillentry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND A.wareHouseId=i.id 
+	<if test="whName != null and whName !='' ">
+                     And A.wareHouseId in (${whName})
+    </if>
+	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and B.orgUnitNo in (${invOrgUnitNo})
+	</if>
+   <if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+    <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose> 
+		group by G.className,i.whName,c.itemNo,c.itemName,c.spec,j.unitName
+		Order By G.classcode,i.whName,c.itemNo
+    </when>
+	
+	<when test="scmactiontype == 3 and scmactiontype !='' ">
+	select  G.className,i.whName, '' as variable,'其它入库' as billtype,c.itemNo,
+			c.itemName,c.spec,j.unitName,B.remarks,
+			sum(B.qty) qty,
+			sum(B.Amt) as amt,
+            sum(B.Amt)/case when sum(B.qty)=0 THEN 1 else sum(B.qty) end as price,  
+   		    sum(B.TaxAmt) as taxAmt,
+            sum(B.TaxAmt) / case when sum(B.qty)=0 THEN 1 else sum(B.qty) end  as taxPrice,
+			'' as variablename
+		from ScmInvOtherInWarehsBill as A, scminvotherinwarehsbillentry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND A.wareHouseId=i.id
+    and B.wareHouseId &gt; '0' 
+	<if test="whName != null and whName !='' ">
+                     And B.wareHouseId in (${whName})
+    </if>
+    <if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and B.orgUnitNo in (${invOrgUnitNo})
+	</if>
+    <if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+   <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose> 
+		group by G.className,i.whName,c.itemNo,c.itemName,c.spec,j.unitName
+		Order By G.classcode,i.whName,c.itemNo
+    </when>
+	
+	<when test="scmactiontype == 4 and scmactiontype !='' ">
+	select  G.className,i.whName, CONCAT('#$orgBaseUnitBiz#$',a.useOrgUnitNo) as variable,'领料出库' as billtype,c.itemNo,
+			c.itemName,c.spec,j.unitName,B.remarks,
+			sum(case when A.biztype = '1' then B.qty else - B.qty end) qty,
+			sum(case when A.biztype = '1' then B.Amt else - B.Amt end) as amt,
+      sum(case when A.biztype = '1' then B.Amt else - B.Amt end)/case when sum(case when A.biztype = '1' then B.qty else - B.qty end)=0 
+      THEN 1 else sum(case when A.biztype = '1' then B.qty else - B.qty end) end as price,  
+   		sum(case when A.biztype = '1' then B.TaxAmt else - B.TaxAmt end) as taxAmt,
+      sum(case when A.biztype = '1' then B.TaxAmt else - B.TaxAmt end) / case when sum(case when A.biztype = '1' then B.qty else - B.qty end)=0 
+      THEN 1 else sum(case when A.biztype = '1' then B.qty else - B.qty end) end  as taxPrice,
+	  '部门' as variablename
+		from ScmInvMaterialReqBill as A, scminvmaterialreqbillentry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.otId=B.otId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND A.wareHouseId=i.id 
+	<if test="whName != null and whName !='' ">
+                     And A.wareHouseId in (${whName})
+    </if>
+	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and A.orgUnitNo in (${invOrgUnitNo})
+	</if>
+   <if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+       And a.useOrgUnitNo in (${costOrgUnitNo}) 
+    </if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+    <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose>
+		group by G.className, a.useOrgUnitNo,i.whName,c.itemNo,c.itemName,c.spec,j.unitName
+		Order By G.classcode,i.whName,a.useOrgUnitNo,c.itemNo
+    </when>
+	
+	<when test="scmactiontype == 5 and scmactiontype !='' ">
+	select  G.className,i.whName,  CONCAT('#$customerBiz#$',a.custId) as variable,'销售出库' as billtype,c.itemNo,
+			c.itemName,c.spec,j.unitName,B.remarks,
+			sum(case when A.biztype in('1','2','3')  then B.qty else - B.qty end) qty,
+			sum(case when A.biztype in('1','2','3')  then B.Amt else - B.Amt end) as amt,
+      sum(case when A.biztype in('1','2','3')  then B.Amt else - B.Amt end)/case when sum(case when A.biztype in('1','2','3')  then B.qty else - B.qty end)=0 
+      THEN 1 else sum(case when A.biztype in('1','2','3')  then B.qty else - B.qty end) end as price,  
+   		sum(case when A.biztype in('1','2','3')  then B.TaxAmt else - B.TaxAmt end) as taxAmt,
+      sum(case when A.biztype in('1','2','3')  then B.TaxAmt else - B.TaxAmt end) / case when sum(case when A.biztype in('1','2','3')  then B.qty else - B.qty end)=0 
+      THEN 1 else sum(case when A.biztype in('1','2','3')  then B.qty else - B.qty end) end  as taxPrice,
+	  '客户' as variablename
+		from ScmInvSaleIssueBill as A, scminvsaleissuebillentry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.otId=B.otId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND B.wareHouseId=i.id 
+	<if test="whName != null and whName !='' ">
+                     And B.wareHouseId in (${whName})
+    </if>
+	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and A.orgUnitNo in (${invOrgUnitNo})
+	</if>
+    <if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="custNo !=null and custNo !=''">
+	and A.custId in(${custNo})
+	</if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+    <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose>
+		group by G.className, a.custId,i.whName,c.itemNo,c.itemName,c.spec,j.unitName
+		Order By G.classcode,i.whName,a.custId,c.itemNo
+	</when>
+	
+	<when test="scmactiontype == 6 and scmactiontype !='' ">
+	select  G.className,i.whName,  '' as variable,'其它出库' as billtype,c.itemNo,
+			c.itemName,c.spec,j.unitName,B.remarks,
+			sum(B.qty) qty,
+			sum(B.Amt) as amt,
+            sum(B.Amt)/case when sum(B.qty)=0 THEN 1 else sum(B.qty) end as price,  
+   		    sum(B.TaxAmt) as taxAmt,
+            sum(B.TaxAmt) / case when sum(B.qty)=0 THEN 1 else sum(B.qty) end  as taxPrice,
+			'' as variablename
+		from ScmInvOtherIssueBill as A, scminvotherissuebillentry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.otId=B.otId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND A.wareHouseId=i.id 
+	<if test="whName != null and whName !='' ">
+                     And A.wareHouseId in (${whName})
+    </if>
+	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and B.orgUnitNo in (${invOrgUnitNo})
+	</if>
+    <if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+   <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose>
+		group by G.className,i.whName,c.itemNo,c.itemName,c.spec,j.unitName
+		Order By G.classcode,i.whName,c.itemNo
+	</when>
+	
+        	<otherwise>
+   select  G.className,i.whName,  '' as variable,'调拨出库' as billtype,c.itemNo,
+			c.itemName,c.spec,j.unitName,B.remarks,
+			sum(B.qty) qty,
+			sum(B.Amt) as amt,
+            sum(B.Amt)/case when qty =0 THEN 1 else qty end as price,  
+   		    sum(B.TaxAmt) as taxAmt,
+            sum(B.TaxAmt) / case when qty =0 THEN 1 else qty end  as taxPrice,
+			'' as variablename
+		from ScmInvMoveIssueBill as A, scminvmoveissuebillentry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.otid=B.otid And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND A.wareHouseId=i.id 
+	<if test="whName != null and whName !='' ">
+                     And A.wareHouseId in (${whName})
+    </if>
+	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and B.orgUnitNo in (${invOrgUnitNo})
+	</if>
+   <if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+    <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose> 
+		group by G.className,i.whName,c.itemNo,c.itemName,c.spec,j.unitName
+		Order By G.classcode,i.whName,c.itemNo
+        	</otherwise>
+	</choose>
+	 </select>
+	 
+	 
+	 <!-- 仓库事务发生汇总表-->
+    <select id="scmcommonreport.scminvttransferoccursummary" resultType="Map" parameterType="Map">
+	 <choose>
+	  <when test="scmactiontype == 1 and scmactiontype !='' ">	
+       select  G.className,i.whName, H.vendorName as variable,'采购入库' as billtype,
+			sum(case when A.biztype &lt; '6' then B.Amt else - B.Amt end) as amt,
+   		    sum(case when A.biztype &lt; '6' then B.TaxAmt else - B.TaxAmt end) as taxAmt,
+			'供应商' as variablename,B.wareHouseId,G.id as classid,A.vendorId 
+		from ScmInvPurInWarehsBill as A, ScmInvPurInWarehsBillEntry as B,ScmMaterial C,scmsupplier H,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+		And A.vendorId = H.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND B.wareHouseId=i.id
+    and B.wareHouseId &gt; '0' 
+	<if test="whName != null and whName !='' ">
+                     And B.wareHouseId in (${whName})
+    </if>
+	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and B.orgUnitNo in (${invOrgUnitNo})
+	</if>
+	<if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="vendorName !=null and vendorName !=''">
+	and A.vendorId in (${vendorName})
+	</if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+   <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose> 
+		group by G.className, H.vendorName,i.whName,B.wareHouseId,G.id,A.vendorId
+		Order By G.classcode,i.whName
+    </when>
+	
+	<when test="scmactiontype == 2 and scmactiontype !='' ">	
+       select  G.className,i.whName,  '' as variable,'调拨入库' as billtype,
+	  sum(B.Amt) as amt,
+      sum(B.TaxAmt) as taxAmt,
+	  '' as variablename,A.wareHouseId,G.id as classid
+		from ScmInvMoveInWarehsBill as A, scminvmoveinwarehsbillentry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND A.wareHouseId=i.id 
+	<if test="whName != null and whName !='' ">
+                     And A.wareHouseId in (${whName})
+    </if>
+	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and B.orgUnitNo in (${invOrgUnitNo})
+	</if>
+   <if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+    <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose> 
+		group by G.className,i.whName,A.wareHouseId,G.id
+		Order By G.classcode,i.whName
+    </when>
+	
+	<when test="scmactiontype == 3 and scmactiontype !='' ">
+	select  G.className,i.whName, '' as variable,'其它入库' as billtype,
+			sum(B.Amt) as amt, 
+   		    sum(B.TaxAmt) as taxAmt,
+			'' as variablename,
+			A.wareHouseId,G.id as classid
+		from ScmInvOtherInWarehsBill as A, scminvotherinwarehsbillentry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND A.wareHouseId=i.id
+    and B.wareHouseId &gt; '0' 
+	<if test="whName != null and whName !='' ">
+                     And B.wareHouseId in (${whName})
+    </if>
+    <if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and B.orgUnitNo in (${invOrgUnitNo})
+	</if>
+    <if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+   <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose> 
+		group by G.className,i.whName,A.wareHouseId,G.id 
+		Order By G.classcode,i.whName
+    </when>
+	
+	<when test="scmactiontype == 4 and scmactiontype !='' ">
+	select  G.className,i.whName, CONCAT('#$orgBaseUnitBiz#$',a.useOrgUnitNo) as variable,'领料出库' as billtype,
+			sum(case when A.biztype = '1' then B.Amt else - B.Amt end) as amt,
+   		    sum(case when A.biztype = '1' then B.TaxAmt else - B.TaxAmt end) as taxAmt,   
+	        '部门' as variablename,A.wareHouseId,G.id as classid,a.useOrgUnitNo
+		from ScmInvMaterialReqBill as A, scminvmaterialreqbillentry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.otId=B.otId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND A.wareHouseId=i.id 
+	<if test="whName != null and whName !='' ">
+                     And A.wareHouseId in (${whName})
+    </if>
+	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and A.orgUnitNo in (${invOrgUnitNo})
+	</if>
+   <if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+       And a.useOrgUnitNo in (${costOrgUnitNo}) 
+    </if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+    <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose>
+		group by G.className, a.useOrgUnitNo,i.whName,A.wareHouseId,G.id 
+		Order By G.classcode,i.whName,a.useOrgUnitNo
+    </when>
+	
+	<when test="scmactiontype == 5 and scmactiontype !='' ">
+	select  G.className,i.whName,  CONCAT('#$customerBiz#$',a.custId) as variable,'销售出库' as billtype,
+			sum(case when A.biztype in('1','2','3')  then B.Amt else - B.Amt end) as amt,  
+   		    sum(case when A.biztype in('1','2','3')  then B.TaxAmt else - B.TaxAmt end) as taxAmt,
+	        '客户' as variablename,B.wareHouseId,G.id as classid,a.custId
+		from ScmInvSaleIssueBill as A, scminvsaleissuebillentry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.otId=B.otId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND B.wareHouseId=i.id 
+	<if test="whName != null and whName !='' ">
+                     And B.wareHouseId in (${whName})
+    </if>
+	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and A.orgUnitNo in (${invOrgUnitNo})
+	</if>
+    <if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="custNo !=null and custNo !=''">
+	and A.custId in(${custNo})
+	</if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+    <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose>
+		group by G.className, a.custId,i.whName,B.wareHouseId,G.id 
+		Order By G.classcode,i.whName,a.custId
+	</when>
+	
+	<when test="scmactiontype == 6 and scmactiontype !='' ">
+	select  G.className,i.whName,  '' as variable,'其它出库' as billtype,
+			sum(B.Amt) as amt,  
+   		    sum(B.TaxAmt) as taxAmt,
+			'' as variablename,
+			A.wareHouseId,G.id as classid
+		from ScmInvOtherIssueBill as A, scminvotherissuebillentry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.otId=B.otId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND A.wareHouseId=i.id 
+	<if test="whName != null and whName !='' ">
+                     And A.wareHouseId in (${whName})
+    </if>
+	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and B.orgUnitNo in (${invOrgUnitNo})
+	</if>
+    <if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+   <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose>
+		group by G.className,i.whName,A.wareHouseId,G.id 
+		Order By G.classcode,i.whName
+	</when>
+	
+        	<otherwise>
+   select  G.className,i.whName,  '' as variable,'调拨出库' as billtype,
+			sum(B.Amt) as amt,  
+   		    sum(B.TaxAmt) as taxAmt,
+			'' as variablename,
+			A.wareHouseId,G.id as classid
+		from ScmInvMoveIssueBill as A, scminvmoveissuebillentry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,ScmMaterialGroup G,scminvwarehouse i,scmmeasureunit j
+		Where A.otid=B.otid And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+    And A.status = 'E'
+    and B.unit=j.id
+    AND A.wareHouseId=i.id 
+	<if test="whName != null and whName !='' ">
+                     And A.wareHouseId in (${whName})
+    </if>
+	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+	and B.orgUnitNo in (${invOrgUnitNo})
+	</if>
+   <if test="minOrderDate !=null and minOrderDate !=''">
+    and A.bizDate &gt;= #{minOrderDate}
+	</if>
+	<if test="maxOrderDate !=null and maxOrderDate !=''">
+    and A.bizDate &lt;= #{maxOrderDate}
+	</if>
+	<if test="materialClassName != null and materialClassName !='' "> 
+	AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo like   CONCAT( (select longNo  from scmmaterialgroup  where id=#{materialClassName}), '%'))
+    </if>
+    <choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(E.longNo) - LENGTH( REPLACE (E.longNo, ',', ''))) &lt; ${longNo} THEN E.longNo ELSE CONCAT(substring_index(E.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=E.longNo
+        	</otherwise>
+        </choose> 
+		group by G.className,i.whName,A.wareHouseId,G.id 
+		Order By G.classcode,i.whName
+        	</otherwise>
+	</choose>
+	 </select>
+	 
+	 <!-- 集团价格对比分析表-->
+    <select id="scmcommonreport.selectScmInvPriceAnalysis" resultType="Map" parameterType="Map">
+		select scmmaterialgroup.classcode,scmmaterialgroup.className,CONCAT('#$orgBaseUnitBiz#$',scminvpurinwarehsbill.OrgUnitNo) AS OrgUnitNo,scmmaterial.itemno,scmmaterial.itemName,scmmaterial.spec,
+			sum(scminvpurinwarehsbillentry.qty) as qty,sum(scminvpurinwarehsbillentry.amt) as amt,
+			round(sum(scminvpurinwarehsbillentry.amt)/sum(scminvpurinwarehsbillentry.qty),2) as price,ifnull(T.minprice,0) as minprice,scmmeasureunit.unitName,
+			(T.minprice-round(sum(scminvpurinwarehsbillentry.amt)/sum(scminvpurinwarehsbillentry.qty),2)) as diffprice,
+			((T.minprice-round(sum(scminvpurinwarehsbillentry.amt)/sum(scminvpurinwarehsbillentry.qty),2))/
+				round(sum(scminvpurinwarehsbillentry.amt)/sum(scminvpurinwarehsbillentry.qty),2)) as percentage
+		from scminvpurinwarehsbill join scminvpurinwarehsbillentry on scminvpurinwarehsbill.wrid=scminvpurinwarehsbillentry.wrId
+ 			join scmmaterial on scminvpurinwarehsbillentry.itemid=scmmaterial.id
+			join scmmaterialgroupdetail on scmmaterial.id=scmmaterialgroupdetail.itemId
+			join scmmaterialgroup on scmmaterialgroupdetail.classId=scmmaterialgroup.id
+			join ScmMaterialGroupStandard on scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+			join scmmeasureunit on scminvpurinwarehsbillentry.unit=scmmeasureunit.id
+			left join (select itemid,ifnull(round(min(price),2),0) as minprice
+				from scminvpurinwarehsbill as a,scminvpurinwarehsbillentry as b
+				where a.wrid=b.wrId 
+				<if test="begDate != null and begDate !='' ">
+            	 	and a.bizDate &gt;= #{begDate}
+         		</if>
+	    		<if test="endDate != null and endDate !='' ">
+            		and a.bizDate &lt;= #{endDate}
+         		</if>
+         		<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					and a.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="materialName != null and materialName !='' ">
+					And b.itemid in (${materialName})
+				</if>
+			group by itemid) as T on scminvpurinwarehsbillentry.itemid=T.itemid 
+		where ScmMaterialGroupStandard.standardType='1'
+			<if test="begDate != null and begDate !='' ">
+            	and scminvpurinwarehsbill.bizDate &gt;= #{begDate}
+         	</if>
+	    	<if test="endDate != null and endDate !='' ">
+            	and scminvpurinwarehsbill.bizDate &lt;= #{endDate}
+         	</if>
+         	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+				and scminvpurinwarehsbill.orgUnitNo in (${invOrgUnitNo})
+			</if>
+        	<if test="materialClassName != null and materialClassName !='' ">
+        		And scmmaterialgroup.id in (${materialClassName})
+			</if>
+			<if test="materialName != null and materialName !='' ">
+				And ScmMaterial.id in (${materialName})
+			</if>
+			
+		group by scmmaterialgroup.classcode,scmmaterialgroup.className,scminvpurinwarehsbill.OrgUnitNo,itemno,itemName
+		order by scminvpurinwarehsbill.OrgUnitNo,scmmaterialgroup.classcode,itemno,itemName
+
+    </select>
+    
+    <!-- 超储短缺分析表-->
+    <select id="scmcommonreport.scmInvExceedShortageAnalysis" resultType="Map" parameterType="Map">
+		select CONCAT('#$orgBaseUnitBiz#$',a.orgunitno) as orgunitno,a.ClassName ,a.itemno,a.itemname,a.spec,a.unitName,b.maxqty as maxqty, b.minqty as minqty,a.stockqty, 
+			(case when a.stockqty &gt; b.maxqty then a.stockqty - b.maxqty else  null end) as exceedqty, 
+			(case when a.stockqty &lt; b.minqty then b.minqty - a.stockqty else  null end) as shortageqty,a.wareHouseId,a.whName as wareHouseName
+		from  
+			(select a.orgunitno,d.ClassName ,b.itemno,b.itemname,b.spec,e.unitName ,a.itemid,sum(ifnull(a.qty,0)) as stockqty ,a.wareHouseId,f.whName
+				from scminvstock a,scmmaterial b,scmmaterialgroupdetail c,scmmaterialgroup d ,scmmeasureunit e,scminvwarehouse f,ScmMaterialGroupStandard
+			where  a.itemid = b.id and b.id = c.itemid and c.classId=d.id and c.standardId = ScmMaterialGroupStandard.id and ScmMaterialGroupStandard.standardType='1' 
+					and a.unit=e.id  and a.wareHouseId=f.id
+					and a.costcenter = 0  
+    				<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					and a.orgUnitNo in (${invOrgUnitNo})
+					</if>
+					<if test="whName != null and whName !='' ">
+                     And a.wareHouseId in (${whName})
+           			</if>
+					<if test="materialClassName != null and materialClassName !='' ">
+        			And d.id in (${materialClassName})
+					</if>
+					<if test="materialName != null and materialName !='' ">
+					And b.id in (${materialName})
+					</if>
+				group by a.orgunitno,d.ClassName,a.itemid ,b.spec,e.unitName ) a, 
+			 (SELECT
+			ScmMaterial.id as ItemID,Case WHEN scmmaterialinventory.maxQty is null  Then ScmMaterial.maxQty Else scmmaterialinventory.maxQty end as maxQty,
+			Case WHEN scmmaterialinventory.minQty is null Then ScmMaterial.minQty Else scmmaterialinventory.minQty end as minQty FROM
+			(Select
+			ScmMaterial.id,scmmaterialinventory.maxQty,scmmaterialinventory.minQty,Case WHEN scmmaterialinventory.status is null Then
+			'I' Else scmmaterialinventory.status End as invStatus
+			from
+			ScmMaterial
+			Left Join scmmaterialinventory
+			On ScmMaterial.id=scmmaterialinventory.itemId and
+	 		scmmaterialinventory.orgUnitNo=#{controlUnitNo}
+			And ScmMaterial.status='A') ScmMaterial
+			Left Join scmmaterialinventory ON
+			ScmMaterial.id=scmmaterialinventory.itemId
+			<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+			and scmmaterialinventory.orgUnitNo in (${invOrgUnitNo}) 
+			</if>
+			and scmmaterialinventory.status='A'
+			WHERE Case WHEN
+			scmmaterialinventory.status is null Then ScmMaterial.invStatus Else
+			scmmaterialinventory.status end='A' 
+			ORDER BY ScmMaterial.id ASC
+			) as b   
+ 		where a.itemid = b.itemid 
+ 			and  (b.MaxQty !=0 or b.MinQty !=0) and (a.stockqty &gt; b.maxqty or a.stockqty &lt; b.minqty)
+		order by a.orgunitno,a.wareHouseId,a.ClassName ,a.itemno
+
+    </select>  
+    
+    
+    <!-- 供货周期表-->
+    <select id="scmcommonreport.scmDeliveryTerm" resultType="Map" parameterType="Map">
+		select a.pono,i.PRNo,date_format(i.CreateDate,'%Y-%m-%d') as CreateDate,k.vendorname,p.buyerName,CONCAT('#$orgBaseUnitBiz#$',b.reqOrgUnitNo) as reqOrgUnitNo,f.itemno,f.itemname,f.spec,j.unitName,
+			g.supplyCycle as LeadTime,b.qty,ifnull(sum(n.qty),0) as inqty,
+			date_format(a.sendDate,'%Y-%m-%d') as issuancedate,
+			date_format(max(o.bizDate),'%Y-%m-%d') as indate,
+			DATEDIFF(ifnull(date_format(max(o.bizDate),'%Y-%m-%d'),now()),date_format(a.sendDate,'%Y-%m-%d'))-g.supplyCycle  as overdueday
+		from scmpurorderentry b  
+		join  scmpurorder a on a.id = b.POID    
+		join scmmaterial f on b.itemid = f.id 
+		join ScmMaterialGroupDetail as q on q.itemid=f.id
+		join scmmaterialgroup as r on r.id=q.classid
+		join ScmMaterialGroupStandard on q.standardId = ScmMaterialGroupStandard.id
+		join (SELECT
+		ScmMaterial.id as ItemID,Case WHEN ScmMaterialPurchase.supplyCycle is null Then ScmMaterial.supplyCycle Else ScmMaterialPurchase.supplyCycle end as supplyCycle FROM
+		(Select
+		ScmMaterial.id,ScmMaterialPurchase.supplyCycle,Case WHEN ScmMaterialPurchase.status is null Then
+		'I' Else ScmMaterialPurchase.status End as purStatus
+		from
+		ScmMaterial
+		Left Join ScmMaterialPurchase
+		On ScmMaterial.id=ScmMaterialPurchase.itemId and
+		ScmMaterialPurchase.orgUnitNo=#{controlUnitNo}
+		And ScmMaterial.status='A') ScmMaterial
+		Left Join ScmMaterialPurchase ON
+		ScmMaterial.id=ScmMaterialPurchase.itemId
+		and ScmMaterialPurchase.orgUnitNo in (${purOrgUnitNo}) and
+		ScmMaterialPurchase.status='A'
+		WHERE Case WHEN
+		ScmMaterialPurchase.status is null Then ScmMaterial.purStatus Else
+		ScmMaterialPurchase.status end='A' 
+		ORDER BY ScmMaterial.id ASC
+		) as g on f.id=g.ItemID  
+		join scmmeasureunit j on b.purUnit=j.id
+		join scmsupplier k on a.vendorId=k.id
+		left join scmpurrequireentry h on b.prDtlId=h.id  
+		left join scmpurrequire i on h.prid=i.id   
+		left join scmpurreceiveentry l on l.poDtlId = b.id
+		left join scmpurreceive m on l.pvid=m.id 
+		left join scminvpurinwarehsbillentry n on n.sourceBillDtlId=l.id
+		left join scminvpurinwarehsbill o on o.wrid=n.wrid and o.status = 'E'
+		left join scmpurbuyer p on p.id=a.buyerId
+		where ScmMaterialGroupStandard.standardType='1'
+			<if test="purOrgUnitNo != null and purOrgUnitNo !='' ">
+                and a.orgunitno in (${purOrgUnitNo})
+            </if> 
+            <if test="beginDate != null and beginDate !='' ">
+            	and date_format(a.sendDate,'%Y-%m-%d') &gt;= #{beginDate}
+         	</if>
+	    	<if test="endDate != null and endDate !='' ">
+            	and date_format(a.sendDate,'%Y-%m-%d') &lt;= #{endDate}
+         	</if> 
+
+         	<if test="purBizType != null and purBizType !='' ">
+                and a.bizType in (${purBizType})
+            </if>  
+            <if test="reqOrgUnitNo != null and reqOrgUnitNo !='' ">
+            	and b.reqOrgUnitNo  in (${reqOrgUnitNo})
+         	</if>
+         	<if test="materialClassName != null and materialClassName !='' ">
+        		And r.id in (${materialClassName})
+			</if>
+	    	<if test="materialName != null and materialName !='' ">
+				And f.id in (${materialName})
+			</if>  
+			<if test="ScmRowStatus != null and ScmRowStatus !='' ">
+				And b.rowstatus = #{ScmRowStatus}
+			</if> 
+			<if test="vendorName !=null and vendorName !=''">
+				AND a.vendorId in (${vendorName})
+			</if>
+		group by a.pono,b.reqOrgUnitNo,f.itemno
+
+    </select>
+    
+    <!-- 耗用对比分析明细表-->
+    <select id="scmcommonreport.ScmInvCostConsumedetail" resultType="Map" parameterType="Map">
+    SELECT CONCAT('#$orgBaseUnitBiz#$',b.useOrgUnitNoa) as useOrgUnitNo,b.*,scmcostusetype.name as costusetypename FROM(
+    	select useOrgUnitNo as useOrgUnitNoa,groupName,itemno,itemname,spec,unitname,
+			sum(qty) as thisqty,ifnull(sum(amt)/sum(qty),0) as thisprice,sum(amt) as thisamt ,MaterialGroupId,
+			sum(lastMqty) as lastMqty,ifnull(sum(lastMamt)/sum(lastMqty),0) as lastMprice,sum(lastMamt) as lastMamt,
+			sum(lastYqty) as lastYqty,ifnull(sum(lastYamt)/sum(lastYqty),0) as lastYprice,sum(lastYamt) as lastYamt,
+			(sum(amt)-sum(lastMamt)) as MoMDiff,case when sum(amt)=0 then 0 else (sum(amt)-sum(lastMamt))/sum(amt) end as MoMIncrease,
+			(sum(amt)-sum(lastYamt)) as YoYDiff,case when sum(amt)=0 then 01 else (sum(amt)-sum(lastYamt))/sum(amt) end as YoYIncrease
+		from (
+			SELECT  ScmMaterialGroup.id as MaterialGroupId,scmmaterial.itemNo as itemNo,
+						scminvcostconsume.bizDate as bizDate,scmmaterial.itemName as itemName,
+						scmmaterial.spec as spec,scminvcostconsume.useOrgUnitNo,A.unitName as unitName,
+						ScmMaterialGroup.className as groupName,scminvcostconsumeentry.qty as qty,
+						scminvcostconsumeentry.amt as amt,0 as lastMqty,0 as lastMamt,0 as lastYqty,0 as lastYamt
+		 			FROM  scminvcostconsume,scminvcostconsumeEntry
+					left join ScmMeasureUnit A on scminvcostconsumeEntry.unit=A.id,
+					ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard		 
+					WHERE   scminvcostconsume.dcId=scminvcostconsumeEntry.dcId And scminvcostconsumeEntry.itemId=scmmaterial.id
+						And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+						And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+						<choose>
+							<when test='state!=null and state=="0"'>
+								and ScmInvCostConsume.status = 'E' 
+							</when>
+							<otherwise>
+								and ScmInvCostConsume.status &lt;&gt;'N'
+							</otherwise>
+						</choose>
+						and YEAR(#{accountDate})=YEAR(ScmInvCostConsume.bizDate)
+						and MONTH(#{accountDate})=MONTH(ScmInvCostConsume.bizDate)
+         				<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+            				And ScmInvCostConsume.orgUnitNo in (${costOrgUnitNo})
+        				</if>
+    	 				<if test="materialClassName != null and materialClassName !=''">    
+	 						AND ScmMaterialGroup.id in (${materialClassName})
+	 					</if>
+	 					<if test="materialName != null and materialName !='' ">
+							And ScmMaterial.id in (${materialName})
+						</if>
+ 					union all
+					SELECT  ScmMaterialGroup.id as MaterialGroupId,scmmaterial.itemNo as itemNo,ScmInvCountingCostCenter.bizDate as bizdate,
+						scmmaterial.itemName as itemName,scmmaterial.spec as spec,ScmInvCountingCostCenter.useOrgUnitNo,A.unitName as unitName,
+						ScmMaterialGroup.className as groupName ,-scminvcountingcostcenterentry.differqty as qty,
+						-scminvcountingcostcenterentry.differamt as amt,0 as lastMqty,0 as lastMamt,0 as lastYqty,0 as lastYamt
+		 			FROM  ScmInvCountingCostCenterEntry
+					left join ScmMeasureUnit A on scminvcountingcostcenterentry.unit=A.id,
+						ScmInvCountingTask,ScmInvCountingCostCenter,
+						ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard		 
+					WHERE  ScmInvCountingTask.taskId=ScmInvCountingCostCenter.taskId 
+						And ScmInvCountingCostCenter.tableId=ScmInvCountingCostCenterEntry.tableId
+						And ScmInvCountingCostCenterEntry.itemId=scmmaterial.id
+						And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+						And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		 				and ScmInvCountingCostCenterEntry.differQty &lt;&gt; 0 
+		 				<choose>
+		 					<when test='state!=null and state=="0"'>
+		 						and ScmInvCountingTask.status = 'O' 
+		 					</when>
+		 					<otherwise>
+		 						and ScmInvCountingTask.status in("T","B","E","O")
+		 					</otherwise>
+		 				</choose>
+			            and YEAR(#{accountDate})=YEAR(ScmInvCountingTask.bizDate)
+						and MONTH(#{accountDate})=MONTH(ScmInvCountingTask.bizDate)
+         				<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+            				And ScmInvCountingCostCenter.orgUnitNo in (${costOrgUnitNo})
+        				</if>
+        				<if test="materialClassName != null and materialClassName !=''">    
+	 						AND ScmMaterialGroup.id in (${materialClassName})
+	 					</if>
+	 					<if test="materialName != null and materialName !='' ">
+							And ScmMaterial.id in (${materialName})
+						</if>
+					union all 
+					SELECT  ScmMaterialGroup.id as MaterialGroupId,scmmaterial.itemNo as itemNo,
+						scmcstfrmloss.bizDate as bizDate,scmmaterial.itemName as itemName,
+						scmmaterial.spec as spec,scmcstfrmloss.costOrgUnitNo,A.unitName as unitName,
+						ScmMaterialGroup.className as groupName,scmcstfrmlossentry.qty as qty,
+						scmcstfrmlossentry.amt as amt,0 as lastMqty,0 as lastMamt,0 as lastYqty,0 as lastYamt
+		 			FROM  scmcstfrmloss,scmcstfrmlossEntry
+					left join ScmMeasureUnit A on scmcstfrmlossEntry.unit=A.id,
+					ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard		 
+					WHERE   scmcstfrmloss.Id=scmcstfrmlossEntry.billId And scmcstfrmlossEntry.itemId=scmmaterial.id
+						And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+						And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+						<choose>
+							<when test='state!=null and state=="0"'>
+								and scmcstfrmloss.status = 'E' 
+							</when>
+							<otherwise>
+								and scmcstfrmloss.status &lt;&gt;'N'
+							</otherwise>
+						</choose>
+						and YEAR(#{accountDate})=YEAR(scmcstfrmloss.bizDate)
+						and MONTH(#{accountDate})=MONTH(scmcstfrmloss.bizDate)
+         				<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+            				And scmcstfrmloss.costOrgUnitNo in (${costOrgUnitNo})
+        				</if>
+    	 				<if test="materialClassName != null and materialClassName !=''">    
+	 						AND ScmMaterialGroup.id in (${materialClassName})
+	 					</if>
+					union all
+				SELECT  ScmMaterialGroup.id as MaterialGroupId,scmmaterial.itemNo as itemNo,
+						scminvcostconsume.bizDate as bizDate,scmmaterial.itemName as itemName,
+						scmmaterial.spec as spec,scminvcostconsume.useOrgUnitNo,A.unitName as unitName,
+						ScmMaterialGroup.className as groupName,0 as qty,0 as amt,scminvcostconsumeentry.qty as lastMqty,
+						scminvcostconsumeentry.amt as lastMamt,0 as lastYqty,0 as lastYamt
+		 			FROM  scminvcostconsume,scminvcostconsumeEntry
+					left join ScmMeasureUnit A on scminvcostconsumeEntry.unit=A.id,
+						ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard		 
+					WHERE   scminvcostconsume.dcId=scminvcostconsumeEntry.dcId And scminvcostconsumeEntry.itemId=scmmaterial.id
+						And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+						And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+						<choose>
+							<when test='state!=null and state=="0"'>
+								and ScmInvCostConsume.status = 'E' 
+							</when>
+							<otherwise>
+								and ScmInvCostConsume.status &lt;&gt;'N'
+							</otherwise>
+							</choose> 	
+					   and YEAR(scminvcostconsume.bizDate)=YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 MONTH),'%Y-%m-%d'))
+						and MONTH(scminvcostconsume.bizDate)=MONTH(date_format(date_sub(#{accountDate},INTERVAL 1 MONTH),'%Y-%m-%d'))
+         				<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+            				And ScmInvCostConsume.orgUnitNo in (${costOrgUnitNo})
+        				</if>
+    	 				<if test="materialClassName != null and materialClassName !=''">    
+	 						AND ScmMaterialGroup.id in (${materialClassName})
+	 					</if>
+	 					<if test="materialName != null and materialName !='' ">
+							And ScmMaterial.id in (${materialName})
+						</if>
+ 					union all
+					SELECT  ScmMaterialGroup.id as MaterialGroupId,scmmaterial.itemNo as itemNo,ScmInvCountingCostCenter.bizDate as bizdate,
+						scmmaterial.itemName as itemName,scmmaterial.spec as spec,ScmInvCountingCostCenter.useOrgUnitNo,A.unitName as unitName,
+						ScmMaterialGroup.className as groupName ,0 as qty,0 as amt,-scminvcountingcostcenterentry.differqty as lastMqty,
+						-scminvcountingcostcenterentry.differamt as lastMamt,0 as lastYqty,0 as lastYamt
+		 			FROM  ScmInvCountingCostCenterEntry
+					left join ScmMeasureUnit A on scminvcountingcostcenterentry.unit=A.id,
+						ScmInvCountingTask,ScmInvCountingCostCenter,
+						ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard		 
+					WHERE  ScmInvCountingTask.taskId=ScmInvCountingCostCenter.taskId 
+						And ScmInvCountingCostCenter.tableId=ScmInvCountingCostCenterEntry.tableId
+						And ScmInvCountingCostCenterEntry.itemId=scmmaterial.id
+						And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+						And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		 				and ScmInvCountingCostCenterEntry.differQty &lt;&gt; 0 
+		 				<choose>
+		 					<when test='state!=null and state=="0"'>
+		 						and ScmInvCountingTask.status = 'O' 
+		 					</when>
+		 					<otherwise>
+		 						and ScmInvCountingTask.status in("T","B","E","O")
+		 					</otherwise>
+		 				</choose>
+					    and YEAR(ScmInvCountingTask.bizDate)=YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 MONTH),'%Y-%m-%d'))
+						and MONTH(ScmInvCountingTask.bizDate)=MONTH(date_format(date_sub(#{accountDate},INTERVAL 1 MONTH),'%Y-%m-%d'))
+         				<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+            				And ScmInvCountingCostCenter.orgUnitNo in (${costOrgUnitNo})
+        				</if>
+    	 				<if test="materialClassName != null and materialClassName !=''">    
+	 						AND ScmMaterialGroup.id in (${materialClassName})
+	 					</if>
+	 					<if test="materialName != null and materialName !='' ">
+							And ScmMaterial.id in (${materialName})
+						</if>
+					union all 
+				SELECT  ScmMaterialGroup.id as MaterialGroupId,scmmaterial.itemNo as itemNo,
+						scminvcostconsume.bizDate as bizDate,scmmaterial.itemName as itemName,
+						scmmaterial.spec as spec,scminvcostconsume.useOrgUnitNo,A.unitName as unitName,
+						ScmMaterialGroup.className as groupName,0 as qty,0 as amt,0 as lastMqty,0 as lastMamt,scminvcostconsumeentry.qty as lastYqty,
+						scminvcostconsumeentry.amt as lastYamt
+		 				FROM  scminvcostconsume,scminvcostconsumeEntry
+					left join ScmMeasureUnit A on scminvcostconsumeEntry.unit=A.id,
+						ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard		 
+					WHERE   scminvcostconsume.dcId=scminvcostconsumeEntry.dcId And scminvcostconsumeEntry.itemId=scmmaterial.id
+						And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+						And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+						<choose>
+							<when test='state!=null and state=="0"'>
+								and ScmInvCostConsume.status = 'E' 
+							</when>
+							<otherwise>
+								and ScmInvCostConsume.status &lt;&gt;'N'
+							</otherwise>
+							</choose> 
+					    and YEAR(scminvcostconsume.bizDate)=YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 YEAR),'%Y-%m-%d'))
+						and MONTH(scminvcostconsume.bizDate)=MONTH(date_format(date_sub(#{accountDate},INTERVAL 1 YEAR),'%Y-%m-%d') )
+         				<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+            				And ScmInvCostConsume.orgUnitNo in (${costOrgUnitNo})
+        				</if>
+    	 				<if test="materialClassName != null and materialClassName !=''">    
+	 						AND ScmMaterialGroup.id in (${materialClassName})
+	 					</if>
+	 					<if test="materialName != null and materialName !='' ">
+							And ScmMaterial.id in (${materialName})
+						</if>
+ 				union all
+					SELECT  ScmMaterialGroup.id as MaterialGroupId,scmmaterial.itemNo as itemNo,
+						scmcstfrmloss.bizDate as bizDate,scmmaterial.itemName as itemName,
+						scmmaterial.spec as spec,scmcstfrmloss.costOrgUnitNo,A.unitName as unitName,
+						ScmMaterialGroup.className as groupName,scmcstfrmlossentry.qty as qty,
+						scmcstfrmlossentry.amt as amt,0 as lastMqty,0 as lastMamt,0 as lastYqty,0 as lastYamt
+		 			FROM  scmcstfrmloss,scmcstfrmlossEntry
+					left join ScmMeasureUnit A on scmcstfrmlossEntry.unit=A.id,
+					ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard		 
+					WHERE   scmcstfrmloss.Id=scmcstfrmlossEntry.billId And scmcstfrmlossEntry.itemId=scmmaterial.id
+						And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+						And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+						<choose>
+							<when test='state!=null and state=="0"'>
+								and scmcstfrmloss.status = 'E' 
+							</when>
+							<otherwise>
+								and scmcstfrmloss.status &lt;&gt;'N'
+							</otherwise>
+							</choose> 
+						and YEAR(scmcstfrmloss.bizDate)=YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 YEAR),'%Y-%m-%d'))
+						and MONTH(scmcstfrmloss.bizDate)=MONTH(date_format(date_sub(#{accountDate},INTERVAL 1 YEAR),'%Y-%m-%d') ) 
+         				<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+            				And scmcstfrmloss.costOrgUnitNo in (${costOrgUnitNo})
+        				</if>
+    	 				<if test="materialClassName != null and materialClassName !=''">    
+	 						AND ScmMaterialGroup.id in (${materialClassName})
+	 					</if>
+					union all
+					SELECT  ScmMaterialGroup.id as MaterialGroupId,scmmaterial.itemNo as itemNo,ScmInvCountingCostCenter.bizDate as bizdate,
+						scmmaterial.itemName as itemName,scmmaterial.spec as spec,ScmInvCountingCostCenter.useOrgUnitNo,A.unitName as unitName,
+						ScmMaterialGroup.className as groupName ,0 as qty,0 as amt,0 as lastMqty,0 as lastMamt,-scminvcountingcostcenterentry.differqty as lastYqty,
+						-scminvcountingcostcenterentry.differamt as lastYamt
+		 			FROM  ScmInvCountingCostCenterEntry
+					left join ScmMeasureUnit A on scminvcountingcostcenterentry.unit=A.id,
+						ScmInvCountingTask,ScmInvCountingCostCenter,
+						ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard		 
+					WHERE  ScmInvCountingTask.taskId=ScmInvCountingCostCenter.taskId 
+						And ScmInvCountingCostCenter.tableId=ScmInvCountingCostCenterEntry.tableId
+						And ScmInvCountingCostCenterEntry.itemId=scmmaterial.id
+						And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+						And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+						And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		 				and ScmInvCountingCostCenterEntry.differQty &lt;&gt; 0 
+		 				<choose>
+		 					<when test='state!=null and state=="0"'>
+		 						and ScmInvCountingTask.status = 'O' 
+		 					</when>
+		 					<otherwise>
+		 						and ScmInvCountingTask.status in("T","B","E","O")
+		 					</otherwise>
+		 				</choose>
+						and YEAR(ScmInvCountingTask.bizDate)=YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 YEAR),'%Y-%m-%d'))
+						and MONTH(ScmInvCountingTask.bizDate)=MONTH(date_format(date_sub(#{accountDate},INTERVAL 1 YEAR),'%Y-%m-%d') ) 
+         				<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+            				And ScmInvCountingCostCenter.orgUnitNo in (${costOrgUnitNo})
+        				</if>
+    	 				<if test="materialClassName != null and materialClassName !=''">    
+	 						AND ScmMaterialGroup.id in (${materialClassName})
+	 					</if>
+	 					<if test="materialName != null and materialName !='' ">
+							And ScmMaterial.id in (${materialName})
+						</if>
+			)T
+				group by useorgunitno,groupName,itemno,itemname,spec,unitname
+		order by useorgunitno,itemno
+		)B
+		LEFT JOIN scmcostuseset on B.MaterialGroupId=scmcostuseset.classId and B.useOrgUnitNoa=scmcostuseset.costOrgUnitNo
+		LEFT JOIN scmcostusetype on scmcostusetype.id=scmcostuseset.costUseTypeId
+    </select>
+    
+    <!-- 成本中心耗用分析表-物资类别 -->
+	<select id="scmcommonreport.ScmCostConsumesumcust" resultType="Map" parameterType="Map">
+		select  CONCAT('#$orgBaseUnitBiz#$',useOrgUnitNo) as useOrgUnitNo,tk.classcode,tk.classname,
+		sum(qty) as qty,
+		CASE WHEN #{queryType}='1' THEN SUM(amt) ELSE SUM(taxamt) END as amt,
+		sum(uqty) as uqty,
+		CASE WHEN #{queryType}='1' THEN SUM(uamt) ELSE SUM(taxuamt) END as uamt,
+		sum(yuqty) as yuqty,
+		CASE WHEN #{queryType}='1' THEN SUM(yuamt) ELSE SUM(taxyuamt) END as yuamt from
+		(select b.useOrgUnitNo,G.classcode,G.className,a.qty,a.taxamt as taxamt,a.amt as amt, 0 as uqty,0 as uamt,0 as taxuamt, 0 as yuqty,0 as yuamt,0 as taxyuamt
+		from ScmInvCostConsumeEntry a
+		JOIN scminvcostconsume b on a.dcid=b.dcid
+		join scmmaterial c on c.id=a.itemId
+		join ScmMaterialGroupDetail as q on q.itemid=c.id
+		join scmmaterialgroup as r on r.id=q.classid
+		join ScmMaterialGroupStandard on q.standardId = ScmMaterialGroupStandard.id
+		join scmmeasureunit j on a.Unit=j.id
+		, scmmaterialgroup as G  
+		<choose>
+			<when test="state !=null and state==0" >
+				where b.status='E'
+			</when>
+			<otherwise>
+				where b.status &lt;&gt;'N'
+			</otherwise>
+		</choose>
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(#{accountDate})=YEAR(b.bizDate)
+		and MONTH(#{accountDate})=MONTH(b.bizDate)
+		<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+			and b.orgUnitNo in (${costOrgUnitNo})
+		</if>
+		<if test="materialClassName != null and materialClassName !='' "> 
+			AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo in  (select longNo  from scmmaterialgroup  where id in (${materialClassName})))
+    	</if>
+   		<choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(r.longNo) - LENGTH( REPLACE (r.longNo, ',', ''))) &lt; ${longNo} THEN r.longNo ELSE CONCAT(substring_index(r.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=r.longNo
+        	</otherwise>
+        </choose> 
+		union all
+		select b.useOrgUnitNo,G.classcode,G.className,-differqty as qty,-differTaxAmt as taxamt,-differAmt as amt,0 as uqty,0 as uamt,0 as taxuamt,0 as yuqty,0 as yuamt,0 as taxyuamt
+		From ScmInvCountingCostCenterEntry a
+		Join ScmInvCountingCostCenter B on B.tableId=a.tableId
+		JOIN ScmInvCountingTask c on c.taskid=b.taskId
+		join scmmaterial d on d.id=a.itemId
+		join ScmMaterialGroupDetail as q on q.itemid=d.id
+		join scmmaterialgroup as r on r.id=q.classid
+		join ScmMaterialGroupStandard on q.standardId = ScmMaterialGroupStandard.id
+		join scmmeasureunit j on a.Unit=j.id
+		, scmmaterialgroup as G 
+		<choose>
+			<when test="state !=null and state==0" >
+				where  c.status='O' 
+			</when>
+			<otherwise>
+				where c.status in("T","B","E","O")
+			</otherwise>
+		</choose>
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(#{accountDate})=YEAR(c.bizDate)
+		and MONTH(#{accountDate})=MONTH(c.bizDate) 
+		<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+			and b.orgUnitNo in (${costOrgUnitNo})
+		</if>
+		<if test="materialClassName != null and materialClassName !='' "> 
+			AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo in  (select longNo  from scmmaterialgroup  where id in (${materialClassName})))
+    	</if>
+   		<choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(r.longNo) - LENGTH( REPLACE (r.longNo, ',', ''))) &lt; ${longNo} THEN r.longNo ELSE CONCAT(substring_index(r.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=r.longNo
+        	</otherwise>
+        </choose> 
+		union all 
+		select b.costOrgUnitNo as useOrgUnitNo,G.classcode,G.className,a.qty,a.taxamt as taxamt,a.amt as amt,0 as uqty,0 as uamt,0 as taxuamt,0 as yuqty,0 as yuamt,0 as taxyuamt
+		from scmcstfrmlossEntry a
+		JOIN scmcstfrmloss b on a.billid=b.id
+		join scmmaterial c on c.id=a.itemId
+		join ScmMaterialGroupDetail as q on q.itemid=c.id
+		join scmmaterialgroup as r on r.id=q.classid
+		join ScmMaterialGroupStandard on q.standardId = ScmMaterialGroupStandard.id
+		join scmmeasureunit j on a.Unit=j.id
+		, scmmaterialgroup as G 
+		<choose>
+			<when test="state !=null and state==0" >
+				where b.status='E'
+			</when>
+			<otherwise>
+				where b.status &lt;&gt;'N'
+			</otherwise>
+		</choose>
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(#{accountDate})=YEAR(b.bizDate)
+		and MONTH(#{accountDate})=MONTH(b.bizDate)  
+		<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+			and b.costOrgUnitNo in (${costOrgUnitNo})
+		</if>
+		<if test="materialClassName != null and materialClassName !='' "> 
+			AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo in  (select longNo  from scmmaterialgroup  where id in (${materialClassName})))
+    	</if>
+   		<choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(r.longNo) - LENGTH( REPLACE (r.longNo, ',', ''))) &lt; ${longNo} THEN r.longNo ELSE CONCAT(substring_index(r.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=r.longNo
+        	</otherwise>
+        </choose> 
+
+		union all
+		<!-- 上月-->
+		select b.useOrgUnitNo,G.classcode,G.classname as classname,0 as qty,0 as taxamt,0 as amt,a.qty as uqty,a.amt as uamt,a.taxAmt as taxAmt,0 as yuqty,0 as yuamt,0 as taxyuamt
+		from ScmInvCostConsumeEntry a
+		JOIN scminvcostconsume b on a.dcid=b.dcid
+		join scmmaterial c on c.id=a.itemId
+		join ScmMaterialGroupDetail as q on q.itemid=c.id
+		join scmmaterialgroup as r on r.id=q.classid
+		join ScmMaterialGroupStandard on q.standardId = ScmMaterialGroupStandard.id
+		join scmmeasureunit j on a.Unit=j.id
+		, scmmaterialgroup as G 
+		<choose>
+			<when test="state !=null and state==0" >
+				where b.status='E'
+			</when>
+			<otherwise>
+				where b.status &lt;&gt;'N'
+			</otherwise>
+		</choose>
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(b.bizDate)=case when month(#{accountDate})='01' then YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 MONTH),'%Y-%m-%d')) else YEAR(#{accountDate}) end
+ 		and MONTH(b.bizDate)=MONTH(date_format(date_sub(#{accountDate},INTERVAL 1 MONTH),'%Y-%m-%d')) 
+		
+		<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+			and b.orgUnitNo in (${costOrgUnitNo})
+		</if>
+		<if test="materialClassName != null and materialClassName !='' "> 
+			AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo in  (select longNo  from scmmaterialgroup  where id in (${materialClassName})))
+    	</if>
+   		<choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(r.longNo) - LENGTH( REPLACE (r.longNo, ',', ''))) &lt; ${longNo} THEN r.longNo ELSE CONCAT(substring_index(r.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=r.longNo
+        	</otherwise>
+        </choose> 
+		union all
+		select b.useOrgUnitNo as uuseOrgUnitNo,G.classcode,G.classname as classname,0 as qty,0 as taxamt,0 as amt,-differqty as uqty,-differamt as uamt,-differTaxAmt as taxuamt,0 as yuqty,0 as yuamt,0 as taxyuamt 
+		From ScmInvCountingCostCenterEntry a
+		Join ScmInvCountingCostCenter B on B.tableId=a.tableId
+		JOIN ScmInvCountingTask c on c.taskid=b.taskId
+		join scmmaterial d on d.id=a.itemId
+		join ScmMaterialGroupDetail as q on q.itemid=d.id
+		join scmmaterialgroup as r on r.id=q.classid
+		join ScmMaterialGroupStandard on q.standardId = ScmMaterialGroupStandard.id
+		join scmmeasureunit j on a.Unit=j.id
+		, scmmaterialgroup as G 
+		<choose>
+			<when test="state !=null and state==0" >
+				where  c.status='O' 
+			</when>
+			<otherwise>
+				where c.status in("T","B","E","O")
+			</otherwise>
+		</choose>
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(b.bizDate)=case when month(#{accountDate})='01' then YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 MONTH),'%Y-%m-%d')) else YEAR(#{accountDate}) end
+ 		and MONTH(b.bizDate)= MONTH(date_format(date_sub(#{accountDate},INTERVAL 1 MONTH),'%Y-%m-%d')) 
+		
+		<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+			and b.orgUnitNo in (${costOrgUnitNo})
+		</if>
+		<if test="materialClassName != null and materialClassName !='' "> 
+			AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo in  (select longNo  from scmmaterialgroup  where id in (${materialClassName})))
+    	</if>
+   		<choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(r.longNo) - LENGTH( REPLACE (r.longNo, ',', ''))) &lt; ${longNo} THEN r.longNo ELSE CONCAT(substring_index(r.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=r.longNo
+        	</otherwise>
+        </choose>  
+		union all 
+		select b.costOrgUnitNo as useOrgUnitNo,G.classcode,G.className,0 as qty,0 as taxamt,0 as amt,a.qty as uqty,a.amt as uamt,a.amt as taxuamt,0 as yuqty,0 as yuamt,0 as taxyuamt
+		from scmcstfrmlossEntry a
+		JOIN scmcstfrmloss b on a.billid=b.id
+		join scmmaterial c on c.id=a.itemId
+		join ScmMaterialGroupDetail as q on q.itemid=c.id
+		join scmmaterialgroup as r on r.id=q.classid
+		join ScmMaterialGroupStandard on q.standardId = ScmMaterialGroupStandard.id
+		join scmmeasureunit j on a.Unit=j.id
+		, scmmaterialgroup as G 
+		<choose>
+			<when test="state !=null and state==0" >
+				where b.status='E'
+			</when>
+			<otherwise>
+				where b.status &lt;&gt;'N'
+			</otherwise>
+		</choose>
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(b.bizDate)=case when month(#{accountDate})='01' then YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 MONTH),'%Y-%m-%d')) else YEAR(#{accountDate}) end
+ 		and MONTH(b.bizDate)= MONTH(date_format(date_sub(#{accountDate},INTERVAL 1 MONTH),'%Y-%m-%d')) 
+		
+		<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+			and b.costOrgUnitNo in (${costOrgUnitNo})
+		</if>
+		<if test="materialClassName != null and materialClassName !='' "> 
+			AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo in  (select longNo  from scmmaterialgroup  where id in (${materialClassName})))
+    	</if>
+   		<choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(r.longNo) - LENGTH( REPLACE (r.longNo, ',', ''))) &lt; ${longNo} THEN r.longNo ELSE CONCAT(substring_index(r.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=r.longNo
+        	</otherwise>
+        </choose> 
+
+		union ALL
+		<!-- 上年-->
+		select b.useOrgUnitNo,G.classcode,G.classname as classname,0 as qty,0 as taxamt,0 as amt,0 as uqty,0 as uamt,0 as taxuamt,a.qty as yuqty,a.amt as yuamt,a.amt as taxyuamt
+		from ScmInvCostConsumeEntry a
+		JOIN scminvcostconsume b on a.dcid=b.dcid
+		join scmmaterial c on c.id=a.itemId
+		join ScmMaterialGroupDetail as q on q.itemid=c.id
+		join scmmaterialgroup as r on r.id=q.classid
+		join ScmMaterialGroupStandard on q.standardId = ScmMaterialGroupStandard.id
+		join scmmeasureunit j on a.Unit=j.id
+		, scmmaterialgroup as G 
+		<choose>
+			<when test="state !=null and state==0" >
+				where b.status='E'
+			</when>
+			<otherwise>
+				where b.status &lt;&gt;'N'
+			</otherwise>
+		</choose>
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(b.bizDate)=YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 YEAR),'%Y-%m-%d'))
+		and MONTH(b.bizDate)=MONTH(#{accountDate})	
+		<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+			and b.orgUnitNo in (${costOrgUnitNo})
+		</if>
+		<if test="materialClassName != null and materialClassName !='' "> 
+			AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo in  (select longNo  from scmmaterialgroup  where id in (${materialClassName})))
+    	</if>
+   		<choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(r.longNo) - LENGTH( REPLACE (r.longNo, ',', ''))) &lt; ${longNo} THEN r.longNo ELSE CONCAT(substring_index(r.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=r.longNo
+        	</otherwise>
+        </choose>  
+		union all
+		select b.useOrgUnitNo as uuseOrgUnitNo,G.classcode,G.classname as classname,0 as qty,0 as taxamt,0 as amt,0 as uqty,0 as uamt,0 as taxuamt,-differqty as yuqty,-differamt as yuamt,-differTaxAmt as taxyuamt
+		From ScmInvCountingCostCenterEntry a
+		Join ScmInvCountingCostCenter B on B.tableId=a.tableId
+		JOIN ScmInvCountingTask c on c.taskid=b.taskId
+		join scmmaterial d on d.id=a.itemId
+		join ScmMaterialGroupDetail as q on q.itemid=d.id
+		join scmmaterialgroup as r on r.id=q.classid
+		join ScmMaterialGroupStandard on q.standardId = ScmMaterialGroupStandard.id
+		join scmmeasureunit j on a.Unit=j.id
+		, scmmaterialgroup as G 
+		<choose>
+			<when test="state !=null and state==0" >
+				where  c.status='O' 
+			</when>
+			<otherwise>
+				where c.status in("T","B","E","O")
+			</otherwise>
+		</choose>
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(b.bizDate)=YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 YEAR),'%Y-%m-%d'))
+		and MONTH(b.bizDate)=MONTH(#{accountDate})
+		<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+			and b.orgUnitNo in (${costOrgUnitNo})
+		</if>
+		<if test="materialClassName != null and materialClassName !='' "> 
+			AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo in  (select longNo  from scmmaterialgroup  where id in (${materialClassName})))
+    	</if>
+   		<choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(r.longNo) - LENGTH( REPLACE (r.longNo, ',', ''))) &lt; ${longNo} THEN r.longNo ELSE CONCAT(substring_index(r.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=r.longNo
+        	</otherwise>
+        </choose> 
+		union all 
+		select b.costOrgUnitNo as useOrgUnitNo,G.classcode,G.className,0 as qty,0 as taxamt,0 as amt,0 as uqty,0 as uamt,0 as taxuamt,a.qty as yuqty,a.amt as yuamt,a.amt as taxyuamt
+		from scmcstfrmlossEntry a
+		JOIN scmcstfrmloss b on a.billid=b.id
+		join scmmaterial c on c.id=a.itemId
+		join ScmMaterialGroupDetail as q on q.itemid=c.id
+		join scmmaterialgroup as r on r.id=q.classid
+		join ScmMaterialGroupStandard on q.standardId = ScmMaterialGroupStandard.id
+		join scmmeasureunit j on a.Unit=j.id
+		, scmmaterialgroup as G 
+		<choose>
+			<when test="state !=null and state==0" >
+				where b.status='E'
+			</when>
+			<otherwise>
+				where b.status &lt;&gt;'N'
+			</otherwise>
+		</choose>
+		and ScmMaterialGroupStandard.standardType='1'
+		and YEAR(b.bizDate)=YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 YEAR),'%Y-%m-%d'))
+		and MONTH(b.bizDate)=MONTH(#{accountDate})
+		<if test="costOrgUnitNo != null and costOrgUnitNo !='' ">
+			and b.costOrgUnitNo in (${costOrgUnitNo})
+		</if>
+		<if test="materialClassName != null and materialClassName !='' "> 
+			AND G.id in (select id from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and 
+          longNo in  (select longNo  from scmmaterialgroup  where id in (${materialClassName})))
+    	</if>
+   		<choose>
+        	<when test="longNo != null and longNo !='' ">
+	    	  	And G.longNo=(Case WHEN (LENGTH(r.longNo) - LENGTH( REPLACE (r.longNo, ',', ''))) &lt; ${longNo} THEN r.longNo ELSE CONCAT(substring_index(r.longNo, ',', ${longNo}),',') End)
+        	</when>
+        	<otherwise>
+        		And G.longNo=r.longNo
+        	</otherwise>
+        </choose> 
+		) as tk
+		group by useOrgUnitNo,classcode
+		order by useOrgUnitNo,classcode
+	
+	</select>
+    
+    <!-- 部门调拨汇总表 -->
+	<select id="scmcommonreport.scmInvMoveBillSummary" resultType="Map" parameterType="Map">
+		select scminvmovebill.outOrgUnitNo,CONCAT('#$orgBaseUnitBiz#$',scminvmovebill.outOrgUnitNo) AS outOrgUnitName,
+		scminvmovebill.inOrgUnitNo,CONCAT('#$orgBaseUnitBiz#$',scminvmovebill.inOrgUnitNo) AS inOrgUnitName,
+		scmmaterialgroup.id as classId,scmmaterialgroup.className,count(distinct scminvmovebill.wtNo) as vouchers,sum(scminvmovebillentry.amt) as amt,
+		sum(scminvmovebillentry.taxAmt) as taxAmt,(sum(scminvmovebillentry.taxAmt)-sum(scminvmovebillentry.amt)) as tax 
+		from
+		scminvmovebill,scminvmovebillentry,scmmaterial,
+		scmmaterialgroupdetail, scmmaterialgroup, scmmaterialgroupstandard
+		where scminvmovebill.wtId=scminvmovebillentry.wtId and scminvmovebillentry.itemId = scmmaterial.id 
+		and scmmaterial.id = scmmaterialgroupdetail.itemId and scmmaterialgroupstandard.standardType = '1'
+		and scmmaterialgroupdetail.classId = scmmaterialgroup.id and scmmaterialgroupdetail.standardId = scmmaterialgroup.standardId 
+		and scmmaterialgroupdetail.standardId = scmmaterialgroupstandard.Id
+		<if test="outCstOrgUnitNo!=null and outCstOrgUnitNo!=''">
+			and scminvmovebill.outOrgUnitNo in (${outCstOrgUnitNo})
+		</if>
+		<if test="inCstOrgUnitNo!=null and inCstOrgUnitNo!=''">
+			and scminvmovebill.inOrgUnitNo in (${inCstOrgUnitNo})
+		</if>
+		<if test="begDate!=null and begDate!=''">
+			and scminvmovebill.bizDate &gt;= #{begDate}
+		</if>
+		<if test="endDate!=null and endDate!=''">
+			and scminvmovebill.bizDate &lt;= #{endDate}
+		</if>
+		<if test="materialClassName!=null and materialClassName!=''">
+			and scmmaterialgroup.id in (${materialClassName})
+		</if>
+		<if test="materialName!=null and materialName!=''">
+			and scminvmovebillentry.itemId in (${materialName})
+		</if>
+		<choose>
+			<when test='noPost != null and noPost =="0" '>
+				And scminvmovebill.status = 'E'
+			</when>
+			<otherwise>
+				And scminvmovebill.status != 'N'
+			</otherwise>
+		</choose>
+		group by scminvmovebill.outOrgUnitNo,scminvmovebill.inOrgUnitNo,scmmaterialgroup.className
+	</select>
+	
+	<!-- 部门调拨明细表 -->
+	<select id="scmcommonreport.scmInvMoveBillDetailSummary" resultType="Map" parameterType="Map">
+		select scminvmovebill.outOrgUnitNo,scminvmovebill.inOrgUnitNo,
+		CONCAT('#$orgBaseUnitBiz#$',scminvmovebill.outOrgUnitNo) AS outOrgUnitName,
+		CONCAT('#$orgBaseUnitBiz#$',scminvmovebill.inOrgUnitNo) AS inOrgUnitName,
+		DATE_FORMAT(scminvmovebill.bizDate,'%Y-%m-%d') as bizDate,scmmaterialgroup.className,
+		scminvmovebill.wtNo,scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,scmmeasureunit.unitName
+		as unit,scminvmovebillentry.lot,
+		sum(scminvmovebillentry.qty) as qty,
+		case when sum(scminvmovebillentry.qty)=0 then 0 else sum(scminvmovebillentry.amt)/sum(scminvmovebillentry.qty) end as price,
+		sum(scminvmovebillentry.amt) amt,sum(scminvmovebillentry.taxAmt) as taxAmt,
+		(sum(scminvmovebillentry.taxAmt)-sum(scminvmovebillentry.amt)) as tax
+		from
+		scminvmovebill,scminvmovebillentry,scmmaterial,
+		scmmaterialgroupdetail, scmmaterialgroup, scmmaterialgroupstandard,scmmeasureunit
+		where scminvmovebill.wtId=scminvmovebillentry.wtId and scminvmovebillentry.itemId = scmmaterial.id 
+		and scmmaterial.id = scmmaterialgroupdetail.itemId and scmmaterialgroupstandard.standardType = '1'
+		and scmmaterialgroupdetail.classId = scmmaterialgroup.id and scmmaterialgroupdetail.standardId = scmmaterialgroup.standardId 
+		and scmmaterialgroupdetail.standardId = scmmaterialgroupstandard.Id
+		and scminvmovebillentry.unit=scmmeasureunit.id
+		<if test="outCstOrgUnitNo!=null and outCstOrgUnitNo!=''">
+			and scminvmovebill.outOrgUnitNo in (${outCstOrgUnitNo})
+		</if>
+		<if test="inCstOrgUnitNo!=null and inCstOrgUnitNo!=''">
+			and scminvmovebill.inOrgUnitNo in (${inCstOrgUnitNo})
+		</if>
+		<if test="begDate!=null and begDate!=''">
+			and scminvmovebill.bizDate &gt;= #{begDate}
+		</if>
+		<if test="endDate!=null and endDate!=''">
+			and scminvmovebill.bizDate &lt;= #{endDate}
+		</if>
+		<if test="materialClassName!=null and materialClassName!=''">
+			and scmmaterialgroup.id in (${materialClassName})
+		</if>
+		<if test="materialName!=null and materialName!=''">
+			and scminvmovebillentry.itemId in (${materialName})
+		</if>
+		<choose>
+			<when test='noPost != null and noPost =="0" '>
+				And scminvmovebill.status = 'E'
+			</when>
+			<otherwise>
+				And scminvmovebill.status != 'N'
+			</otherwise>
+		</choose> 
+		group by scminvmovebill.outOrgUnitNo,scminvmovebill.inOrgUnitNo,scminvmovebill.wtNo,scminvmovebill.bizDate,
+		scminvmovebillentry.itemId,scminvmovebillentry.unit,scminvmovebillentry.lot
+	</select>
+	<!-- 采购入库事务汇总表-供应商物资表 -->
+	<select id="scmcommonreport.ScmInvSupplierWrItemSum" resultType="Map" parameterType="Map">
+    <choose>
+	  <when test='summarize == "2" and summarize !="" '>
+		select B.itemId, C.itemNo, C.itemName, C.spec, E.className,
+			A.vendorId, G.vendorName, B.unit, H.unitName, CONCAT('#$orgBaseUnitBiz#$',B.orgUnitNo) as orgUnitName, 
+			(case when scminvwarehouse.whName is not null then scminvwarehouse.whName  else CONCAT('#$orgBaseUnitBiz#$',useOrgUnitNo) end)  AS wareHouseName, 
+			B.taxRate as addInTaxRate,
+		    SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end) as addInQty,
+		    SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) as addInAmt,
+		    SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end)/SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end) as addInPrice,
+		    SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end) as addInTaxAmt,
+		    SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end)/SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end) as addInTaxPrice,
+		    SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end)-SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) as addInTax,
+		    '仓库/部门' as variablename
+		from ScmInvPurInWarehsBill as A join ScmInvPurInWarehsBillEntry as B on A.wrId=B.wrId 
+
+		join ScmMaterial C on B.itemId=C.id
+		join ScmMaterialGroupDetail D on C.id=D.itemId
+		join ScmMaterialGroup E on D.classId=E.id And D.standardId=E.standardId
+		join ScmMaterialGroupStandard F on D.standardId=F.id And F.standardType='1'
+		join scmsupplier G on A.vendorId = G.id
+		join scmMeasureUnit H on B.unit = H.id
+		left join scminvwarehouse on scminvwarehouse.id=B.wareHouseId
+		 where
+	    <if test="invOrgUnitNo != null and invOrgUnitNo !='' ">
+            B.orgUnitNo in (${invOrgUnitNo})
+        </if> 
+	    <if test="begDate != null and begDate !='' ">
+            and A.bizDate &gt;= #{begDate}
+         </if>
+	    <if test="endDate != null and endDate !='' ">
+            and A.bizDate &lt;= #{endDate}
+         </if>
+	    <if test="materialClassIds != null and materialClassIds !='' ">
+           And E.id in (${materialClassIds})
+        </if>
+        <if test="materialIds != null and materialIds !='' ">
+           And B.itemId in (${materialIds})
+        </if>
+        <if test="vendorName != null and vendorName !='' ">
+            And A.vendorId in (${vendorName})
+        </if>
+         <if test='noPost != null and noPost =="0" '>
+             And A.status = 'E'
+         </if> 
+         <if test='stockType != null and stockType =="0"'>
+         	And B.wareHouseId &gt; 0
+         </if>
+        <if test='stockType != null and stockType =="1"'>
+         	And IFNULL(B.useOrgUnitNo,'')!=''
+        </if>
+	    <if test="whOrDept != null and whOrDept !='' ">
+            And (B.useOrgUnitNo = #{whOrDept} or B.wareHouseId = #{whOrDept})
+        </if> 
+	    <if test="taxRate !=null and taxRate != '-1' and taxRate !='' ">
+            And B.taxRate = #{taxRate}
+        </if> 
+
+		group by B.itemId, A.vendorId, B.unit, B.orgUnitNo,B.taxRate,B.wareHouseId,B.useOrgUnitNo
+		<if test='type != null and type =="V"'>
+			Order By A.vendorId,C.itemNo
+		</if>
+		<if test='type != null and type =="M"'>
+			Order By C.itemNo,A.vendorId
+		</if>
+		</when>
+	  <otherwise>
+	  	select B.itemId, C.itemNo, C.itemName, C.spec, E.className,
+			A.vendorId, G.vendorName, B.unit, H.unitName, CONCAT('#$orgBaseUnitBiz#$',B.orgUnitNo) as orgUnitName ,'' as wareHouseName, B.taxRate as addInTaxRate,
+		    SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end) as addInQty,
+		    SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) as addInAmt,
+		    SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end)/SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end) as addInPrice,
+		    SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end) as addInTaxAmt,
+		    SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end)/SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end) as addInTaxPrice,
+		    SUM(case when A.bizType in ('1','3') then B.taxAmt else -B.taxAmt end)-SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) as addInTax,
+		    '' as variablename
+		from ScmInvPurInWarehsBill as A, ScmInvPurInWarehsBillEntry as B,ScmMaterial C,
+		ScmMaterialGroupDetail D,ScmMaterialGroup E,ScmMaterialGroupStandard F,
+		scmsupplier G, scmMeasureUnit H
+
+		Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And F.standardType='1'
+		And D.classId=E.id And D.standardId=E.standardId And D.standardId=F.id
+		And A.vendorId = G.id And B.unit = H.id
+	    <if test="invOrgUnitNo != null and invOrgUnitNo !='' ">
+            and B.orgUnitNo in (${invOrgUnitNo})
+        </if> 
+	    <if test="begDate != null and begDate !='' ">
+            and A.bizDate &gt;= #{begDate}
+         </if>
+	    <if test="endDate != null and endDate !='' ">
+            and A.bizDate &lt;= #{endDate}
+         </if>
+	    <if test="materialClassIds != null and materialClassIds !='' ">
+           And E.id in (${materialClassIds})
+        </if>
+        <if test="materialIds != null and materialIds !='' ">
+           And B.itemId in (${materialIds})
+        </if>
+        <if test="vendorName != null and vendorName !='' ">
+            And A.vendorId in (${vendorName})
+        </if>
+         <if test='noPost != null and noPost =="0" '>
+             And A.status = 'E'
+         </if> 
+         <if test='stockType != null and stockType =="0"'>
+         	And B.wareHouseId &gt; 0
+         </if>
+        <if test='stockType != null and stockType =="1"'>
+         	And IFNULL(B.useOrgUnitNo,'')!=''
+        </if>
+	    <if test="whOrDept != null and whOrDept !='' ">
+            And (B.useOrgUnitNo = #{whOrDept} or B.wareHouseId = #{whOrDept})
+        </if> 
+	    <if test="taxRate !=null and taxRate != '-1' and taxRate !='' ">
+            And B.taxRate = #{taxRate}
+        </if>
+        	
+		group by B.itemId, A.vendorId, B.unit, B.orgUnitNo,B.taxRate
+		<if test='type != null and type =="V"'>
+			Order By A.vendorId,C.itemNo
+		</if>
+		<if test='type != null and type =="M"'>
+			Order By C.itemNo,A.vendorId
+		</if>
+
+	  </otherwise>
+	</choose>
+    </select>
+    <!-- EBS入库单导入模板 --> 
+    <select id="scmcommonreport.scmSupSupplyOfMaterialLeadingIn" resultType="Map" parameterType="Map">
+    	select  a.orgUnitNo,a.bizType,a.wrNo,scmsupplier.vendorName,
+	        DATE_FORMAT(a.bizDate,'%Y-%m-%d') as bizDate,   b.itemNo as itemNo,b.itemNo as itemNoinfo,b.itemName,
+				case when a.orgUnitNo='00000102' then '1' else e.className end as className,
+		 	sum(a.addInQty - a.returnQty) as qty,
+			case When sum(a.addInqty - returnQty)=0 Then 0 Else sum(a.addInAmt - a.returnAmt)/sum(a.addInQty - a.returnQty) end as price,
+			sum(a.addInTaxAmt - a.returnTaxAmt) as taxAmt,
+			sum(a.addInAmt - a.returnAmt) as amt,
+			a.taxRate*100 as taxRate,DATE_FORMAT(a.createDate,'%Y-%m-%d') as createDate,DATE_FORMAT(a.createDate,'%Y-%m-%d') as modifydate,'' WNULL
+        FROM
+			(SELECT A.orgUnitNo,A.vendorId, A.bizDate, '采购入库单' as bizType,   
+				A.wrNo, B.itemId, sum(B.qty) as addInQty, B.price as addInPrice, sum(B.amt) as addInAmt, 
+				B.taxRate, B.taxPrice as addInTaxPrice, sum(B.taxAmt) as addInTaxAmt, 
+				0 as returnqty, 0 as returnPrice, 0 as returnAmt, 
+				0 as returnTaxPrice, 0 as returnTaxAmt, B.remarks,a.createDate
+	        FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+			Where A.wrId=B.wrId And A.bizType in ('1','3') AND A.vendorId &gt; 0
+				 <if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId in (${vendorName})
+				</if>	
+				<if test="purBizType !=null and purBizType !=''">
+	                and A.bizType = #{purBizType}
+	            </if>
+				<if test="begDate !=null and begDate !=''">
+					AND A.bizDate &gt;= #{begDate}
+				</if>
+				<if test="endDate !=null and endDate !=''">
+					AND A.bizDate &lt;= #{endDate}
+				</if>
+				<choose>
+					<when test='noPost != null and noPost =="0" '>
+		 				And A.status = 'E'
+		 			</when>
+		 			<otherwise>
+		 				and A.status != 'N'
+		 			</otherwise>
+		 		</choose>
+		 		GROUP BY A.orgUnitNo,A.vendorId, A.wrNo, B.itemId,A.orgUnitNo,A.bizDate
+			UNION ALL
+			SELECT A.orgUnitNo,A.vendorId, A.bizDate, '退回供应商' as bizType,   
+				A.wrNo, B.itemId, 0 as addinQty, 0 as addinPrice, 0 as addinAmt, 
+				B.taxRate, 0 as addinTaxPrice, 0 as addinTaxAmt, 
+				sum(B.qty) as returnqty, B.price as returnPrice, sum(B.amt) as returnAmt, 
+				B.taxPrice as returnTaxPrice, sum(B.taxAmt) as returnTaxAmt, B.remarks,a.createDate
+	     FROM scminvpurinwarehsbill A,scminvpurinwarehsbillentry B
+			Where A.wrId=B.wrId And A.bizType in ('6','8') AND A.vendorId &gt; 0
+				 <if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND A.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				<if test="vendorName !=null and vendorName !=''">
+					AND A.vendorId in (${vendorName})
+				</if>	
+				<if test="purBizType !=null and purBizType !=''">
+	                and A.bizType = #{purBizType}
+	            </if>
+				<if test="begDate !=null and begDate !=''">
+					AND A.bizDate &gt;= #{begDate}
+				</if>
+				<if test="endDate !=null and endDate !=''">
+					AND A.bizDate &lt;= #{endDate}
+				</if>
+				<choose>
+					<when test='noPost != null and noPost =="0" '>
+		 				And A.status = 'E'
+		 			</when>
+		 			<otherwise>
+		 				and A.status != 'N'
+		 			</otherwise>
+		 		</choose>
+	 			GROUP BY A.orgUnitNo,A.vendorId, A.wrNo, B.itemId,A.orgUnitNo,A.bizDate) a join scmmaterial as b on a.itemId=b.id              
+			join scmmaterialgroupdetail as d on b.id=d.itemId
+			join scmmaterialgroup as c on  c.id=d.classId 
+			join scmmaterialgroup as e on substring_index(left(c.longno,3), ',', 1)=e.id
+			join ScmMaterialGroupStandard on c.standardId = ScmMaterialGroupStandard.id
+			left join scmsupplier on scmsupplier.id=a.vendorId
+	where ScmMaterialGroupStandard.standardType='1'
+	GROUP BY a.orgUnitNo,a.vendorId,a.bizDate,a.WrNo,b.itemNo
+	ORDER BY a.orgUnitNo,a.vendorId,a.bizDate,a.WrNo,b.itemNo
+    </select>
+    <!-- 采购员采购完成率汇总表 -->
+	<select id="scmcommonreport.scmPurBuyerAchievingRate" resultType="Map" parameterType="Map">
+		select scmpurbuyer.id as buyerID,scmpurbuyer.buyerName,sum(finished)+sum(Notfinished) as sumAll,sum(finished) as finished,sum(Notfinished) as Notfinished 
+		from (
+			select b.buyerId,count(b.id) as finished,'' as Notfinished
+			from scmpurrequire as a join scmpurrequireentry as b on a.id=b.prid 
+			join scmmaterial as c on b.itemid=c.id 
+			join ScmMaterialGroupDetail as d on c.id=d.itemid 
+			join scmmaterialgroup as e on d.classid=e.id
+			join ScmMaterialGroupStandard on d.standardId = ScmMaterialGroupStandard.id
+			left join scmpurorderentry as f on f.prdtlid=b.id
+			where ScmMaterialGroupStandard.standardType='1'
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				And	a.purorgunitno = #{purOrgUnitNo}
+				</if>
+				<if test="begDate!=null and begDate!=''">
+				AND date_format(a.checkdate,'%Y-%m-%d') &gt;= #{begDate}
+				</if>
+				<if test="endDate!=null and endDate!=''">
+				and date_format(a.checkdate,'%Y-%m-%d') &lt;= #{endDate}
+				</if>
+				<if test="buyer!=null and buyer!=''">
+				and b.buyerId in (${buyer})
+				</if>
+				and b.rowstatus in ('C','A','E')
+				and (f.rowstatus is not null or f.rowstatus !='I')
+				and b.id not in (select id from scmpurrequireentry where rowStatus='C' and orderQty=0 
+						<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+						 and purorgunitno = #{purOrgUnitNo}
+						</if> 
+			 			<if test="begDate!=null and begDate!=''">
+						AND date_format(checkdate,'%Y-%m-%d') &gt;= #{begDate}
+						</if>
+						<if test="endDate!=null and endDate!=''">
+						and date_format(checkdate,'%Y-%m-%d') &lt;= #{endDate}
+						</if>
+						)
+			group by buyerId
+
+			union all
+
+			select b.buyerId,'' as finished,count(b.id) as Notfinished
+			from scmpurrequire as a join scmpurrequireentry as b on a.id=b.prid 
+			join scmmaterial as c on b.itemid=c.id 
+			join ScmMaterialGroupDetail as d on c.id=d.itemid 
+			join scmmaterialgroup as e on d.classid=e.id
+			join ScmMaterialGroupStandard on d.standardId = ScmMaterialGroupStandard.id
+			left join scmpurorderentry as f on f.prdtlid=b.id
+			where ScmMaterialGroupStandard.standardType='1'
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				and a.purorgunitno = #{purOrgUnitNo}
+				</if>
+				<if test="begDate!=null and begDate!=''">
+				and date_format(a.checkdate,'%Y-%m-%d') &gt;= #{begDate}
+				</if>
+				<if test="endDate!=null and endDate!=''">
+				and date_format(a.checkdate,'%Y-%m-%d') &lt;= #{endDate}
+				</if>
+				<if test="buyer!=null and buyer!=''">
+				and b.buyerId in (${buyer})
+				</if>
+				and b.rowstatus in ('C','A','E')
+				and (f.rowstatus is null or f.rowstatus ='I')
+				and b.id not in (select id from scmpurrequireentry where rowStatus='C' and orderQty=0 
+						<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+						 and purorgunitno = #{purOrgUnitNo}
+						</if> 
+			 			<if test="begDate!=null and begDate!=''">
+						AND date_format(checkdate,'%Y-%m-%d') &gt;= #{begDate}
+						</if>
+						<if test="endDate!=null and endDate!=''">
+						and date_format(checkdate,'%Y-%m-%d') &lt;= #{endDate}
+						</if>
+						)
+			group by buyerId
+		)temp1,scmpurbuyer
+		where temp1.buyerId=scmpurbuyer.id
+		GROUP BY scmpurbuyer.buyerName 
+		order by scmpurbuyer.buyername
+	</select>
+	<!-- 采购员采购完成率明细表 -->
+	<select id="scmcommonreport.scmPurBuyerAchievingRateDetail" resultType="Map" parameterType="Map">
+		select  a.prNo,c.itemno,c.itemname,c.spec,g.unitName,h.vendorName,i.buyerName,CONCAT('#$orgBaseUnitBiz#$',b.orgUnitNo) as orgUnitNo,b.qty ,sum(k.qty) as inqty,ifnull(f.rowstatus,'Z') as rowstatus
+			from scmpurrequire as a join scmpurrequireentry as b on a.id=b.prid 
+			join scmmaterial as c on b.itemid=c.id 
+			join ScmMaterialGroupDetail as d on c.id=d.itemid 
+			join scmmaterialgroup as e on d.classid=e.id
+			left join ScmMaterialGroupStandard on d.standardId = ScmMaterialGroupStandard.id
+			join scmmeasureunit as g on g.id=b.purunit
+	 		join scmpurbuyer as i on i.id=b.buyerid
+	 		left join scmpurorderentry as f on f.prdtlid=b.id
+	 		left join scmsupplier as h on h.id=b.vendorid
+	 		left join scmpurreceiveentry as j on j.poDtlId=f.Id
+	 	 	left join scminvpurinwarehsbillentry as k on k.sourceBillDtlId=j.id
+			where ScmMaterialGroupStandard.standardType='1'
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				and	 a.purorgunitno = #{purOrgUnitNo}
+				</if>
+				<if test="begDate!=null and begDate!=''">
+				AND date_format(a.checkdate,'%Y-%m-%d') &gt;= #{begDate}
+				</if>
+				<if test="endDate!=null and endDate!=''">
+				and date_format(a.checkdate,'%Y-%m-%d') &lt;= #{endDate}
+				</if>
+				<if test="buyer!=null and buyer!=''">
+				and i.Id in (${buyer})
+				</if>
+				and b.rowstatus in ('C','A','E')
+				and (f.rowstatus is not null and f.rowstatus !='I')
+				and b.id not in (select id from scmpurrequireentry where rowStatus='C' and orderQty=0 
+						<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+						 and purorgunitno = #{purOrgUnitNo}
+						</if> 
+			 			<if test="begDate!=null and begDate!=''">
+						AND date_format(checkdate,'%Y-%m-%d') &gt;= #{begDate}
+						</if>
+						<if test="endDate!=null and endDate!=''">
+						and date_format(checkdate,'%Y-%m-%d') &lt;= #{endDate}
+						</if>
+						)
+			group by a.prNo,c.itemno,c.itemname,c.spec,g.unitName,h.vendorName,i.buyerName,b.orgUnitNo
+
+
+			union all
+
+			select  a.prNo,c.itemno,c.itemname,c.spec,g.unitName,h.vendorName,i.buyerName,CONCAT('#$orgBaseUnitBiz#$',b.orgUnitNo) as orgUnitNo,b.qty ,sum(k.qty) as inqty,ifnull(f.rowstatus,'Z') as rowstatus
+			from scmpurrequire as a join scmpurrequireentry as b on a.id=b.prid 
+			join scmmaterial as c on b.itemid=c.id 
+			join ScmMaterialGroupDetail as d on c.id=d.itemid 
+			join scmmaterialgroup as e on d.classid=e.id
+			left join ScmMaterialGroupStandard on d.standardId = ScmMaterialGroupStandard.id
+			join scmmeasureunit as g on g.id=b.purunit
+	 		join scmpurbuyer as i on i.id=b.buyerid
+	 		left join scmpurorderentry as f on f.prdtlid=b.id
+	 		left join scmsupplier as h on h.id=b.vendorid
+	 		left join scmpurreceiveentry as j on j.poDtlId=f.Id
+	 	 	left join scminvpurinwarehsbillentry as k on k.sourceBillDtlId=j.id
+			where ScmMaterialGroupStandard.standardType='1'
+				<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+				and	 a.purorgunitno = #{purOrgUnitNo}
+				</if>
+				<if test="begDate!=null and begDate!=''">
+				and date_format(a.checkdate,'%Y-%m-%d') &gt;= #{begDate}
+				</if>
+				<if test="endDate!=null and endDate!=''">
+				and date_format(a.checkdate,'%Y-%m-%d') &lt;= #{endDate}
+				</if>
+				<if test="buyer!=null and buyer!=''">
+				and i.Id in (${buyer})
+				</if>
+				and b.rowstatus in ('C','A','E')
+				and (f.rowstatus is null or f.rowstatus ='I')
+				and b.id not in (select id from scmpurrequireentry where rowStatus='C' and orderQty=0 
+						<if test="purOrgUnitNo !=null and purOrgUnitNo !=''">
+						 and purorgunitno = #{purOrgUnitNo}
+						</if> 
+			 			<if test="begDate!=null and begDate!=''">
+						AND date_format(checkdate,'%Y-%m-%d') &gt;= #{begDate}
+						</if>
+						<if test="endDate!=null and endDate!=''">
+						and date_format(checkdate,'%Y-%m-%d') &lt;= #{endDate}
+						</if>
+						)
+			group by a.prNo,c.itemno,c.itemname,c.spec,g.unitName,h.vendorName,i.buyerName,b.orgUnitNo
+			order by buyername,rowstatus,prno,itemno
+
+	</select>
+	<!-- 物资转换率核查表 -->
+	<select id="scmcommonreport.ScmScmmatrialConvrateSum" resultType="Map" parameterType="Map">
+		SELECT scmmaterial.itemNo,scmmaterial.itemName,scmmaterial.spec,scmmaterial.baseUnitId,scmmaterial.`status` as scmstatus,
+		scmmaterialgroupdetail.classId,scmmaterialgroup.className,scmmeasureunit.unitName,
+		CASE WHEN scmmaterialinventory.unitId is null THEN ctlinv.unitId ELSE scmmaterialinventory.unitId END AS invUnit,
+		invscmmeasureunit.unitName as invUnitName,invscmmaterialunitrelation.convrate as invconvrate,
+		CASE WHEN scmmaterialpurchase.purUnit is null THEN ctlpur.purUnit ELSE scmmaterialpurchase.purUnit END AS purUnit,
+		purscmmeasureunit.unitName as purUnitName,purscmmaterialunitrelation.convrate as purconvrate
+		FROM scmmaterial
+		LEFT JOIN scmmaterialgroupdetail ON  scmmaterialgroupdetail.itemId = scmmaterial.id
+		LEFT JOIN scmmaterialgroup ON scmmaterialgroup.id =  scmmaterialgroupdetail.classId
+		LEFT JOIN ScmMaterialGroupStandard ON scmmaterialgroupdetail.standardId = ScmMaterialGroupStandard.id
+		LEFT JOIN scmmeasureunit ON scmmaterial.baseUnitId = scmmeasureunit.id
+		LEFT JOIN scmmaterialinventory ctlinv ON ctlinv.orgUnitNo = #{controlUnitNo} AND scmmaterial.id = ctlinv.itemId
+		LEFT JOIN scmmaterialinventory ON scmmaterialinventory.orgUnitNo = #{invOrgUnitNo} AND scmmaterial.id = scmmaterialinventory.itemId
+		LEFT JOIN scmmeasureunit invscmmeasureunit ON 
+			CASE WHEN scmmaterialinventory.unitId is null THEN ctlinv.unitId ELSE scmmaterialinventory.unitId END = invscmmeasureunit.id
+		LEFT JOIN scmmaterialunitrelation invscmmaterialunitrelation ON 
+			CASE WHEN scmmaterialinventory.unitId is null THEN ctlinv.unitId ELSE scmmaterialinventory.unitId END = invscmmaterialunitrelation.targetUnitId 
+			AND scmmaterial.id =  invscmmaterialunitrelation.itemid
+		LEFT JOIN scmmaterialpurchase ctlpur ON ctlpur.orgUnitNo = #{controlUnitNo} AND  scmmaterial.id = ctlpur.itemId
+		LEFT JOIN scmmaterialpurchase  ON scmmaterialpurchase.orgUnitNo = #{invOrgUnitNo} AND  scmmaterial.id = scmmaterialpurchase.itemId
+		LEFT JOIN scmmeasureunit purscmmeasureunit ON 
+			CASE WHEN scmmaterialpurchase.purUnit is null THEN ctlpur.purUnit ELSE scmmaterialpurchase.purUnit END = purscmmeasureunit.id
+		LEFT JOIN scmmaterialunitrelation purscmmaterialunitrelation ON 
+			CASE WHEN scmmaterialpurchase.purUnit is null THEN ctlpur.purUnit ELSE scmmaterialpurchase.purUnit END = purscmmaterialunitrelation.targetUnitId 
+			AND scmmaterial.id =  purscmmaterialunitrelation.itemid
+		WHERE scmmaterial.controlUnitNo = #{controlUnitNo}
+			and ScmMaterialGroupStandard.standardType='1' 
+		    <if test="materialClassName != null and materialClassName !='' ">
+	           And scmmaterialgroup.id in (${materialClassName})
+	        </if>
+	        <if test="materialName != null and materialName !='' ">
+	           And scmmaterial.id in (${materialName})
+	        </if>
+	    order by itemNo
+	</select>
+	<!-- 采购入库单价变动对比表 -->
+	<select id="scmcommonreport.ScmInvPricechangesAnalysis" resultType="Map" parameterType="Map">
+
+		select itemNo,itemName,Spec,className,unitName,sum(InQty) as InQty,sum(InAmt) as InAmt,ifnull(round(sum(InAmt)/sum(InQty),2),0) as InPrice,
+			sum(LasMInQty) as LasMInQty,sum(LasMInAmt)as LasMInAmt,ifnull(round(sum(LasMInAmt)/sum(LasMInQty),2),0) as LasMInPrice,
+			sum(LasYInQty)as LasYInQty,sum(LasYInAmt)as LasYInAmt,ifnull(round(sum(LasYInAmt)/sum(LasYInQty),2),0) as LasYInPrice
+		from (
+			select C.itemNo, C.itemName, C.Spec, E.className,H.unitName,round(SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end),2) as InQty,
+				SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) as InAmt,
+				0 as LasMInQty,0 as LasMInAmt,0 as LasYInQty,0 as LasYInAmt
+			from ScmInvPurInWarehsBill as A, 
+				ScmInvPurInWarehsBillEntry as B,
+				ScmMaterial C,
+				ScmMaterialGroupDetail D,
+				ScmMaterialGroup E,
+				scmsupplier G,
+				ScmMaterialGroupStandard, 
+				scmMeasureUnit H
+			Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId 
+				And D.classId=E.id and D.standardId = ScmMaterialGroupStandard.id  and ScmMaterialGroupStandard.standardType='1'  And A.vendorId = G.id And B.unit = H.id      
+       	    	<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				and YEAR(#{accountDate})=YEAR(A.bizDate)
+				and MONTH(#{accountDate})=MONTH(A.bizDate)
+         	  And A.status = 'E'
+          	 	<if test="materialClassIds != null and materialClassIds !='' ">
+          			And E.id in (${materialClassIds})
+        		</if>
+			group by C.itemNo, C.itemName, C.Spec, E.className,H.unitName
+
+			union ALL
+
+			select C.itemNo, C.itemName, C.Spec, E.className,H.unitName,0 as InQty,0 as InAmt,
+				round(SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end),2) as LasMInQty,
+				SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) as LasMInAmt,
+				0 as LasYInQty,0 as LasYInAmt
+			from ScmInvPurInWarehsBill as A, 
+				ScmInvPurInWarehsBillEntry as B,
+				ScmMaterial C,
+				ScmMaterialGroupDetail D,
+				ScmMaterialGroup E,
+				scmsupplier G,
+				ScmMaterialGroupStandard, 
+				scmMeasureUnit H
+			Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId 
+				And D.classId=E.id  and D.standardId = ScmMaterialGroupStandard.id  and ScmMaterialGroupStandard.standardType='1'
+				And A.vendorId = G.id And B.unit = H.id
+    			<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.orgUnitNo in (${invOrgUnitNo})
+				</if>
+	 			and YEAR(A.bizDate)=case when month(#{accountDate})='01' then YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 MONTH),'%Y-%m-%d')) else YEAR(#{accountDate}) end
+ 				and MONTH(A.bizDate)=MONTH(date_format(date_sub(#{accountDate},INTERVAL 1 MONTH),'%Y-%m-%d'))
+
+				And A.status = 'E'
+				<if test="materialClassIds != null and materialClassIds !='' ">
+          			And E.id in (${materialClassIds})
+        		</if>
+			group by C.itemNo, C.itemName, C.Spec, E.className,H.unitName
+
+			union ALL
+
+			select C.itemNo, C.itemName, C.Spec, E.className,H.unitName,0 as InQty,0 as InAmt,	0 as LasMInQty,	0 as LasMInAmt,
+				round(SUM(case when A.bizType in ('1','3') then B.qty else -B.qty end),2) as LasYInQty,
+				SUM(case when A.bizType in ('1','3') then B.amt else -B.amt end) as LasYInAmt
+			from ScmInvPurInWarehsBill as A, 
+				ScmInvPurInWarehsBillEntry as B,
+				ScmMaterial C,
+				ScmMaterialGroupDetail D,
+				ScmMaterialGroup E,
+				ScmMaterialGroupStandard,
+				scmsupplier G, 
+				scmMeasureUnit H
+			Where A.wrId=B.wrId And B.itemId=C.id	And C.id=D.itemId And D.classId=E.id  and D.standardId = ScmMaterialGroupStandard.id  and ScmMaterialGroupStandard.standardType='1'
+				And A.vendorId = G.id And B.unit = H.id
+	    		<if test="invOrgUnitNo !=null and invOrgUnitNo !=''">
+					AND B.orgUnitNo in (${invOrgUnitNo})
+				</if>
+				and YEAR(A.bizDate)=YEAR(date_format(date_sub(#{accountDate},INTERVAL 1 YEAR),'%Y-%m-%d'))
+				and MONTH(A.bizDate)=MONTH(#{accountDate})
+	    		And A.status = 'E'
+	    		<if test="materialClassIds != null and materialClassIds !='' ">
+	          		And E.id in (${materialClassIds})
+	        	</if>
+	        group by C.itemNo, C.itemName, C.Spec, E.className,H.unitName
+	        )A
+			group by itemNo,itemName,Spec,className,unitName
+			<choose>
+				<when test='ranked != null and ranked =="N" '>
+			 		 
+			 		<choose>
+			 			<when test='input != null '>
+			 				order by InQty desc limit ${input}
+			 			</when>
+			 			<otherwise>
+			 				order by itemno 
+			 			</otherwise>
+			 		</choose>
+			 	</when>
+			 	<otherwise>
+			 		 
+			 		<choose>
+			 			<when test='input != null '>
+			 				order by InAmt desc limit ${input}
+			 			</when>
+			 			<otherwise>
+			 				order by itemno 
+			 			</otherwise>
+			 		</choose>
+			 	</otherwise>
+			</choose>
+			
+	</select>
+</mapper>

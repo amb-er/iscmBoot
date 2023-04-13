@@ -1,0 +1,56 @@
+
+K
+java:S3740‹"/Provide the parametrized type for this generic.(Ú±ë¤üÿÿÿÿ
+F
+java:S3740¹"/Provide the parametrized type for this generic.(³é‘
+F
+java:S3740¹"/Provide the parametrized type for this generic.(³é‘
+F
+java:S3740œ"/Provide the parametrized type for this generic.(³é‘
+F
+java:S3740œ"/Provide the parametrized type for this generic.(³é‘
+t
+java:S1192ˆ"XDefine a constant instead of duplicating this literal "webservice.params.null" 10 times.(«ıÀËøÿÿÿÿ
+p
+java:S1192‡"YDefine a constant instead of duplicating this literal "paramså‚æ•°ä¸èƒ½ä¸ºç©º" 5 times.(€½Ï’
+?
+java:S1148æ"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148“"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148Í"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148ö"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+?
+java:S1148±"#Use a logger to log this exception.(€ÉÔ…ıÿÿÿÿ
+N
+java:S2589ò"7Remove this expression which always evaluates to "true"(¹‹üİ
+e
+java:S4488z"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(·ÆÃÒşÿÿÿÿ
+a
+java:S4488Ÿ"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(´º™“
+a
+java:S4488Ï"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(÷±®õ
+a
+java:S4488ñ"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(çÉİ¼
+f
+java:S4488Ÿ"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(ˆ¬¢üÿÿÿÿ
+f
+java:S4488À"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(ñÀ·ˆøÿÿÿÿ
+f
+java:S4488í"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(ÛÈ®ºøÿÿÿÿ
+n
+java:S3776œ"RRefactor this method to reduce its Cognitive Complexity from 18 to the 15 allowed.(â›¬±ùÿÿÿÿ
+f
+java:S4488š"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(ÀˆàÌşÿÿÿÿ
+n
+java:S3776Ö"RRefactor this method to reduce its Cognitive Complexity from 21 to the 15 allowed.(Ö‚¬Éûÿÿÿÿ
+f
+java:S4488Ô"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(‰ô øÿÿÿÿ
+i
+java:S3776ÿ"RRefactor this method to reduce its Cognitive Complexity from 18 to the 15 allowed.(íŒéó
+a
+java:S4488ı"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(€ııÃ
+G
+java:S1068t"1Remove this unused "orgCompanyBiz" private field.(‹ÀÊ½
+R	java:S125ú"<This block of commented-out lines of code should be removed.(åÜÔ¼

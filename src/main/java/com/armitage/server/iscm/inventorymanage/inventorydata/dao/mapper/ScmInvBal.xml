@@ -1,0 +1,2302 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvbal">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvbal.findAll" resultType="ScmInvBal" >
+	    SELECT * FROM ScmInvBal WHERE  1=1  
+	</select>
+ 
+	<select id="scminvbal.findAllPage" resultType="ScmInvBal" parameterType="Map"> 
+		SELECT ScmInvBal.* FROM ScmInvBal,ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE  ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id And ScmInvBal.itemId=ScmMaterial.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id ORDER BY ScmInvBal.id ASC 
+	</select> 
+	<select id="scminvbal.findItemPage" resultType="ScmInvBal2" parameterType="Map"> 
+		SELECT ScmInvBal.*, ScmMaterial.itemNo as itemNo,ScmMaterial.itemName as itemName,ScmMaterial.spec as spec,A.unitName as unitName,
+		ScmMaterialGroup.className as groupName,ScmMaterialGroup.classCode as groupCode,ScmMaterialGroup.longNo as longNo,
+		ScmMaterialGroup.id as groupId,ScmInvWareHouse.whName as whName
+		FROM ScmInvBal 
+		left join ScmMeasureUnit A on ScmInvBal.unit=A.id
+		left join ScmInvWareHouse on ScmInvBal.wareHouseId=ScmInvWareHouse.id,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE  ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id And ScmInvBal.itemId=ScmMaterial.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id ORDER BY ScmInvBal.id ASC 
+	</select>
+	<select id="scminvbal.selectById" resultType="ScmInvBal" parameterType="Long">
+		SELECT * FROM ScmInvBal WHERE id = #{value}
+	</select> 
+	<insert id="scminvbal.addByCostCenter" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into ScmInvBal(periodId, accountYear, accountPeriod,
+		FinOrgUnitNo, OrgUnitNo, WareHouseID, CostOrgUnitNo, costCenter,
+		itemId, Unit, PieUnit, StartQty, StartPieQty, StartAmt, AddQty,
+		AddPieQty, AddAmt,
+		OutQty, OutPieQty, OutAmt, AdjQty, AdjPieQty, AdjAmt, EndQty, EndPieQty,
+		EndAmt, Lot, StartBaseQty, AddBaseQty, OutBaseQty, AdjBaseQty,
+		EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt,baseUnit)
+		Select
+		#{periodId},#{accountYear},#{accountPeriod},#{finOrgUnitNo},A.OrgUnitNo,0,A.CostOrgUnitNo,1,
+		A.itemId, A.Unit, C.PieUnitId,0,0,0,0,0,0,
+		0,0,0,A.QtydIff,A.PieQtydIff,A.AmtdIff,0,0,0,A.Lot,0,0,0,A.QtydIff*A.convrate,0,0,0,0,A.taxAmtdIff,0,A.baseUnit
+		From (Select sum(T.QtydIff) as QtydIff,sum(T.AmtdIff) as
+		AmtdIff,sum(T.taxAmtdIff) as taxAmtdIff,sum(T.PieQtydIff) as
+		PieQtydIff,T.OrgUnitNo,T.CostOrgUnitNo,T.itemId,T.Unit,T.Lot,T.convrate,T.baseUnit
+		From (Select A.UseOrgUnitNo as OrgUnitNo,A.OrgUnitNo as
+		CostOrgUnitNo,B.itemId,B.Lot,B.Unit,B.AccountQty,B.DifferQty as
+		QtydIff,B.DifferAmt as
+		AmtdIff,B.PieUnit,C.baseUnitId as baseUnit,IFNULL(B.DifferPieQty,0) as
+		PieQtydIff,B.DifferTaxAmt as taxAmtdIff,t.convrate as convrate
+		From scminvcountingcostcenter as A,scminvcountingcostcenterEntry as B
+		left join ScmMaterialUnitRelation T on b.itemId=t.itemId
+		AND b.unit=t.targetUnitId,ScmMaterial as C
+		Where A.TaskID = #{taskId} And
+		A.TableID = B.TableID And
+		B.DifferQty != 0 And
+		B.itemId = C.id) T Group By
+		T.OrgUnitNo,T.CostOrgUnitNo,T.itemId,T.Unit,T.Lot) as A
+		Left Join (SELECT * FROM ScmInvBal WHERE accountYear = #{accountYear} And
+		accountPeriod = #{accountPeriod} AND costCenter = 1) B On A.OrgUnitNo =
+		B.OrgUnitNo And A.CostOrgUnitNo = B.CostOrgUnitNo And
+		A.itemId = B.itemId And A.Unit = B.Unit And A.LOT = B.LOT,
+		ScmMaterial C
+		Where A.itemId = C.id And B.OrgUnitNo Is null
+	</insert>
+	<insert id="scminvbal.addByOtherInWarehsBill" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+		ScmInvBal(periodId,accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter,itemId,Unit,BaseUnit,PieUnit,StartQty,StartPieQty,StartAmt,AddQty,AddPieQty,AddAmt,OutQty,OutPieQty,OutAmt,AdjQty,AdjPieQty,AdjAmt,
+		EndQty,EndPieQty,EndAmt,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt)
+		Select
+		T.periodId,T.FYear,T.Period,T.FinOrgUnitNo,T.OrgUnitNo,T.WareHouseID,T.CostOrgUnitNo,T.IsCostCentor,T.itemId,T.Unit,T.BaseUnit,T.PieUnit,0,0,0,T.Qty,T.PieQty,T.Amt,0,0,0,0,0,0,
+		0,0,0,T.Lot,0,T.BaseQty,0,0,0,0,T.taxAmt,0,0,0 From
+		(Select
+		T1.periodId,T1.FYear,T1.Period,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case
+		when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end) as
+		IsCostCentor,T1.itemId,T1.Unit,T1.BaseUnit,T1.PieUnit,Sum(T1.Qty) as
+		Qty,Sum(T1.PieQty) as PieQty,Sum(T1.Amt) as Amt,
+		T1.Lot,Sum(T1.BaseQty) as BaseQty,Sum(T1.taxAmt) as taxAmt
+		From (SELECT M.periodId,M.wrId,d.lineId,M.bizdate as
+		invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,D.baseUnit,D.baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		Where M.wrId = #{wrId} And M.status = 'A' And M.wrId = D.wrId order by d.lineid) T1
+		Group By
+		T1.periodId,T1.FYear,T1.Period,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case when IFNULL(T1.WareHouseID,0) = 0 then '1' else '0' end),
+		T1.ItemNo,T1.Itemname,T1.Spec,T1.Unit,T1.PieUnit,T1.Lot) T
+		Left Join ScmInvBal T2
+		On T.FYear = T2.accountYear And T.Period = T2.accountPeriod And
+		T.OrgUnitNo = T2.OrgUnitNo And
+		T.CostOrgUnitNo = IFNULL(T2.CostOrgUnitNo,'') And T.itemId = T2.itemId And
+		T.Lot = T2.Lot And T.Unit = T2.Unit And T.WareHouseID =
+		IFNULL(T2.WareHouseID,0)
+		Where T2.accountYear is null
+	</insert>
+	
+	<insert id="scminvbal.addByOtherInWarehsBillForInvProfit" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+		ScmInvBal(periodId,accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter,itemId,Unit,PieUnit,StartQty,StartPieQty,StartAmt,AddQty,AddPieQty,AddAmt,OutQty,OutPieQty,OutAmt,AdjQty,AdjPieQty,AdjAmt,
+		EndQty,EndPieQty,EndAmt,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt,baseUnit)
+		Select
+		T.periodId,T.accountYear,T.accountPeriod,T.FinOrgUnitNo,T.OrgUnitNo,T.WareHouseID,T.CostOrgUnitNo,T.costCenter,T.itemId,T.Unit,T.PieUnit,0,0,0,0,0,0,0,0,0,T.Qty,T.PieQty,T.Amt,
+		0,0,0,T.Lot,0,0,0,T.BaseQty,0,0,0,0,T.taxAmt,0,T.baseUnit From
+		(Select T1.periodId,T1.fYear as accountYear,T1.period as
+		accountPeriod,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case
+		when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end) as
+		costCenter,T1.itemId,T1.Itemname,
+		T1.Spec,T1.Unit,T1.PieUnit,T1.baseUnit,Sum(T1.Qty) as Qty,Sum(T1.PieQty) as
+		PieQty,Sum(T1.Amt) as Amt,
+		T1.Lot,Sum(T1.BaseQty) as BaseQty,Sum(T1.taxAmt) as taxAmt
+		From (SELECT M.periodId,M.wrId,d.lineId,M.bizdate as
+		invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,
+		A.baseUnitId as baseUnit,IFNULL(ScmMaterialUnitRelation.convrate,0) * D.Qty as baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		left join ScmMaterialUnitRelation on
+		D.itemId=ScmMaterialUnitRelation.itemId
+		AND D.unit=ScmMaterialUnitRelation.targetUnitId
+		Where M.wrId = #{wrId} And
+		M.status = 'A' And
+		M.wrId = D.wrId
+		order by d.lineid) T1
+		Group By
+		T1.periodId,T1.fYear,T1.period,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case
+		when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end),
+		T1.itemId,T1.Itemname,T1.Spec,T1.Unit,T1.PieUnit,T1.Lot) T
+		Left Join ScmInvBal T2
+		On T.accountYear = T2.accountYear And T.accountPeriod = T2.accountPeriod
+		And T.OrgUnitNo = T2.OrgUnitNo And
+		T.CostOrgUnitNo = IFNULL(T2.CostOrgUnitNo,'') And T.itemId = T2.itemId And
+		T.Lot = T2.Lot And T.Unit = T2.Unit And T.WareHouseID =
+		IFNULL(T2.WareHouseID,0)
+		Where T2.accountYear is null
+	</insert>
+	
+	<insert id="scminvbal.addByOtherInWarehsBillForInvDataSync" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+		ScmInvBal(periodId,accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter,itemId,Unit,PieUnit,StartQty,StartPieQty,StartAmt,AddQty,AddPieQty,AddAmt,OutQty,OutPieQty,OutAmt,AdjQty,AdjPieQty,AdjAmt,
+		EndQty,EndPieQty,EndAmt,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt,baseUnit)
+		Select
+		T.periodId,T.accountYear,T.accountPeriod,T.FinOrgUnitNo,T.OrgUnitNo,T.WareHouseID,T.CostOrgUnitNo,T.costCenter,T.itemId,T.Unit,T.PieUnit,0,0,0,0,0,0,0,0,0,T.Qty,T.PieQty,T.Amt,
+		0,0,0,T.Lot,0,0,0,T.BaseQty,0,0,0,0,T.taxAmt,0,T.baseUnit From
+		(Select T1.periodId,T1.fYear as accountYear,T1.period as
+		accountPeriod,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case
+		when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end) as
+		costCenter,T1.itemId,T1.Itemname,
+		T1.Spec,T1.Unit,T1.PieUnit,T1.baseUnit,Sum(T1.Qty) as Qty,Sum(T1.PieQty) as
+		PieQty,Sum(T1.Amt) as Amt,
+		T1.Lot,Sum(T1.BaseQty) as BaseQty,Sum(T1.taxAmt) as taxAmt
+		From (SELECT M.periodId,M.wrId,d.lineId,M.bizdate as
+		invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,
+		A.baseUnitId as baseUnit,IFNULL(ScmMaterialUnitRelation.convrate,0) * D.Qty as baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		left join ScmMaterialUnitRelation on
+		D.itemId=ScmMaterialUnitRelation.itemId
+		AND D.unit=ScmMaterialUnitRelation.targetUnitId
+		Where M.wrId = #{wrId} And
+		M.wrId = D.wrId
+		order by d.lineid) T1
+		Group By
+		T1.periodId,T1.fYear,T1.period,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case
+		when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end),
+		T1.itemId,T1.Itemname,T1.Spec,T1.Unit,T1.PieUnit,T1.Lot) T
+		Left Join ScmInvBal T2
+		On T.accountYear = T2.accountYear And T.accountPeriod = T2.accountPeriod
+		And T.OrgUnitNo = T2.OrgUnitNo And
+		T.CostOrgUnitNo = IFNULL(T2.CostOrgUnitNo,'') And T.itemId = T2.itemId And
+		T.Lot = T2.Lot And T.Unit = T2.Unit And T.WareHouseID =
+		IFNULL(T2.WareHouseID,0)
+		Where T2.accountYear is null
+	</insert>
+	
+	<insert id="scminvbal.addByOtherInWarehsBillForCancel" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+		ScmInvBal(periodId,accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter,itemId,Unit,PieUnit,StartQty,StartPieQty,StartAmt,AddQty,AddPieQty,AddAmt,OutQty,OutPieQty,OutAmt,AdjQty,AdjPieQty,AdjAmt,
+		EndQty,EndPieQty,EndAmt,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt,baseUnit)
+		Select
+		T.periodId,T.accountYear,T.accountPeriod,T.FinOrgUnitNo,T.OrgUnitNo,T.WareHouseID,T.CostOrgUnitNo,T.costCenter,T.itemId,T.Unit,T.PieUnit,0,0,0,0,0,0,0,0,0,-T.Qty,-T.PieQty,-T.Amt,
+		0,0,0,T.Lot,0,0,0,-T.BaseQty,0,0,0,0,-T.taxAmt,0,T.baseUnit From
+		(Select T1.periodId,T1.fYear as accountYear,T1.period as
+		accountPeriod,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case
+		when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end) as
+		costCenter,T1.itemId,T1.Itemname,
+		T1.Spec,T1.Unit,T1.PieUnit,T1.baseUnit,Sum(T1.Qty) as Qty,Sum(T1.PieQty) as
+		PieQty,Sum(T1.Amt) as Amt,
+		T1.Lot,Sum(T1.BaseQty) as BaseQty,Sum(T1.taxAmt) as taxAmt
+		From (SELECT M.periodId,M.wrId,d.lineId,M.bizdate as
+		invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,
+		A.baseUnitId as baseUnit,IFNULL(ScmMaterialUnitRelation.convrate,0) * D.Qty as baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		left join ScmMaterialUnitRelation on
+		D.itemId=ScmMaterialUnitRelation.itemId
+		AND D.unit=ScmMaterialUnitRelation.targetUnitId
+		Where M.wrId = #{wrId} And
+		M.status = 'A' And
+		M.wrId = D.wrId
+		order by d.lineid) T1
+		Group By
+		T1.periodId,T1.fYear,T1.period,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case
+		when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end),
+		T1.itemId,T1.Itemname,T1.Spec,T1.Unit,T1.PieUnit,T1.Lot) T
+		Left Join ScmInvBal T2
+		On T.accountYear = T2.accountYear And T.accountPeriod = T2.accountPeriod
+		And T.OrgUnitNo = T2.OrgUnitNo And
+		T.CostOrgUnitNo = IFNULL(T2.CostOrgUnitNo,'') And T.itemId = T2.itemId And
+		T.Lot = T2.Lot And T.Unit = T2.Unit And T.WareHouseID =
+		IFNULL(T2.WareHouseID,0)
+		Where T2.accountYear is null
+	</insert>
+
+	<insert id="scminvbal.addByPurInWarehsBill" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+		ScmInvBal(periodId,accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter,ItemId,Unit,PieUnit,baseUnit,StartQty,StartPieQty,StartAmt,AddQty,AddPieQty,AddAmt,OutQty,OutPieQty,OutAmt,AdjQty,AdjPieQty,AdjAmt,
+		EndQty,EndPieQty,EndAmt,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt)
+		Select
+		T.periodId,T.FYear,T.Period,T.FinOrgUnitNo,T.OrgUnitNo,T.WareHouseID,T.CostOrgUnitNo,T.IsCostCentor,T.ItemId,T.Unit,T.PieUnit,T.baseUnit,0,0,0,T.Qty,T.PieQty,T.Amt,0,0,0,0,0,0,
+		0,0,0,T.Lot,0,T.BaseQty,0,0,0,0,T.taxAmt,0,0,0 From
+		(Select
+		T1.periodId,T1.FYear,T1.Period,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case
+		when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end) as
+		IsCostCentor,T1.ItemId,T1.Unit,T1.PieUnit,T1.baseUnit,Sum(T1.Qty) as
+		Qty,Sum(T1.PieQty) as PieQty,Sum(T1.Amt) as Amt,
+		T1.Lot,Sum(T1.BaseQty) as BaseQty,Sum(T1.taxAmt) as taxAmt
+		From (select M.periodId,M.WRID,M.BizDate as InvDate,D.FinOrgUnitNo,(CASE IFNULL(D.WareHouseID,0)
+		WHEN 0 THEN D.UseOrgUnitNo ELSE D.OrgUnitNo END) as OrgUnitNo,
+		IFNULL(D.WareHouseID,0) as WareHouseID,IFNULL(D.CostOrgUnitNo,'') as
+		CostOrgUnitNo,D.ItemId,D.Unit,D.PieUnit,D.Lot,IFNULL(D.Qty,0) as
+		Qty,IFNULL(D.PieQty,0) as PieQty,
+		IFNULL(D.Price,0) as Price,IFNULL(D.Amt,0) as Amt,D.TaxRate,D.taxPrice,D.taxAmt,D.ExpDate,
+		D.sourceBillDtlId as sourceBillID,D.BaseUnit,IFNULL(D.BaseQty,0) as BaseQty,(CASE M.biztype
+		WHEN '2' THEN 0 ELSE M.VendorId END) as
+		VendorId,M.accountYear as fYear,M.accountPeriod as period
+		From scminvpurinwarehsbill as M,scminvpurinwarehsbillEntry as D,scmmaterial	as A
+		Where M.WRID = #{wrId} And
+		M.Status = 'A' And
+		M.WRID = D.WRID And
+		D.ItemId = A.id) T1
+		Group By
+		T1.periodId,T1.FYear,T1.Period,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case
+		when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end),
+		T1.ItemId,T1.Unit,T1.PieUnit,T1.baseUnit,T1.Lot) T
+		Left Join ScmInvBal T2
+		On T.FYear = T2.accountYear And T.Period = T2.accountPeriod And
+		T.OrgUnitNo = T2.OrgUnitNo And
+		T.CostOrgUnitNo = IFNULL(T2.CostOrgUnitNo,'') And T.itemId = T2.itemId And
+		T.Lot = T2.Lot And T.Unit = T2.Unit And T.WareHouseID =
+		IFNULL(T2.WareHouseID,0)
+		Where T2.accountYear is null
+	</insert>
+	
+	<insert id="scminvbal.addByPurInWarehsBillOut" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+		ScmInvBal(periodId,accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter,itemId,Unit,PieUnit,baseUnit,StartQty,StartPieQty,StartAmt,AddQty,AddPieQty,AddAmt,OutQty,OutPieQty,OutAmt,AdjQty,AdjPieQty,AdjAmt,
+		EndQty,EndPieQty,EndAmt,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt)
+		Select
+		T.periodId,T.accountYear,T.accountPeriod,T.FinOrgUnitNo,T.OrgUnitNo,T.WareHouseID,T.CostOrgUnitNo,T.costCenter,T.itemId,T.Unit,T.PieUnit,T.baseUnit,0,0,0,T.Qty,T.PieQty,T.Amt,0,0,0,0,0,0,
+		0,0,0,T.Lot,0,T.BaseQty,0,0,0,0,T.taxAmt,0,0,0 From
+		(Select
+		T1.periodId,T1.accountYear,T1.accountPeriod,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case
+		when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end) as
+		costCenter,T1.itemId,T1.Unit,T1.PieUnit,T1.baseUnit,Sum(-T1.Qty) as
+		Qty,Sum(-T1.PieQty) as PieQty,Sum(-T1.Amt) as Amt,
+		T1.Lot,Sum(-T1.BaseQty) as BaseQty,Sum(-T1.taxAmt) as taxAmt
+		From (select M.periodId,M.WRID,M.BizDate as InvDate,D.FinOrgUnitNo,(CASE
+		IFNULL(D.WareHouseID,0) WHEN 0 THEN D.UseOrgUnitNo ELSE D.OrgUnitNo
+		END) as OrgUnitNo,
+		IFNULL(D.WareHouseID,0) as WareHouseID,IFNULL(D.CostOrgUnitNo,'') as
+		CostOrgUnitNo,D.ItemId,D.Unit,D.PieUnit,D.Lot,D.Qty,IFNULL(D.PieQty,0)
+		as PieQty,
+		D.Price,IFNULL(D.Amt,0) as Amt,D.taxRate,D.taxPrice,IFNULL(D.taxAmt,0) as taxAmt,D.ExpDate,
+		D.sourceBillDtlId as SourceBillID,D.BaseUnit,IFNULL(D.BaseQty,0) as
+		BaseQty,M.accountYear,M.accountPeriod,M.vendorId
+		From scminvpurinwarehsbill as M,scminvpurinwarehsbillEntry as D,scmmaterial	as A
+		Where M.WRID = #{wrId} And
+		M.Status = 'A' And
+		M.WRID = D.WRID And
+		D.ItemId = A.id) T1
+		Group By
+		T1.periodId,T1.accountYear,T1.accountPeriod,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo,(case
+		when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end),
+		T1.itemId,T1.Unit,T1.PieUnit,T1.Lot) T
+		Left Join ScmInvBal T2
+		On T.accountYear = T2.accountYear And T.accountPeriod = T2.accountPeriod
+		And T.OrgUnitNo = T2.OrgUnitNo And
+		T.CostOrgUnitNo = IFNULL(T2.CostOrgUnitNo,'') And T.itemId = T2.itemId And
+		T.Lot = T2.Lot And T.Unit = T2.Unit And T.WareHouseID =
+		IFNULL(T2.WareHouseID,0)
+		Where T2.accountYear is null
+	</insert>
+
+    <insert id="scminvbal.addByMoveBillIn" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		insert into ScmInvBal 
+		    (periodId, accountYear, accountPeriod, finOrgUnitNo, orgUnitNo, wareHouseId, costOrgUnitNo, costCenter, itemId,
+		        unit,baseUnit, pieUnit, startQty, startPieQty, StartAmt, addQty, addPieQty, addAmt, outQty, outPieQty, outAmt,
+		        adjQty, adjPieQty, adjAmt, endQty, endPieQty, endAmt, lot, startBaseQty, addBaseQty, outBaseQty, adjBaseQty, 
+		        endBaseQty, addTaxAmt, startTaxAmt, outTaxAmt, adjTaxAmt, endTaxAmt)
+		    select 
+		        T1.periodId, T1.accountYear, T1.accountPeriod, T1.finOrgUnitNo, T1.inOrgUnitNo, 0, T1.inCstOrgUnitNo,
+		        1, T1.itemId, T1.unit, T1.baseUnit,T1.pieUnit, 0, 0, 0, T1.qty, T1.pieQty, T1.amt, 0, 0, 0, 0, 0, 0, 0, 0, 0, T1.lot, 0, T1.baseQty,
+		        0, 0, 0, T1.taxAmt, 0, 0, 0, 0
+		    from (
+		        select 
+		                A.periodId, A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.inOrgUnitNo, A.inCstOrgUnitNo,
+		                B.itemId, B.unit,B.baseUnit, B.pieUnit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.baseQty) as baseQty, 
+		                B.price, SUM(B.amt) as amt, B.taxRate, B.taxPrice, SUM(B.taxAmt) as taxAmt, B.lot
+		            from 
+		                scminvmovebill A, scminvmovebillentry B
+		            where 
+		                A.wtId = B.wtId
+		                and A.wtId = #{wtId}
+		            group by A.periodId, A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.inOrgUnitNo, A.inCstOrgUnitNo, 
+		                B.itemId, B.unit, B.pieUnit, B.lot) T1
+		        left join ScmInvBal T2 on T1.accountYear = T2.accountYear
+		        and T1.accountPeriod = T2.accountPeriod
+		        and T1.inOrgUnitNo = T2.orgUnitNo
+		        and T1.inCstOrgUnitNo = T2.costOrgUnitNo
+		        and T1.itemId = T2.itemId 
+		        and T1.lot = T2.lot
+		        and T1.unit = T2.unit
+		where T2.accountYear is null
+    </insert>
+    
+    <insert id="scminvbal.addByCancelMoveBillForIn" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		insert into ScmInvBal 
+		    (periodId, accountYear, accountPeriod, finOrgUnitNo, orgUnitNo, wareHouseId, costOrgUnitNo, costCenter, itemId,
+		        unit,baseUnit, pieUnit, startQty, startPieQty, StartAmt, addQty, addPieQty, addAmt, outQty, outPieQty, outAmt,
+		        adjQty, adjPieQty, adjAmt, endQty, endPieQty, endAmt, lot, startBaseQty, addBaseQty, outBaseQty, adjBaseQty, 
+		        endBaseQty, addTaxAmt, startTaxAmt, outTaxAmt, adjTaxAmt, endTaxAmt)
+		    select 
+		        T1.periodId, T1.accountYear, T1.accountPeriod, T1.finOrgUnitNo, T1.inOrgUnitNo, 0, T1.inCstOrgUnitNo,
+		        1, T1.itemId, T1.unit, T1.baseUnit,T1.pieUnit, 0, 0, 0, -T1.qty, -T1.pieQty, -T1.amt, 0, 0, 0, 0, 0, 0, 0, 0, 0, T1.lot, 0, -T1.baseQty,
+		        0, 0, 0, -T1.taxAmt, 0, 0, 0, 0
+		    from (
+		        select 
+		                A.periodId, A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.inOrgUnitNo, A.inCstOrgUnitNo,
+		                B.itemId, B.unit,B.baseUnit, B.pieUnit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.baseQty) as baseQty, 
+		                B.price, SUM(B.amt) as amt, B.taxRate, B.taxPrice, SUM(B.taxAmt) as taxAmt, B.lot
+		            from 
+		                scminvmovebill A, scminvmovebillentry B
+		            where 
+		                A.wtId = B.wtId
+		                and A.wtId = #{wtId}
+		            group by A.periodId, A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.inOrgUnitNo, A.inCstOrgUnitNo, 
+		                B.itemId, B.unit, B.pieUnit, B.lot) T1
+		        left join ScmInvBal T2 on T1.accountYear = T2.accountYear
+		        and T1.accountPeriod = T2.accountPeriod
+		        and T1.inOrgUnitNo = T2.orgUnitNo
+		        and T1.inCstOrgUnitNo = T2.costOrgUnitNo
+		        and T1.itemId = T2.itemId 
+		        and T1.lot = T2.lot
+		        and T1.unit = T2.unit
+		where T2.accountYear is null
+    </insert>
+
+    <insert id="scminvbal.addByMoveBillOut" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+        insert into ScmInvBal 
+            (periodId, accountYear, accountPeriod, finOrgUnitNo, orgUnitNo, wareHouseId, costOrgUnitNo, costCenter, itemId,
+                unit, pieUnit,baseUnit, startQty, startPieQty, StartAmt, addQty, addPieQty, addAmt, outQty, outPieQty, outAmt,
+                adjQty, adjPieQty, adjAmt, endQty, endPieQty, endAmt, lot, startBaseQty, addBaseQty, outBaseQty, adjBaseQty, 
+                endBaseQty, addTaxAmt, startTaxAmt, outTaxAmt, adjTaxAmt, endTaxAmt)
+            select 
+                T1.periodId, T1.accountYear, T1.accountPeriod, T1.finOrgUnitNo, T1.outOrgUnitNo, 0, T1.outCstOrgUnitNo,
+                1, T1.itemId, T1.unit, T1.pieUnit,T1.baseUnit, 0, 0, 0, T1.qty, T1.pieQty, T1.amt, 0, 0, 0, 0, 0, 0, 0, 0, 0, T1.lot, 0, T1.baseQty,
+                0, 0, 0, T1.taxAmt, 0, 0, 0, 0
+            from (
+                select 
+                        A.periodId, A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.outOrgUnitNo, A.outCstOrgUnitNo,
+                        B.itemId, B.unit, B.pieUnit,B.baseUnit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.baseQty) as baseQty, 
+                        B.price, SUM(B.amt) as amt, B.taxRate, B.taxPrice, SUM(B.taxAmt) as taxAmt, B.lot
+                    from 
+                        scminvmovebill A, scminvmovebillentry B
+                    where 
+                        A.wtId = B.wtId
+                        and A.wtId = #{wtId}
+                    group by A.periodId, A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.outOrgUnitNo, A.outCstOrgUnitNo, 
+                        B.itemId, B.unit, B.pieUnit, B.lot) T1
+                left join ScmInvBal T2 on T1.accountYear = T2.accountYear
+                and T1.accountPeriod = T2.accountPeriod
+                and T1.outOrgUnitNo = T2.orgUnitNo
+                and T1.outCstOrgUnitNo = T2.costOrgUnitNo
+                and T1.itemId = T2.itemId 
+                and T1.lot = T2.lot
+                and T1.unit = T2.unit
+        where T2.accountYear is null
+    </insert>
+    
+    <insert id="scminvbal.addByPostMoveBillForOut" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+        insert into ScmInvBal 
+            (periodId, accountYear, accountPeriod, finOrgUnitNo, orgUnitNo, wareHouseId, costOrgUnitNo, costCenter, itemId,
+                unit, pieUnit,baseUnit, startQty, startPieQty, StartAmt, addQty, addPieQty, addAmt, outQty, outPieQty, outAmt,
+                adjQty, adjPieQty, adjAmt, endQty, endPieQty, endAmt, lot, startBaseQty, addBaseQty, outBaseQty, adjBaseQty, 
+                endBaseQty, addTaxAmt, startTaxAmt, outTaxAmt, adjTaxAmt, endTaxAmt)
+            select 
+                T1.periodId, T1.accountYear, T1.accountPeriod, T1.finOrgUnitNo, T1.outOrgUnitNo, 0, T1.outCstOrgUnitNo,
+                1, T1.itemId, T1.unit, T1.pieUnit,T1.baseUnit, 0, 0, 0, -T1.qty, -T1.pieQty, -T1.amt, 0, 0, 0, 0, 0, 0, 0, 0, 0, T1.lot, 0, -T1.baseQty,
+                0, 0, 0, -T1.taxAmt, 0, 0, 0, 0
+            from (
+                select 
+                        A.periodId, A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.outOrgUnitNo, A.outCstOrgUnitNo,
+                        B.itemId, B.unit, B.pieUnit,B.baseUnit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.baseQty) as baseQty, 
+                        B.price, SUM(B.amt) as amt, B.taxRate, B.taxPrice, SUM(B.taxAmt) as taxAmt, B.lot
+                    from 
+                        scminvmovebill A, scminvmovebillentry B
+                    where 
+                        A.wtId = B.wtId
+                        and A.wtId = #{wtId}
+                    group by A.periodId, A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.outOrgUnitNo, A.outCstOrgUnitNo, 
+                        B.itemId, B.unit, B.pieUnit, B.lot) T1
+                left join ScmInvBal T2 on T1.accountYear = T2.accountYear
+                and T1.accountPeriod = T2.accountPeriod
+                and T1.outOrgUnitNo = T2.orgUnitNo
+                and T1.outCstOrgUnitNo = T2.costOrgUnitNo
+                and T1.itemId = T2.itemId 
+                and T1.lot = T2.lot
+                and T1.unit = T2.unit
+        where T2.accountYear is null
+    </insert>
+    
+	<insert id="scminvbal.addByMaterialReqBillOutOrgunitNo" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+		ScmInvBal(periodId, accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter,itemId,Unit,PieUnit,baseUnit,StartQty,StartPieQty,StartAmt,AddQty,AddPieQty,AddAmt,OutQty,OutPieQty,OutAmt,AdjQty,AdjPieQty,AdjAmt,
+		EndQty,EndPieQty,EndAmt,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt)
+		Select
+		T.periodId,T.accountYear,T.accountPeriod,T.FinOrgUnitNo,T.UseOrgUnitNo,0,T.CostOrgUnitNo,T.costCenter,T.itemId,T.Unit,T.PieUnit,T.baseUnit,0,0,0,T.Qty,T.PieQty,T.Amt,0,0,0,0,0,0,
+		0,0,0,T.Lot,0,T.BaseQty,0,0,0,0,T.taxAmt,0,0,0
+		From
+		(Select
+		A.periodId,A.accountYear,A.accountPeriod,A.FinOrgUnitNo,A.UseOrgUnitNo,A.CostOrgUnitNo,1
+		as costCenter,B.itemId,B.Unit,B.PieUnit,B.baseUnit,Sum(B.Qty) as Qty,Sum(B.PieQty)
+		as PieQty,Sum(B.Amt) as Amt,
+		B.Lot,Sum(B.BaseQty) as BaseQty,Sum(B.taxAmt) as taxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId}
+		Group By
+		A.periodId,A.accountYear,A.accountPeriod,A.FinOrgUnitNo,A.UseOrgUnitNo,A.CostOrgUnitNo,B.itemId,B.Unit,B.PieUnit,B.Lot)
+		T
+		Left Join ScmInvBal T2
+		On T.accountYear = T2.accountYear And T.accountPeriod = T2.accountPeriod
+		And T.UseOrgUnitNo = T2.OrgUnitNo And
+		T.CostOrgUnitNo = IFNULL(T2.CostOrgUnitNo,'') And T.itemId = T2.itemId And
+		T.Lot = T2.Lot And T.Unit = T2.Unit
+		Where T2.accountYear is null  
+	</insert>
+	<insert id="scminvbal.addByMaterialReqBillInOrgunitNo" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+		ScmInvBal(periodId, accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter,itemId,Unit,PieUnit,baseUnit,StartQty,StartPieQty,StartAmt,AddQty,AddPieQty,AddAmt,OutQty,OutPieQty,OutAmt,AdjQty,AdjPieQty,AdjAmt,
+		EndQty,EndPieQty,EndAmt,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt)
+		Select
+		T.periodId,T.accountYear,T.accountPeriod,T.FinOrgUnitNo,T.UseOrgUnitNo,0,T.CostOrgUnitNo,T.costCenter,T.itemId,T.Unit,T.PieUnit,T.baseUnit,0,0,0,-T.Qty,-T.PieQty,-T.Amt,0,0,0,0,0,0,
+		0,0,0,T.Lot,0,-T.BaseQty,0,0,0,0,-T.taxAmt,0,0,0
+		From
+		(Select
+		A.periodId,A.accountYear,A.accountPeriod,A.FinOrgUnitNo,A.UseOrgUnitNo,A.CostOrgUnitNo,1
+		as costCenter,B.itemId,B.Unit,B.PieUnit,B.baseUnit,Sum(B.Qty) as Qty,Sum(B.PieQty)
+		as PieQty,Sum(B.Amt) as Amt,
+		B.Lot,Sum(B.BaseQty) as BaseQty,Sum(B.taxAmt) as taxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId}
+		Group By
+		A.periodId,A.accountYear,A.accountPeriod,A.FinOrgUnitNo,A.UseOrgUnitNo,A.CostOrgUnitNo,B.itemId,B.Unit,B.PieUnit,B.Lot)
+		T
+		Left Join ScmInvBal T2
+		On T.accountYear = T2.accountYear And T.accountPeriod = T2.accountPeriod
+		And T.UseOrgUnitNo = T2.OrgUnitNo And
+		T.CostOrgUnitNo = IFNULL(T2.CostOrgUnitNo,'') And T.itemId = T2.itemId And
+		T.Lot = T2.Lot And T.Unit = T2.Unit
+		Where T2.accountYear is null  
+	</insert>
+	
+	<insert id="scminvbal.addByMaterialReqBillOut" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+			ScmInvBal(periodId, accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter,itemId,Unit,PieUnit,baseUnit
+			,StartQty,StartPieQty,StartAmt,AddQty,AddPieQty,AddAmt,OutQty,OutPieQty,OutAmt,AdjQty,AdjPieQty,AdjAmt,
+			EndQty,EndPieQty,EndAmt,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt)
+		Select
+			T.periodId,T.accountYear,T.accountPeriod,T.FinOrgUnitNo,T.orgUnitNo,T.WareHouseID,0,T.costCenter,T.itemId,T.Unit,T.PieUnit,T.baseUnit
+			,0,0,0	,0,0,0	,T.Qty,T.PieQty,T.Amt	,0,0,0	,0,0,0
+			,T.Lot	,0,0,T.BaseQty,0,0	,0,0,T.taxAmt,0,0
+		From
+		(Select
+			A.periodId,A.accountYear,A.accountPeriod,A.FinOrgUnitNo,A.orgUnitNo,A.WareHouseID
+			,0 as costCenter,B.itemId,B.Unit,B.PieUnit,B.baseUnit,Sum(B.Qty) as Qty,Sum(B.PieQty)
+			as PieQty,Sum(B.Amt) as Amt,
+			B.Lot,Sum(B.BaseQty) as BaseQty,Sum(B.taxAmt) as taxAmt
+			From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+			Where A.OTID = B.OTID And A.OTID = #{otId}
+			Group By
+			A.periodId,A.accountYear,A.accountPeriod,A.FinOrgUnitNo,A.orgUnitNo,A.WareHouseID,B.itemId,B.Unit,B.PieUnit,B.Lot) T
+		Left Join ScmInvBal T2
+			On T.accountYear = T2.accountYear And T.accountPeriod = T2.accountPeriod
+				And T.orgUnitNo = T2.OrgUnitNo And T.WareHouseId = T2.WareHouseId 
+				And T.itemId = T2.itemId And T.Lot = T2.Lot And T.Unit = T2.Unit
+		Where T2.accountYear is null  		
+	</insert>
+	<insert id="scminvbal.addByMaterialReqBillIn" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+			ScmInvBal(periodId, accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter,itemId,Unit,PieUnit,baseUnit
+			,StartQty,StartPieQty,StartAmt,AddQty,AddPieQty,AddAmt,OutQty,OutPieQty,OutAmt,AdjQty,AdjPieQty,AdjAmt,
+			EndQty,EndPieQty,EndAmt,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt)
+		Select
+			T.periodId,T.accountYear,T.accountPeriod,T.FinOrgUnitNo,T.orgUnitNo,T.WareHouseID,0,T.costCenter,T.itemId,T.Unit,T.PieUnit,T.baseUnit
+			,0,0,0	,0,0,0	,-T.Qty,-T.PieQty,-T.Amt	,0,0,0	,0,0,0
+			,T.Lot	,0,0,-T.BaseQty,0,0	,0,0,-T.taxAmt,0,0
+		From
+		(Select
+			A.periodId,A.accountYear,A.accountPeriod,A.FinOrgUnitNo,A.orgUnitNo,A.WareHouseID
+			,0 as costCenter,B.itemId,B.Unit,B.PieUnit,B.baseUnit,Sum(B.Qty) as Qty,Sum(B.PieQty)
+			as PieQty,Sum(B.Amt) as Amt,
+			B.Lot,Sum(B.BaseQty) as BaseQty,Sum(B.taxAmt) as taxAmt
+			From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+			Where A.OTID = B.OTID And A.OTID = #{otId}
+			Group By
+			A.periodId,A.accountYear,A.accountPeriod,A.FinOrgUnitNo,A.orgUnitNo,A.WareHouseID,B.itemId,B.Unit,B.PieUnit,B.Lot) T
+		Left Join ScmInvBal T2
+			On T.accountYear = T2.accountYear And T.accountPeriod = T2.accountPeriod
+				And T.orgUnitNo = T2.OrgUnitNo And T.WareHouseId = T2.WareHouseId 
+				And T.itemId = T2.itemId And T.Lot = T2.Lot And T.Unit = T2.Unit
+		Where T2.accountYear is null    				
+	</insert>
+	
+	<insert id="scminvbal.addByMaterialReqBillReturn" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+		ScmInvBal(periodId,accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter,itemId,Unit,PieUnit,baseUnit,StartQty,StartPieQty,StartAmt,AddQty,AddPieQty,AddAmt,OutQty,OutPieQty,OutAmt,AdjQty,AdjPieQty,AdjAmt,
+		EndQty,EndPieQty,EndAmt,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt)
+		Select
+		T.periodId,T.accountYear,T.accountPeriod,T.FinOrgUnitNo,T.OrgUnitNo,T.WareHouseID,T.CostOrgUnitNo,T.costCenter,T.itemId,T.Unit,T.PieUnit,T.baseUnit,0,0,0,0,0,0,-T.Qty,-T.PieQty,-T.Amt,0,0,0,
+		0,0,0,T.Lot,0,0,-T.BaseQty,0,0,0,0,-T.taxAmt,0,0
+		From
+		(Select
+		A.periodId,A.accountYear,A.accountPeriod,A.FinOrgUnitNo,A.OrgUnitNo,A.WareHouseID,''
+		as CostOrgUnitNo,0 as costCenter,B.itemId,B.Unit,B.PieUnit,B.baseUnit,Sum(B.Qty)
+		as Qty,Sum(B.PieQty) as PieQty,Sum(B.Amt) as Amt, Sum(B.taxAmt) as
+		taxAmt,
+		B.Lot,Sum(B.BaseQty) as BaseQty
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId}
+		Group By
+		A.periodId,A.accountYear,A.accountPeriod,A.FinOrgUnitNo,A.OrgUnitNo,A.WareHouseID,B.itemId,B.Unit,B.PieUnit,B.Lot)
+		T
+		Left Join ScmInvBal T2
+		On T.accountYear = T2.accountYear And T.accountPeriod = T2.accountPeriod
+		And T.OrgUnitNo = T2.OrgUnitNo And
+		T.WareHouseID = IFNULL(T2.WareHouseID,0) And T.itemId = T2.itemId And
+		T.Lot = T2.Lot And T.Unit = T2.Unit
+		Where T2.accountYear is null  
+	</insert>
+   
+	<insert id="scminvbal.add" parameterType="ScmInvBal"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmInvBal (
+        periodId,
+        accountYear,
+        accountPeriod,
+        finOrgUnitNo,
+        orgUnitNo,
+        wareHouseId,
+        costOrgUnitNo,
+        costCenter,
+        itemId,
+        unit,
+        pieUnit,
+        baseUnit,
+        lot,
+        startQty,
+        startBaseQty,
+        startPieQty,
+        startAmt,
+        startTaxAmt,
+        addQty,
+        addBaseQty,
+        addPieQty,
+        addAmt,
+        addTaxAmt,
+        outQty,
+        outBaseQty,
+        outPieQty,
+        outAmt,
+        outTaxAmt,
+        adjQty,
+        adjBaseQty,
+        adjPieQty,
+        adjAmt,
+        adjTaxAmt,
+        endQty,
+        endBaseQty,
+        endPieQty,
+        endAmt,
+        endTaxAmt        )
+		VALUES (
+        #{periodId},
+        #{accountYear},
+        #{accountPeriod},
+        #{finOrgUnitNo},
+        #{orgUnitNo},
+        #{wareHouseId},
+        #{costOrgUnitNo},
+        #{costCenter},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{baseUnit},
+        #{lot},
+        #{startQty},
+        #{startBaseQty},
+        #{startPieQty},
+        #{startAmt},
+        #{startTaxAmt},
+        #{addQty},
+        #{addBaseQty},
+        #{addPieQty},
+        #{addAmt},
+        #{addTaxAmt},
+        #{outQty},
+        #{outBaseQty},
+        #{outPieQty},
+        #{outAmt},
+        #{outTaxAmt},
+        #{adjQty},
+        #{adjBaseQty},
+        #{adjPieQty},
+        #{adjAmt},
+        #{adjTaxAmt},
+        #{endQty},
+        #{endBaseQty},
+        #{endPieQty},
+        #{endAmt},
+        #{endTaxAmt}        )
+	</insert>
+ 
+	<update id="scminvbal.update" parameterType="ScmInvBal">
+		UPDATE ScmInvBal set
+        periodId=#{periodId},
+        accountYear=#{accountYear},
+        accountPeriod=#{accountPeriod},
+        finOrgUnitNo=#{finOrgUnitNo},
+        orgUnitNo=#{orgUnitNo},
+        wareHouseId=#{wareHouseId},
+        costOrgUnitNo=#{costOrgUnitNo},
+        costCenter=#{costCenter},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        baseUnit=#{baseUnit},
+        lot=#{lot},
+        startQty=#{startQty},
+        startBaseQty=#{startBaseQty},
+        startPieQty=#{startPieQty},
+        startAmt=#{startAmt},
+        startTaxAmt=#{startTaxAmt},
+        addQty=#{addQty},
+        addBaseQty=#{addBaseQty},
+        addPieQty=#{addPieQty},
+        addAmt=#{addAmt},
+        addTaxAmt=#{addTaxAmt},
+        outQty=#{outQty},
+        outBaseQty=#{outBaseQty},
+        outPieQty=#{outPieQty},
+        outAmt=#{outAmt},
+        outTaxAmt=#{outTaxAmt},
+        adjQty=#{adjQty},
+        adjBaseQty=#{adjBaseQty},
+        adjPieQty=#{adjPieQty},
+        adjAmt=#{adjAmt},
+        adjTaxAmt=#{adjTaxAmt},
+        endQty=#{endQty},
+        endBaseQty=#{endBaseQty},
+        endPieQty=#{endPieQty},
+        endAmt=#{endAmt},
+        endTaxAmt=#{endTaxAmt}		 WHERE id = #{id}
+	</update>
+	
+	<update id="scminvbal.updateByOtherInWarehsBill" parameterType="Map">
+		Update ScmInvBal T2,
+		(Select
+		T.FYear,T.Period,T.Orgunitno,T.CostOrgUnitNo,T.ItemId,T.lot,T.unit,T.WareHouseID,T.PieUnit,T.Spec,Sum(T.Qty)
+		As Qty,Sum(T.PieQty) as PieQty,
+		Sum(T.Amt) as Amt,Sum(T.BaseQty) as BaseQty,Sum(T.taxAmt) as taxAmt From (SELECT
+		M.wrId,d.lineId,M.bizdate as invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as
+		isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,
+		D.baseUnit,D.baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		Where M.wrId = #{wrId} And	M.status = 'A' And M.wrId = D.wrId	order by d.lineid) T
+		Group by
+		T.FYear,T.Period,T.Orgunitno,T.CostOrgUnitNo,T.itemno,T.lot,T.unit,T.WareHouseID,T.PieUnit,T.Spec) T1
+		Set T2.AddQty = IFNULL(T2.AddQty,0) + T1.Qty,
+		T2.AddPieQty =	IFNULL(T2.AddPieQty,0)+ IFNULL(T1.PieQty,0),
+		T2.AddBaseQty = IFNULL(T2.AddBaseQty,0)+T1.BaseQty,
+		T2.AddAmt = IFNULL(T2.AddAmt,0)+ T1.Amt,
+		T2.addTaxAmt = IFNULL(T2.addTaxAmt,0)+ T1.taxAmt
+		Where T1.FYear = T2.accountYear And T1.Period = T2.accountPeriod And
+		T1.OrgUnitNo = T2.OrgUnitNo And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And T1.ItemId = T2.ItemId And
+		T1.Lot = T2.Lot And T1.Unit = T2.Unit And IFNULL(T1.WareHouseID,0) =
+		IFNULL(T2.WareHouseID,0)
+	</update>
+	
+	<update id="scminvbal.updateByOtherInWarehsBillForInvProfit" parameterType="Map">
+		Update ScmInvBal T2,
+		(Select T.fYear as accountYear,T.period as
+		accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID,Sum(T.Qty)
+		As Qty,Sum(T.PieQty) as PieQty,
+		Sum(T.Amt) as Amt,Sum(T.BaseQty) as BaseQty,Sum(T.taxAmt) as taxAmt From (SELECT
+		M.wrId,d.lineId,M.bizdate as
+		invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,D.baseUnit,D.baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		Where M.wrId = #{wrId} And	M.status = 'A' And	M.wrId = D.wrId order by d.lineid) T
+		Group by
+		T.fYear,T.period,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID)
+		T1 Set T2.AdjQty = IFNULL(T2.AdjQty,0) + T1.Qty,
+		T2.AdjPieQty =IFNULL(T2.AdjPieQty,0)+ IFNULL(T1.PieQty,0),
+		T2.AdjBaseQty = IFNULL(T2.AdjBaseQty,0)+T1.BaseQty,
+		T2.AdjAmt = IFNULL(T2.AdjAmt,0)+ T1.Amt,
+		T2.AdjTaxAmt = IFNULL(T2.AdjTaxAmt,0)+ T1.taxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.OrgUnitNo = T2.OrgUnitNo And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And T1.itemId
+		= T2.itemId And
+		T1.Lot = T2.Lot And T1.Unit = T2.Unit And IFNULL(T1.WareHouseID,0) =
+		IFNULL(T2.WareHouseID,0)
+	</update>
+	
+	<update id="scminvbal.updateByOtherInWarehsBillForDataSnyc" parameterType="Map">
+		Update ScmInvBal T2,
+		(Select T.fYear as accountYear,T.period as
+		accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID,Sum(T.Qty)
+		As Qty,Sum(T.PieQty) as PieQty,
+		Sum(T.Amt) as Amt,Sum(T.BaseQty) as BaseQty,Sum(T.taxAmt) as taxAmt From (SELECT
+		M.wrId,d.lineId,M.bizdate as
+		invDate,M.finOrgUnitNo,M.orgUnitNo,
+		D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+		A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+		IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as
+		allocatedQty,D.expDate,M.accountYear as fYear,M.accountPeriod
+		as period,D.sourceBillDtlId as sourceBillID,D.baseUnit,D.baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterial as A on D.itemId=A.id
+		Where M.wrId = #{wrId} And	M.wrId = D.wrId order by d.lineid) T
+		Group by
+		T.fYear,T.period,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID)
+		T1 Set T2.AdjQty = IFNULL(T2.AdjQty,0) + T1.Qty,
+		T2.AdjPieQty =IFNULL(T2.AdjPieQty,0)+ IFNULL(T1.PieQty,0),
+		T2.AdjBaseQty = IFNULL(T2.AdjBaseQty,0)+T1.BaseQty,
+		T2.AdjAmt = IFNULL(T2.AdjAmt,0)+ T1.Amt,
+		T2.AdjTaxAmt = IFNULL(T2.AdjTaxAmt,0)+ T1.taxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.OrgUnitNo = T2.OrgUnitNo And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And T1.itemId
+		= T2.itemId And
+		T1.Lot = T2.Lot And T1.Unit = T2.Unit And IFNULL(T1.WareHouseID,0) =
+		IFNULL(T2.WareHouseID,0)
+	</update>
+	
+	<update id="scminvbal.updateByPurInWarehsBill" parameterType="Map">
+		Update ScmInvBal T2,(select M.accountYear as fYear,M.accountPeriod as period,(CASE IFNULL(D.WareHouseID,0)
+		WHEN 0 THEN D.UseOrgUnitNo ELSE D.OrgUnitNo END) as OrgUnitNo,IFNULL(D.CostOrgUnitNo,'') as CostOrgUnitNo,
+		D.ItemId,D.Lot,D.Unit,IFNULL(D.WareHouseID,0) as WareHouseID,D.PieUnit,SUM(IFNULL(D.Qty,0)) as Qty,
+		SUM(IFNULL(D.PieQty,0)) as PieQty,SUM(IFNULL(D.Amt,0)) as Amt,SUM(IFNULL(D.BaseQty,0)) as BaseQty,
+		SUM(IFNULL(D.taxAmt,0)) as taxAmt
+		From scminvpurinwarehsbill as M,scminvpurinwarehsbillEntry as D
+		Where M.WRID = #{wrId} And
+		M.Status = 'A' And
+		M.WRID = D.WRID
+		Group by M.accountYear,M.accountPeriod,CASE IFNULL(D.WareHouseID,0)	WHEN 0 THEN D.UseOrgUnitNo ELSE D.OrgUnitNo END,
+		D.CostOrgUnitNo,D.itemId,D.lot,D.unit,D.WareHouseID,D.PieUnit) T1
+		Set T2.AddQty = IFNULL(T2.AddQty,0) + T1.Qty,
+		T2.AddPieQty =IFNULL(T2.AddPieQty,0)+ IFNULL(T1.PieQty,0),
+		T2.AddBaseQty = IFNULL(T2.AddBaseQty,0)+T1.BaseQty,
+		T2.AddAmt = IFNULL(T2.AddAmt,0)+ T1.Amt,
+		T2.addTaxAmt = IFNULL(T2.addTaxAmt,0)+ T1.taxAmt
+		Where T1.FYear = T2.accountYear And T1.Period = T2.accountPeriod And
+		T1.OrgUnitNo = T2.OrgUnitNo And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And T1.ItemId = T2.ItemId And
+		T1.Lot = T2.Lot And T1.Unit = T2.Unit And IFNULL(T1.WareHouseID,0) =
+		IFNULL(T2.WareHouseID,0)
+	</update>
+
+    <update id="scminvbal.updateByMoveBillOutSub" parameterType="Map">
+		update ScmInvBal T2,
+		(select 
+		        A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.outOrgUnitNo, A.outCstOrgUnitNo,
+		        B.itemId, B.unit, B.pieUnit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.baseQty) as baseQty, 
+		        B.price, SUM(B.amt) as amt, B.taxRate, B.taxPrice, SUM(B.taxAmt) as taxAmt, B.lot
+		    from 
+		        scminvmovebill A, scminvmovebillentry B
+		    where 
+		        A.wtId = B.wtId
+		        and A.wtId = #{wtId}
+		    group by A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.outOrgUnitNo, A.outCstOrgUnitNo, 
+		        B.itemId, B.unit, B.pieUnit, B.lot) T1
+		SET
+		    T2.addQty = IFNULL(T2.addQty,0) - T1.Qty,
+		    T2.addPieQty = IFNULL(T2.addPieQty,0) - IFNULL(T1.pieQty,0),
+		    T2.addBaseQty = IFNULL(T2.addBaseQty,0) - T1.baseQty,
+		    T2.addAmt = IFNULL(T2.addAmt,0) - T1.amt,
+		    T2.addTaxAmt = IFNULL(T2.addTaxAmt,0) - T1.taxAmt
+		where 
+		    T1.accountYear = T2.accountYear
+		    and T1.accountPeriod = T2.accountPeriod
+		    and T1.outOrgUnitNo = T2.orgUnitNo
+		    and T1.outCstOrgUnitNo = T2.costOrgUnitNo
+		    and T1.itemId = T2.itemId
+		    and T1.lot = T2.lot
+		    and T1.unit = T2.unit
+		    and T2.costCenter = TRUE
+    </update>
+    
+    <update id="scminvbal.updateByMoveBillInPlus" parameterType="Map">
+		update ScmInvBal T2,
+		(select 
+		        A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.inOrgUnitNo, A.inCstOrgUnitNo,
+		        B.itemId, B.unit, B.pieUnit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.baseQty) as baseQty, 
+		        B.price, SUM(B.amt) as amt, B.taxRate, B.taxPrice, SUM(B.taxAmt) as taxAmt, B.lot
+		    from 
+		        scminvmovebill A, scminvmovebillentry B
+		    where 
+		        A.wtId = B.wtId
+		        and A.wtId = #{wtId}
+		    group by A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.inOrgUnitNo, A.inCstOrgUnitNo, 
+		        B.itemId, B.unit, B.pieUnit, B.lot) T1
+		SET
+		    T2.addQty = IFNULL(T2.addQty,0) + T1.Qty,
+		    T2.addPieQty = IFNULL(T2.addPieQty,0) + IFNULL(T1.pieQty,0),
+		    T2.addBaseQty = IFNULL(T2.addBaseQty,0) + T1.baseQty,
+		    T2.addAmt = IFNULL(T2.addAmt,0) + T1.amt,
+		    T2.addTaxAmt = IFNULL(T2.addTaxAmt,0) + T1.taxAmt
+		where 
+		    T1.accountYear = T2.accountYear
+		    and T1.accountPeriod = T2.accountPeriod
+		    and T1.inOrgUnitNo = T2.orgUnitNo
+		    and T1.inCstOrgUnitNo = T2.costOrgUnitNo
+		    and T1.itemId = T2.itemId
+		    and T1.lot = T2.lot
+		    and T1.unit = T2.unit
+		    and T2.costCenter = TRUE
+    </update>
+
+    <update id="scminvbal.updateByMoveBillInSub" parameterType="Map">
+        update ScmInvBal T2,
+        (select 
+                A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.inOrgUnitNo, A.inCstOrgUnitNo,
+                B.itemId, B.unit, B.pieUnit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.baseQty) as baseQty, 
+                B.price, SUM(B.amt) as amt, B.taxRate, B.taxPrice, SUM(B.taxAmt) as taxAmt, B.lot
+            from 
+                scminvmovebill A, scminvmovebillentry B
+            where 
+                A.wtId = B.wtId
+                and A.wtId = #{wtId}
+            group by A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.inOrgUnitNo, A.inCstOrgUnitNo, 
+                B.itemId, B.unit, B.pieUnit, B.lot) T1
+        SET
+            T2.addQty = IFNULL(T2.addQty,0) - T1.Qty,
+            T2.addPieQty = IFNULL(T2.addPieQty,0) - IFNULL(T1.pieQty,0),
+            T2.addBaseQty = IFNULL(T2.addBaseQty,0) - T1.baseQty,
+            T2.addAmt = IFNULL(T2.addAmt,0) - T1.amt,
+            T2.addTaxAmt = IFNULL(T2.addTaxAmt,0) - T1.taxAmt
+        where 
+            T1.accountYear = T2.accountYear
+            and T1.accountPeriod = T2.accountPeriod
+            and T1.inOrgUnitNo = T2.orgUnitNo
+            and T1.inCstOrgUnitNo = T2.costOrgUnitNo
+            and T1.itemId = T2.itemId
+            and T1.lot = T2.lot
+            and T1.unit = T2.unit
+            and T2.costCenter = TRUE
+    </update>
+
+    <update id="scminvbal.updateByMoveBillOutPlus" parameterType="Map">
+        update ScmInvBal T2,
+        (select 
+                A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.outOrgUnitNo, A.outCstOrgUnitNo,
+                B.itemId, B.unit, B.pieUnit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.baseQty) as baseQty, 
+                B.price, SUM(B.amt) as amt, B.taxRate, B.taxPrice, SUM(B.taxAmt) as taxAmt, B.lot
+            from 
+                scminvmovebill A, scminvmovebillentry B
+            where 
+                A.wtId = B.wtId
+                and A.wtId = #{wtId}
+            group by A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.outOrgUnitNo, A.outCstOrgUnitNo, 
+                B.itemId, B.unit, B.pieUnit, B.lot) T1
+        SET
+            T2.addQty = IFNULL(T2.addQty,0) + T1.Qty,
+            T2.addPieQty = IFNULL(T2.addPieQty,0) + IFNULL(T1.pieQty,0),
+            T2.addBaseQty = IFNULL(T2.addBaseQty,0) + T1.baseQty,
+            T2.addAmt = IFNULL(T2.addAmt,0) + T1.amt,
+            T2.addTaxAmt = IFNULL(T2.addTaxAmt,0) + T1.taxAmt
+        where 
+            T1.accountYear = T2.accountYear
+            and T1.accountPeriod = T2.accountPeriod
+            and T1.outOrgUnitNo = T2.orgUnitNo
+            and T1.outCstOrgUnitNo = T2.costOrgUnitNo
+            and T1.itemId = T2.itemId
+            and T1.lot = T2.lot
+            and T1.unit = T2.unit
+            and T2.costCenter = TRUE
+    </update>
+         
+    <update id="scminvbal.updateBySaleIssuePostPlus" parameterType="Map">
+		update
+		    ScmInvBal T2,
+		    (select 
+		            A.accountYear, A.accountPeriod, Case When B.wareHouseId>0 Then B.orgUnitNo else B.outOrgUnitNo End as orgUnitNo, B.wareHouseId,
+		            B.itemId, B.lot, B.unit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.taxAmt) as taxAmt, SUM(B.baseQty) as baseQty,
+		            SUM(B.amt) as amt,B.outCostOrgUnitNo as costOrgUnitNo,Case When B.wareHouseId>0 Then 0 else 1 end as costCenter
+		        from 
+		            scminvsaleissuebill A, scminvsaleissuebillentry B
+		        where 
+		            A.otId = B.otId
+		            and A.otId = #{otId}
+		        group by A.accountYear, A.accountPeriod, Case When B.wareHouseId>0 Then B.orgUnitNo else B.outOrgUnitNo End,
+			B.wareHouseId, B.itemId, B.lot, B.unit,B.outCostOrgUnitNo,Case When B.wareHouseId>0 Then 0 else 1 end) T1
+		SET
+		    T2.outQty = IFNULL(T2.outQty,0) + T1.Qty,
+		    T2.outPieQty = IFNULL(T2.outPieQty,0) + IFNULL(T1.pieQty,0),
+		    T2.outBaseQty = IFNULL(T2.outBaseQty,0) + T1.baseQty,
+		    T2.outAmt = IFNULL(T2.outAmt,0) + T1.amt,
+		    T2.outTaxAmt = IFNULL(T2.outTaxAmt,0) + T1.taxAmt
+		where 
+		    T1.accountYear = T2.accountYear
+		    and T1.accountPeriod = T2.accountPeriod
+		    and T1.orgUnitNo = T2.orgUnitNo
+		    and T1.wareHouseId = T2.wareHouseId
+		    and T1.itemId = T2.itemId
+		    and T1.lot = T2.lot
+		    and T1.unit = T2.unit
+    </update> 
+    
+    <update id="scminvbal.updateBySaleIssueUnPost" parameterType="Map">
+        <choose>
+            <when test='flag == "0"'>
+		        update
+		            ScmInvBal T2,
+		            (select 
+		                    A.accountYear, A.accountPeriod, B.orgUnitNo, B.wareHouseId,
+		                    B.itemId, B.lot, B.unit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.taxAmt) as taxAmt, SUM(B.baseQty) as baseQty,
+		                    SUM(B.amt) as amt,b.outCostOrgUnitNo,b.outOrgUnitNo
+		                from 
+		                    scminvsaleissuebill A, scminvsaleissuebillentry B
+		                where 
+		                    A.otId = B.otId
+		                    and A.otId = #{otId}
+		                group by A.accountYear, A.accountPeriod, B.orgUnitNo, B.wareHouseId, B.itemId, B.lot, B.unit) T1
+		        SET
+		            T2.outQty = IFNULL(T2.outQty,0) - T1.qty,
+		            T2.outPieQty = IFNULL(T2.outPieQty,0) - IFNULL(T1.pieQty,0),
+		            T2.outBaseQty = IFNULL(T2.outBaseQty,0) - T1.baseQty,
+		            T2.outAmt = IFNULL(T2.outAmt,0) - T1.amt,
+		            T2.outTaxAmt = IFNULL(T2.outTaxAmt, 0) - T1.taxAmt
+		        where 
+		            T1.accountYear = T2.accountYear
+		            and T1.accountPeriod = T2.accountPeriod
+		            and T1.itemId = T2.itemId
+		            and T1.lot = T2.lot
+		            and T1.unit = T2.unit
+		            and CASE 
+						WHEN T1.wareHouseId>0 THEN  T2.wareHouseId = T1.wareHouseId and T2.costCenter = 0 and T1.orgUnitNo = T2.orgUnitNo
+						ELSE T2.costOrgUnitNo=T1.outCostOrgUnitNo and T2.orgUnitNo=T1.outOrgUnitNo and T2.costCenter = 1
+					END             
+            </when>
+            <otherwise>
+                update
+                    ScmInvBal T2,
+                    (select 
+		                    A.accountYear, A.accountPeriod, B.orgUnitNo, B.wareHouseId,
+		                    B.itemId, B.lot, B.unit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.taxAmt) as taxAmt, SUM(B.baseQty) as baseQty,
+		                    SUM(B.amt) as amt,b.outCostOrgUnitNo,b.outOrgUnitNo
+                        from 
+                            scminvsaleissuebill A, scminvsaleissuebillentry B
+                        where 
+                            A.otId = B.otId
+                            and A.otId = #{otId}
+                        group by A.accountYear, A.accountPeriod, B.orgUnitNo, B.wareHouseId, B.itemId, B.lot, B.unit) T1
+                SET
+                    T2.outQty = IFNULL(T2.outQty,0) + T1.qty,
+                    T2.outPieQty = IFNULL(T2.outPieQty,0) + IFNULL(T1.pieQty,0),
+                    T2.outBaseQty = IFNULL(T2.outBaseQty,0) + T1.baseQty,
+                    T2.outAmt = IFNULL(T2.outAmt,0) + T1.amt,
+                    T2.outTaxAmt = IFNULL(T2.outTaxAmt, 0) + T1.taxAmt
+                where 
+                    T1.accountYear = T2.accountYear
+                    and T1.accountPeriod = T2.accountPeriod
+                    and T1.itemId = T2.itemId
+                    and T1.lot = T2.lot
+                    and T1.unit = T2.unit     
+                    and CASE 
+						WHEN T1.wareHouseId>0 THEN  T2.wareHouseId = T1.wareHouseId and T2.costCenter = 0 and T1.orgUnitNo = T2.orgUnitNo
+						ELSE T2.costOrgUnitNo=T1.outCostOrgUnitNo and T2.orgUnitNo=T1.outOrgUnitNo and T2.costCenter = 1
+					END             
+            </otherwise>
+        </choose>    
+    </update>
+    
+    <insert id="scminvbal.addBySaleIssuePost" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		insert into 
+		    ScmInvBal(periodId, accountYear, accountPeriod, finOrgUnitNo, orgUnitNo, wareHouseId, costOrgUnitNo, costCenter, itemId,
+		        unit, pieUnit,baseUnit, startQty, startPieQty, StartAmt, addQty, addPieQty, addAmt, outQty, outPieQty, outAmt,
+		        adjQty, adjPieQty, adjAmt, endQty, endPieQty, endAmt, lot, startBaseQty, addBaseQty, outBaseQty, adjBaseQty, 
+		        endBaseQty, addTaxAmt, startTaxAmt, outTaxAmt, adjTaxAmt, endTaxAmt)
+		    select T.periodId, T.accountYear, T.accountPeriod, T.finOrgUnitNo, T.orgUnitNo, T.wareHouseId, T.costOrgUnitNo, T.costCenter,
+		        T.itemId, T.unit, T.pieUnit,T.baseUnit, 0, 0, 0, 0, 0, 0, -T.qty, -T.pieQty, -T.amt, 0, 0, 0, 0, 0, 0, T.lot, 0, 0, -T.baseQty, 0, 0, 
+		        0, 0, -T.taxAmt, 0, 0
+		    from 
+		        (select 
+		                M.periodId, M.accountYear, M.accountPeriod, M.finOrgUnitNo, Case When D.wareHouseId &gt; 0 Then D.orgUnitNo else D.outOrgUnitNo end as orgUnitNo, 
+		                D.wareHouseId, D.outCostOrgUnitNo as costOrgUnitNo, Case When D.wareHouseId &gt; 0 Then 0 else 1 end as costCenter,
+		                D.itemId, A.spec, D.unit, D.pieUnit,D.baseUnit, SUM(D.qty) as qty, SUM(D.pieQty) as pieQty, SUM(D.taxAmt) as taxAmt, D.lot,
+		                SUM(D.baseQty) as baseQty, SUM(D.amt) as amt
+		            from    
+		                scminvsaleissuebill as M, scminvsaleissuebillentry as D, scmmaterial as A
+		            where 
+		                M.otId = #{otId}
+		                and M.otId = D.otId
+		                and M.status = 'A'
+		                and D.itemId = A.id
+		            group by M.periodId, M.accountYear, M.accountPeriod, M.finOrgUnitNo, Case When D.wareHouseId &gt; 0 Then D.orgUnitNo else D.outOrgUnitNo end,
+		             D.wareHouseId, D.outCostOrgUnitNo, D.itemId,A.spec, D.unit, D.pieUnit, D.lot
+		            order by D.lineId) T
+		    left join ScmInvBal T2 on T.accountYear = T2.accountYear
+		        and T.accountPeriod = T2.accountPeriod
+		        and T.orgUnitNo = T2.orgUnitNo
+		        and T.costOrgUnitNo = IFNULL(T2.costOrgUnitNo,'')
+		        and T.itemId = T2.itemId
+		        and T.lot = T2.lot
+		        and T.unit = T2.unit
+		        and T.wareHouseId = IFNULL(T2.wareHouseId,'')
+		        and T.costCenter=T2.costCenter
+		where T2.accountYear is null
+    </insert>  
+    
+    <update id="scminvbal.updateBySaleIssuePostSub" parameterType="Map">
+		update 
+		    ScmInvBal T2,
+		    (select 
+		        M.accountYear, M.accountPeriod, M.finOrgUnitNo, Case When D.wareHouseId &gt; 0 Then D.orgUnitNo else D.outOrgUnitNo end as orgUnitNo, 
+		        D.wareHouseId, D.outCostOrgUnitNo as costOrgUnitNo, Case When D.wareHouseId &gt; 0 Then 0 else 1 end as costCenter,
+		        D.itemId, A.spec, D.unit, D.pieUnit, SUM(D.qty) as qty, SUM(D.pieQty) as pieQty, SUM(D.taxAmt) as taxAmt, D.lot,
+		        SUM(D.baseQty) as baseQty, SUM(D.amt) as amt
+		    from    
+		        scminvsaleissuebill as M, scminvsaleissuebillentry as D, scmmaterial as A
+		    where 
+		        M.otId = #{otId}
+		        and M.otId = D.otId
+		        and M.`status` = 'A'
+		        and D.itemId = A.id
+		    group by M.accountYear, M.accountPeriod, M.finOrgUnitNo, Case When D.wareHouseId &gt; 0 Then D.orgUnitNo else D.outOrgUnitNo end, D.wareHouseId, D.outCostOrgUnitNo,
+		     Case When D.wareHouseId &gt; 0 Then 0 else 1 end,D.itemId,A.spec, D.unit, D.pieUnit, D.lot
+		    order by D.lineId) T
+		SET
+		    T2.outQty = IFNULL(T2.outQty,0) - T.qty,
+		    T2.outPieQty = IFNULL(T2.outPieQty,0) - IFNULL(T.pieQty,0),
+		    T2.outBaseQty = IFNULL(T2.outBaseQty,0) - T.baseQty,
+		    T2.outAmt = IFNULL(T2.outAmt,0) - T.amt,
+		    T2.outTaxAmt = IFNULL(T2.outTaxAmt,0) - T.taxAmt
+		WHERE
+		        T.accountYear = T2.accountYear
+		        and T.accountPeriod = T2.accountPeriod
+		        and T.orgUnitNo = T2.orgUnitNo
+		        and IFNULL(T.costOrgUnitNo,'') = IFNULL(T2.costOrgUnitNo,'')
+		        and T.itemId = T2.itemId
+		        and T.lot = T2.lot
+		        and T.unit = T2.unit
+		        and IFNULL(T.wareHouseId,'') = IFNULL(T2.wareHouseId,'')
+		        and T.costCenter=T2.costCenter
+    </update>  
+
+	<delete id="scminvbal.delete" parameterType="String">
+		DELETE FROM ScmInvBal WHERE id IN (${value})
+	</delete> 
+
+	 <update id="scminvbal.updateByOtherIssueOutSub" parameterType="Map">
+		Update scmInvBal T2 , (Select A.accountYear,A.periodId,B.orgUnitNo,B.wareHouseID,B.itemId,
+		B.lot,B.unit,Sum(B.qty) As qty,Sum(B.pieQty) as pieQty,    
+		Sum(B.Amt) as Amt,Sum(B.baseQty) as baseQty ,Sum(B.TaxAmt) as TaxAmt    
+	    From scmInvOtherIssueBill A,scmInvOtherIssueBillentry B    
+	    Where A.otId = B.otId And A.otId = #{otId}
+	    Group by A.accountYear,A.periodId,B.orgUnitNo,B.wareHouseID,B.itemId,B.lot,B.unit) T1   
+		Set T2.outQty = ifNull(T2.outQty,0) + T1.qty,
+		T2.outPieQty = ifNull(T2.outPieQty,0)+ ifNull(T1.pieQty,0),    
+		T2.outBaseQty = ifNull(T2.outBaseQty,0)+ T1.baseQty,
+		T2.outAmt = ifNull(T2.outAmt,0)+ T1.Amt,
+		T2.outTaxAmt = ifNull(T2.outTaxAmt,0)+ T1.taxAmt
+		Where T1.accountYear = T2.accountYear And T1.periodId = T2.periodId 
+		And T1.wareHouseID = T2.wareHouseID    
+	    And T1.orgUnitNo = T2.orgUnitNo 
+	    And T1.itemId = T2.itemId 
+	    And T1.lot = T2.lot 
+	    And T1.unit = T2.unit 
+	 </update>
+	 
+	 <update id="scminvbal.updateByOtherIssueInSub" parameterType="Map">
+		Update ScmInvBal T2 , (Select A.accountYear,A.periodId,B.orgunitNo,B.wareHouseId,B.itemId,
+		B.lot,B.unit,Sum(B.qty) As qty,Sum(B.pieQty) as pieQty,Sum(B.amt) as amt,Sum(B.baseQty) as baseQty,Sum(B.taxAmt) as taxAmt
+	    From ScmInvOtherIssueBill A,ScmInvOtherIssueBillEntry B    
+	    Where A.otId = B.otId 
+		And A.otId = #{otId} And A.status='E'
+		Group by A.accountYear,A.periodId,B.orgunitNo,B.wareHouseId,B.itemId,B.lot,B.unit) T1    
+		Set T2.outQty = ifNull(T2.outQty,0) - T1.qty,
+		T2.outPieQty = ifNull(T2.outPieQty,0)- ifNull(T1.pieQty,0),    
+		T2.outBaseQty = ifNull(T2.outBaseQty,0)- T1.baseQty,
+		T2.outAmt = ifNull(T2.outAmt,0)-T1.amt,
+		T2.outTaxAmt = ifNull(T2.outTaxAmt,0)-T1.taxAmt
+		Where T1.accountYear = T2.accountYear 
+		And T1.periodId = T2.periodId 
+		And T1.wareHouseId = T2.wareHouseId    
+	    And T1.orgunitNo = T2.orgunitNo 
+	    And T1.itemId = T2.itemId 
+	    And T1.lot = T2.lot 
+	    And T1.unit = T2.unit
+	 </update>
+	 
+ 	<insert id="scminvbal.addByOtherIssueInForCancelDataSnyc" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+		ScmInvBal(periodId,accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter
+		,itemId,Unit,PieUnit,StartQty,StartPieQty,StartAmt
+		,AddQty,AddPieQty,AddAmt
+		,OutQty,OutPieQty,OutAmt
+		,AdjQty,AdjPieQty,AdjAmt
+		,EndQty,EndPieQty,EndAmt
+		,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty
+		,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt,baseUnit)
+		Select
+		T.periodId,T.accountYear,T.accountPeriod,T.FinOrgUnitNo,T.OrgUnitNo,T.WareHouseID,T.CostOrgUnitNo,T.costCenter
+		,T.itemId,T.Unit,T.PieUnit,0,0,0
+		,0,0,0
+		,-T.Qty,-T.PieQty,-T.Amt
+		,0,0,0
+		,0,0,0
+		,T.Lot,0,0,0,-T.BaseQty,0
+		,0,0,0,-T.taxAmt,0,T.baseUnit 
+		From(Select T1.periodId,T1.fYear as accountYear,T1.period as accountPeriod,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo
+			,(case when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end) as costCenter
+			,T1.itemId,T1.Itemname,T1.Spec,T1.Unit,T1.PieUnit,T1.baseUnit
+			,Sum(T1.Qty) as Qty,Sum(T1.PieQty) as PieQty,Sum(T1.Amt) as Amt,
+			T1.Lot,Sum(T1.BaseQty) as BaseQty,Sum(T1.taxAmt) as taxAmt
+			From (SELECT M.periodId,M.otId,d.lineId,M.bizdate as invDate,M.finOrgUnitNo,M.orgUnitNo
+				,D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+				A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+				IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as allocatedQty,D.expDate,M.accountYear as fYear
+				,M.accountPeriod as period,D.sourceBillDtlId as sourceBillID,
+				A.baseUnitId as baseUnit,IFNULL(ScmMaterialUnitRelation.convrate,0) * D.Qty as baseQty
+				From ScmInvOtherIssueBill as M,ScmInvOtherIssueBillEntry as D
+				left join ScmMaterial as A on D.itemId=A.id
+				left join ScmMaterialUnitRelation on D.itemId=ScmMaterialUnitRelation.itemId
+					AND D.unit=ScmMaterialUnitRelation.targetUnitId
+				Where M.otId = #{otId} 
+				And M.status = 'A' 
+				And M.otId = D.otId
+				order by d.lineid) T1
+			Group By
+			T1.periodId,T1.fYear,T1.period,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo
+			,(case when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end),T1.itemId,T1.Itemname,T1.Spec,T1.Unit,T1.PieUnit,T1.Lot
+			) T
+		Left Join ScmInvBal T2
+			On T.accountYear = T2.accountYear 
+			And T.accountPeriod = T2.accountPeriod
+			And T.OrgUnitNo = T2.OrgUnitNo 
+			And T.CostOrgUnitNo = IFNULL(T2.CostOrgUnitNo,'') 
+			And T.itemId = T2.itemId 
+			And T.Lot = T2.Lot And T.Unit = T2.Unit 
+			And T.WareHouseID = IFNULL(T2.WareHouseID,0)
+		Where T2.accountYear is null
+	</insert>
+	
+	<insert id="scminvbal.addByOtherIssueOutForDataSnyc" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+		ScmInvBal(periodId,accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter
+		,itemId,Unit,PieUnit,StartQty,StartPieQty,StartAmt
+		,AddQty,AddPieQty,AddAmt
+		,OutQty,OutPieQty,OutAmt
+		,AdjQty,AdjPieQty,AdjAmt
+		,EndQty,EndPieQty,EndAmt
+		,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty
+		,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt,baseUnit)
+		Select
+		T.periodId,T.accountYear,T.accountPeriod,T.FinOrgUnitNo,T.OrgUnitNo,T.WareHouseID,T.CostOrgUnitNo,T.costCenter
+		,T.itemId,T.Unit,T.PieUnit,0,0,0
+		,0,0,0
+		,T.Qty,T.PieQty,T.Amt
+		,0,0,0
+		,0,0,0
+		,T.Lot,0,0,0,T.BaseQty,0
+		,0,0,0,T.taxAmt,0,T.baseUnit 
+		From(Select T1.periodId,T1.fYear as accountYear,T1.period as accountPeriod,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo
+			,(case when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end) as costCenter
+			,T1.itemId,T1.Itemname,T1.Spec,T1.Unit,T1.PieUnit,T1.baseUnit
+			,Sum(T1.Qty) as Qty,Sum(T1.PieQty) as PieQty,Sum(T1.Amt) as Amt,
+			T1.Lot,Sum(T1.BaseQty) as BaseQty,Sum(T1.taxAmt) as taxAmt
+			From (SELECT M.periodId,M.otId,d.lineId,M.bizdate as invDate,M.finOrgUnitNo,M.orgUnitNo
+				,D.wareHouseId,'' as costOrgUnitNo,0 as isCostCentor,D.itemId,A.itemNo,A.itemname,
+				A.spec,D.unit,D.pieUnit,D.lot,D.qty,D.taxRate,D.taxPrice,D.taxAmt,
+				IFNULL(D.pieQty,0) as pieQty,D.price,D.amt,0 as allocatedQty,D.expDate,M.accountYear as fYear
+				,M.accountPeriod as period,D.sourceBillDtlId as sourceBillID,
+				A.baseUnitId as baseUnit,IFNULL(ScmMaterialUnitRelation.convrate,0) * D.Qty as baseQty
+				From ScmInvOtherIssueBill as M,ScmInvOtherIssueBillEntry as D
+				left join ScmMaterial as A on D.itemId=A.id
+				left join ScmMaterialUnitRelation on D.itemId=ScmMaterialUnitRelation.itemId
+					AND D.unit=ScmMaterialUnitRelation.targetUnitId
+				Where M.otId = #{otId} 
+				And M.otId = D.otId
+				order by d.lineid) T1
+			Group By
+			T1.periodId,T1.fYear,T1.period,T1.FinOrgUnitNo,T1.OrgUnitNo,T1.WareHouseID,T1.CostOrgUnitNo
+			,(case when IFNULL(T1.WareHouseID,0) = 0 then 1 else 0 end),T1.itemId,T1.Itemname,T1.Spec,T1.Unit,T1.PieUnit,T1.Lot
+			) T
+		Left Join ScmInvBal T2
+			On T.accountYear = T2.accountYear 
+			And T.accountPeriod = T2.accountPeriod
+			And T.OrgUnitNo = T2.OrgUnitNo 
+			And T.CostOrgUnitNo = IFNULL(T2.CostOrgUnitNo,'') 
+			And T.itemId = T2.itemId 
+			And T.Lot = T2.Lot And T.Unit = T2.Unit 
+			And T.WareHouseID = IFNULL(T2.WareHouseID,0)
+		Where T2.accountYear is null
+	</insert>
+	 
+	 <update id="scminvbal.updateByMaterialReqBillOut" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		A.accountYear,A.accountPeriod,A.Orgunitno,A.WareHouseID,B.itemId,B.lot,B.unit,Sum(B.Qty)
+		As Qty,Sum(B.PieQty) as PieQty,
+		Sum(B.Amt) as Amt,Sum(B.BaseQty) as BaseQty,Sum(B.TaxAmt) as TaxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId}
+		Group by
+		A.accountYear,A.accountPeriod,A.Orgunitno,A.WareHouseID,B.itemId,B.lot,B.unit)
+		T1 Set T2.OutQty = IFNULL(T2.OutQty,0) + T1.Qty,
+		T2.OutPieQty =IFNULL(T2.OutPieQty,0)+ IFNULL(T1.PieQty,0),
+		T2.OutBaseQty = IFNULL(T2.OutBaseQty,0)+T1.BaseQty,
+		T2.OutAmt = IFNULL(T2.OutAmt,0)+ T1.Amt,
+		T2.OutTaxAmt = IFNULL(T2.OutTaxAmt,0)+ T1.TaxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.WareHouseId = T2.WareHouseId
+		And T1.OrgUnitNo = T2.OrgUnitNo And T1.itemId = T2.itemId And T1.Lot =
+		T2.Lot And T1.Unit = T2.Unit  
+	 </update>
+	 
+	 <update id="scminvbal.updateByMaterialReqBillIn" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		A.accountYear,A.accountPeriod,A.Orgunitno,A.WareHouseID,B.itemId,B.lot,B.unit,Sum(B.Qty)
+		As Qty,Sum(B.PieQty) as PieQty,
+		Sum(B.Amt) as Amt,Sum(B.BaseQty) as BaseQty,Sum(B.TaxAmt) as TaxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId}
+		Group by
+		A.accountYear,A.accountPeriod,A.Orgunitno,A.WareHouseID,B.itemId,B.lot,B.unit)
+		T1 Set T2.OutQty = IFNULL(T2.OutQty,0) - T1.Qty,
+		T2.OutPieQty = IFNULL(T2.OutPieQty,0) - IFNULL(T1.PieQty,0),
+		T2.OutBaseQty = IFNULL(T2.OutBaseQty,0) - T1.BaseQty,
+		T2.OutAmt = IFNULL(T2.OutAmt,0) - T1.Amt,
+		T2.OutTaxAmt = IFNULL(T2.OutTaxAmt,0) - T1.TaxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.WareHouseId = T2.WareHouseId
+		And T1.OrgUnitNo = T2.OrgUnitNo And T1.itemId = T2.itemId And T1.Lot =
+		T2.Lot And T1.Unit = T2.Unit  
+	 </update>
+	 
+	 <update id="scminvbal.updateByMaterialReqBillOutOrgunitNo" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		A.accountYear,A.accountPeriod,A.UseOrgUnitNo,A.CostOrgUnitNo,B.itemId,B.lot,B.Unit,Sum(B.Qty)
+		As Qty,Sum(B.PieQty) as PieQty,
+		Sum(B.Amt) as Amt,Sum(B.BaseQty) as BaseQty,Sum(B.TaxAmt) as TaxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId}
+		Group by
+		A.accountYear,A.accountPeriod,A.UseOrgUnitNo,A.CostOrgUnitNo,B.itemId,B.lot,B.Unit)
+		T1 Set T2.AddQty = IFNULL(T2.AddQty,0) + T1.Qty,
+		T2.AddPieQty = IFNULL(T2.AddPieQty,0)+ IFNULL(T1.PieQty,0),
+		T2.AddBaseQty = IFNULL(T2.AddBaseQty,0)+ T1.BaseQty,
+		T2.AddAmt = IFNULL(T2.AddAmt,0)+ T1.Amt,
+		T2.AddTaxAmt = IFNULL(T2.AddTaxAmt,0)+ T1.TaxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.CostOrgUnitNo = T2.CostOrgUnitNo
+		And T1.UseOrgUnitNo = T2.OrgUnitNo And T1.itemId = T2.itemId And T1.Lot =
+		T2.Lot And T1.Unit = T2.Unit  
+	 </update>
+	 
+	 <update id="scminvbal.updateByMaterialReqBillInOrgunitNo" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		A.accountYear,A.accountPeriod,A.UseOrgUnitNo,A.CostOrgUnitNo,B.itemId,B.lot,B.Unit,Sum(B.Qty)
+		As Qty,Sum(B.PieQty) as PieQty,
+		Sum(B.Amt) as Amt,Sum(B.BaseQty) as BaseQty,Sum(B.TaxAmt) as TaxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId}
+		Group by
+		A.accountYear,A.accountPeriod,A.UseOrgUnitNo,A.CostOrgUnitNo,B.itemId,B.lot,B.Unit)
+		T1 Set T2.AddQty = IFNULL(T2.AddQty,0) - T1.Qty,
+		T2.AddPieQty = IFNULL(T2.AddPieQty,0) - IFNULL(T1.PieQty,0),
+		T2.AddBaseQty = IFNULL(T2.AddBaseQty,0) - T1.BaseQty,
+		T2.AddAmt = IFNULL(T2.AddAmt,0) - T1.Amt,
+		T2.AddTaxAmt = IFNULL(T2.AddTaxAmt,0) - T1.TaxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.CostOrgUnitNo = T2.CostOrgUnitNo
+		And T1.UseOrgUnitNo = T2.OrgUnitNo And T1.itemId = T2.itemId And T1.Lot =
+		T2.Lot And T1.Unit = T2.Unit  
+	 </update>
+	 
+	 <update id="scminvbal.updateByMaterialReqBillReturnOrgunitNo" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		A.accountYear,A.accountPeriod,A.UseOrgUnitNo,A.CostOrgUnitNo,B.itemId,B.lot,B.unit,Sum(B.Qty)
+		As Qty,Sum(B.PieQty) as PieQty,
+		Sum(B.Amt) as Amt,Sum(B.BaseQty) as BaseQty,Sum(B.TaxAmt) as TaxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId}
+		Group by
+		A.accountYear,A.accountPeriod,A.UseOrgUnitNo,A.CostOrgUnitNo,B.itemId,B.lot,B.unit)
+		T1 Set T2.AddQty = IFNULL(T2.AddQty,0) - T1.Qty,
+		T2.AddPieQty = IFNULL(T2.AddPieQty,0)- IFNULL(T1.PieQty,0),
+		T2.AddBaseQty = IFNULL(T2.AddBaseQty,0)- T1.BaseQty,
+		T2.AddAmt = IFNULL(T2.AddAmt,0)- T1.Amt,
+		T2.AddTaxAmt = IFNULL(T2.AddTaxAmt,0)- T1.TaxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.CostOrgUnitNo = T2.CostOrgUnitNo
+		And T1.UseOrgUnitNo = T2.OrgUnitNo And T1.itemId = T2.itemId And T1.Lot =
+		T2.Lot And T1.unit = T2.Unit  
+	 </update>
+	 
+	 <update id="scminvbal.updateByMaterialReqBillOrgunitNo" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		A.accountYear,A.accountPeriod,A.UseOrgUnitNo,A.CostOrgUnitNo,B.itemId,B.lot,B.unit,Sum(B.Qty)
+		As Qty,Sum(B.PieQty) as PieQty,
+		Sum(B.Amt) as Amt,Sum(B.BaseQty) as BaseQty,Sum(B.TaxAmt) as TaxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId}
+		Group by
+		A.accountYear,A.accountPeriod,A.UseOrgUnitNo,A.CostOrgUnitNo,B.itemId,B.lot,B.unit)
+		T1 Set T2.AddQty = IFNULL(T2.AddQty,0) + T1.Qty,
+		T2.AddPieQty = IFNULL(T2.AddPieQty,0) + IFNULL(T1.PieQty,0),
+		T2.AddBaseQty = IFNULL(T2.AddBaseQty,0) + T1.BaseQty,
+		T2.AddAmt = IFNULL(T2.AddAmt,0) + T1.Amt,
+		T2.AddTaxAmt = IFNULL(T2.AddTaxAmt,0) + T1.TaxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.CostOrgUnitNo = T2.CostOrgUnitNo
+		And T1.UseOrgUnitNo = T2.OrgUnitNo And T1.itemId = T2.itemId And T1.Lot =
+		T2.Lot And T1.unit = T2.Unit  
+	 </update>
+	 
+	 <update id="scminvbal.updateByMaterialReqBillReturn" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		A.accountYear,A.accountPeriod,A.Orgunitno,A.WareHouseID,B.itemId,B.lot,B.unit,Sum(B.Qty)
+		As Qty,Sum(B.PieQty) as PieQty,
+		Sum(B.Amt) as Amt,Sum(B.BaseQty) as BaseQty,Sum(B.TaxAmt) as TaxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId}
+		Group by
+		A.accountYear,A.accountPeriod,A.Orgunitno,A.WareHouseID,B.itemId,B.lot,B.unit)
+		T1 Set T2.OutQty = IFNULL(T2.OutQty,0) - T1.Qty,
+		T2.OutPieQty = IFNULL(T2.OutPieQty,0)- IFNULL(T1.PieQty,0),
+		T2.OutBaseQty = IFNULL(T2.OutBaseQty,0)- T1.BaseQty,
+		T2.OutAmt = IFNULL(T2.OutAmt,0)- T1.Amt,
+		T2.OutTaxAmt = IFNULL(T2.OutTaxAmt,0)- T1.TaxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.WareHouseId = T2.WareHouseId
+		And T1.OrgUnitNo = T2.OrgUnitNo And T1.itemId = T2.itemId And T1.Lot =
+		T2.Lot And T1.Unit = T2.Unit  
+	 </update>
+	 
+	  <update id="scminvbal.updateByMaterialReqBill" parameterType="Map">
+	  	Update ScmInvBal T2,(Select
+		A.accountYear,A.accountPeriod,A.Orgunitno,A.WareHouseID,B.itemId,B.lot,B.unit,Sum(B.Qty)
+		As Qty,Sum(B.PieQty) as PieQty,
+		Sum(B.Amt) as Amt,Sum(B.BaseQty) as BaseQty,Sum(B.TaxAmt) as TaxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		Where A.OTID = B.OTID And A.OTID = #{otId}
+		Group by
+		A.accountYear,A.accountPeriod,A.Orgunitno,A.WareHouseID,B.itemId,B.lot,B.unit)
+		T1 Set T2.OutQty = IFNULL(T2.OutQty,0) + T1.Qty,
+		T2.OutPieQty = IFNULL(T2.OutPieQty,0) + IFNULL(T1.PieQty,0),
+		T2.OutBaseQty = IFNULL(T2.OutBaseQty,0) + T1.BaseQty,
+		T2.OutAmt = IFNULL(T2.OutAmt,0) + T1.Amt,
+		T2.OutTaxAmt = IFNULL(T2.OutTaxAmt,0) + T1.TaxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.WareHouseId = T2.WareHouseId
+		And T1.OrgUnitNo = T2.OrgUnitNo And T1.itemId = T2.itemId And T1.Lot =
+		T2.Lot And T1.Unit = T2.Unit 
+	  </update>
+	 
+	 <update id="scminvbal.updateByCancelOtherInWarehsBill" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		T.accountYear,T.accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID,Sum(T.Qty)
+		As Qty,Sum(T.PieQty) as PieQty,
+		Sum(T.Amt) as Amt,Sum(T.BaseQty) as BaseQty,Sum(T.TaxAmt) as TaxAmt From (select
+		M.FinOrgUnitNo,M.OrgUnitNo,
+		D.WareHouseID,'' as CostOrgUnitNo,0 as
+		costCenter,D.ItemId,D.Unit,D.PieUnit,D.Lot,D.Qty,
+		IFNULL(D.PieQty,0) as
+		pieQty,D.Price,D.Amt,D.taxRate,D.taxPrice,D.taxAmt,D.ExpDate,M.accountYear,M.accountPeriod,D.sourceBillDtlId
+		as sourceBillID,
+		A.baseUnitId as baseUnit,IFNULL(ScmMaterialUnitRelation.convrate,0) * D.Qty as baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D
+		left join ScmMaterialUnitRelation on
+		D.itemId=ScmMaterialUnitRelation.itemId
+		AND D.unit=ScmMaterialUnitRelation.targetUnitId
+		,ScmMaterial as A
+		Where M.WRID = #{wrId} And
+		M.Status = 'E'And
+		M.WRID = D.WRID And
+		D.ItemId = A.id
+		Group by M.WRID,M.FinOrgUnitNo,M.OrgUnitNo,
+		D.WareHouseID,D.ItemId,D.Unit,D.PieUnit,D.Lot,
+		D.Price,D.ExpDate,M.accountYear,M.accountPeriod,D.sourceBillDtlId,A.baseUnitId)
+		T
+		Group by
+		T.accountYear,T.accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID)
+		T1 Set T2.AddQty = IFNULL(T2.AddQty,0) - T1.Qty,
+		T2.AddPieQty = IFNULL(T2.AddPieQty,0)- IFNULL(T1.PieQty,0),
+		T2.AddBaseQty = IFNULL(T2.AddBaseQty,0)- T1.BaseQty,
+		T2.AddAmt = IFNULL(T2.AddAmt,0)- T1.Amt,
+		T2.AddTaxAmt = IFNULL(T2.AddTaxAmt,0)- T1.TaxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.OrgUnitNo = T2.OrgUnitNo And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And T1.ItemId
+		= T2.ItemId And
+		T1.Lot = T2.Lot And T1.Unit = T2.Unit And IFNULL(T1.WareHouseID,0) =
+		IFNULL(T2.WareHouseID,0)
+	</update>
+	
+	<update id="scminvbal.updateByCancelOtherInWarehsBillForInvProfit" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		T.accountYear,T.accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID,Sum(T.Qty)
+		As Qty,Sum(T.PieQty) as PieQty,
+		Sum(T.Amt) as Amt,Sum(T.BaseQty) as BaseQty,Sum(T.taxAmt) as taxAmt From (select
+		M.FinOrgUnitNo,M.OrgUnitNo,
+		D.WareHouseID,'' as CostOrgUnitNo,0 as
+		costCenter,D.ItemId,D.Unit,D.PieUnit,D.Lot,D.Qty,
+		IFNULL(D.PieQty,0) as
+		pieQty,D.Price,D.Amt,D.taxRate,D.taxPrice,D.taxAmt,D.ExpDate,M.accountYear,M.accountPeriod,D.sourceBillDtlId
+		as sourceBillID,D.baseUnit,D.baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D,ScmMaterial as A
+		Where M.WRID = #{wrId} And	M.Status = 'E'And M.WRID = D.WRID And D.ItemId = A.id
+		Group by M.WRID,M.FinOrgUnitNo,M.OrgUnitNo,D.WareHouseID,D.ItemId,D.Unit,D.PieUnit,D.Lot,
+		D.Price,D.ExpDate,M.accountYear,M.accountPeriod,D.sourceBillDtlId,A.baseUnitId)	T
+		Group by
+		T.accountYear,T.accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID)
+		T1 Set T2.AdjQty = IFNULL(T2.AdjQty,0) - T1.Qty,
+		T2.AdjPieQty = IFNULL(T2.AdjPieQty,0)- IFNULL(T1.PieQty,0),
+		T2.AdjBaseQty = IFNULL(T2.AdjBaseQty,0)- T1.BaseQty,
+		T2.AdjAmt = IFNULL(T2.AdjAmt,0)- T1.Amt,
+		T2.AdjTaxAmt = IFNULL(T2.AdjTaxAmt,0)- T1.taxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod = T2.accountPeriod And T1.OrgUnitNo = T2.OrgUnitNo And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And T1.itemId	= T2.itemId And
+		T1.Lot = T2.Lot And T1.Unit = T2.Unit And IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0)
+	</update>
+	
+	<update id="scminvbal.updateByCancelOtherInWarehsBillForDataSnyc" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		T.accountYear,T.accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID,Sum(T.Qty)
+		As Qty,Sum(T.PieQty) as PieQty,
+		Sum(T.Amt) as Amt,Sum(T.BaseQty) as BaseQty,Sum(T.taxAmt) as taxAmt From (select
+		M.FinOrgUnitNo,M.OrgUnitNo,
+		D.WareHouseID,'' as CostOrgUnitNo,0 as
+		costCenter,D.ItemId,D.Unit,D.PieUnit,D.Lot,D.Qty,
+		IFNULL(D.PieQty,0) as
+		pieQty,D.Price,D.Amt,D.taxRate,D.taxPrice,D.taxAmt,D.ExpDate,M.accountYear,M.accountPeriod,D.sourceBillDtlId
+		as sourceBillID,D.baseUnit,D.baseQty
+		From scminvotherinwarehsbill as M,scminvotherinwarehsbillEntry as D,ScmMaterial as A
+		Where M.WRID = #{wrId} And M.WRID = D.WRID And D.ItemId = A.id
+		Group by M.WRID,M.FinOrgUnitNo,M.OrgUnitNo,D.WareHouseID,D.ItemId,D.Unit,D.PieUnit,D.Lot,
+		D.Price,D.ExpDate,M.accountYear,M.accountPeriod,D.sourceBillDtlId,A.baseUnitId)	T
+		Group by
+		T.accountYear,T.accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID)
+		T1 Set T2.AdjQty = IFNULL(T2.AdjQty,0) - T1.Qty,
+		T2.AdjPieQty = IFNULL(T2.AdjPieQty,0)- IFNULL(T1.PieQty,0),
+		T2.AdjBaseQty = IFNULL(T2.AdjBaseQty,0)- T1.BaseQty,
+		T2.AdjAmt = IFNULL(T2.AdjAmt,0)- T1.Amt,
+		T2.AdjTaxAmt = IFNULL(T2.AdjTaxAmt,0)- T1.taxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod = T2.accountPeriod And T1.OrgUnitNo = T2.OrgUnitNo And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And T1.itemId	= T2.itemId And
+		T1.Lot = T2.Lot And T1.Unit = T2.Unit And IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0)
+	</update>
+	
+	<update id="scminvbal.updateByCancelPurInWarehsBill" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		T.accountYear,T.accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID,Sum(T.Qty)
+		As Qty,Sum(T.PieQty) as PieQty,
+		Sum(T.Amt) as Amt,Sum(T.BaseQty) as BaseQty,Sum(T.TaxAmt) as TaxAmt From (select
+		M.WRID,M.BizDate as InvDate,D.FinOrgUnitNo,(CASE
+		IFNULL(D.WareHouseID,0) WHEN 0 THEN D.UseOrgUnitNo ELSE D.OrgUnitNo
+		END) as OrgUnitNo,
+		IFNULL(D.WareHouseID,0) as WareHouseID,IFNULL(D.CostOrgUnitNo,'') as
+		CostOrgUnitNo,D.ItemId,D.Unit,D.PieUnit,D.Lot,D.Qty,IFNULL(D.PieQty,0)
+		as PieQty,
+		D.Price,IFNULL(D.Amt,0) as Amt,IFNULL(D.taxAmt,0) as taxAmt,D.ExpDate,
+		D.sourceBillDtlId as SourceBillID,D.BaseUnit,IFNULL(D.BaseQty,0) as BaseQty,
+		M.accountYear,M.accountPeriod
+		From scminvpurinwarehsbill as M,scminvpurinwarehsbillEntry as D,scmmaterial
+		as A
+		Where M.WRID = #{wrId} And
+		M.Status = 'E' And
+		M.WRID = D.WRID And
+		D.ItemId = A.id) T
+		Group by
+		T.accountYear,T.accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID)
+		T1 Set T2.AddQty = IFNULL(T2.AddQty,0) - T1.qty,
+		T2.AddPieQty = IFNULL(T2.AddPieQty,0)- IFNULL(T1.PieQty,0),
+		T2.AddBaseQty = IFNULL(T2.AddBaseQty,0)- T1.BaseQty,
+		T2.AddAmt = IFNULL(T2.AddAmt,0)- T1.Amt,
+		T2.AddTaxAmt = IFNULL(T2.AddTaxAmt,0)- T1.TaxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.OrgUnitNo = T2.OrgUnitNo And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And T1.ItemId
+		= T2.ItemId And
+		T1.Lot = T2.Lot And T1.Unit = T2.Unit And IFNULL(T1.WareHouseID,0) =
+		IFNULL(T2.WareHouseID,0)
+	</update>
+	
+	<update id="scminvbal.updateByInitBill" parameterType="Map">
+		Update ScmInvBal T2,  
+		(Select accountYear,accountPeriod,Orgunitno,CostOrgUnitNo,itemid,
+				lot,unit,WareHouseID,PieUnit,Spec,
+				Sum(Qty) As Qty,Sum(PieQty) as PieQty,  
+				Sum(Amt) as Amt,Sum(BaseQty) as BaseQty,
+				Sum(taxAmt) as taxAmt
+		from
+			(select M.InitID,d.LineID,M.Bizdate as InvDate,M.FinOrgUnitNo,M.OrgUnitNo,                  
+			  M.WareHouseID,'' as CostOrgUnitNo,'0' as CostCentor,D.itemId,A.Itemname,                  
+			  A.Spec,D.Unit,D.PieUnit,D.Lot,D.Qty,                   
+			  ifnull(D.PieQty,0) as pieQty,D.Price,D.Amt,D.taxRate,D.taxPrice,D.taxAmt,0 as AllocatedQty,D.ExpDate,
+				M.accountYear,M.accountPeriod,  
+			  A.BaseUnitId,E.convrate * D.Qty as BaseQty         
+			from scminvinitbill as M,scminvinitbillentry as D
+				left join scmmaterial as A on D.itemId = A.id
+				left join ScmMaterialUnitRelation E on D.itemId =  E.itemId and D.unit = E.targetUnitId
+			where M.InitID = #{initId} and            
+			  M.Status = 'A'  and                     
+			  M.InitID = D.InitID  
+			order by D.lineid) T
+			Group by accountYear,accountPeriod,Orgunitno,CostOrgUnitNo,itemid,lot,unit,WareHouseID,PieUnit,Spec) T1
+		Set T2.StartQty = ifnull(T2.StartQty,0) + T1.Qty,
+			T2.StartPieQty = ifnull(T2.StartPieQty,0)+ ifnull(T1.PieQty,0),  
+			T2.StartAmt = ifnull(T2.StartAmt,0)+ T1.Amt,
+			T2.StartBaseQty = ifnull(T2.StartBaseQty,0)+ T1.BaseQty,
+			T2.PieUnit = T1.PieUnit,
+			T2.startTaxAmt = ifnull(T2.StartTaxAmt,0)+ T1.taxAmt
+		Where T1.accountYear = T2.accountYear 
+			And T1.accountPeriod = T2.accountPeriod 
+			And T1.OrgUnitNo = T2.OrgUnitNo 
+			And ifnull(T1.CostOrgUnitNo,'') = ifnull(T2.CostOrgUnitNo,'') 
+			And T1.Itemid = T2.Itemid 
+			And T1.Lot = T2.Lot 
+			And T1.Unit = T2.Unit 
+			And ifnull(T1.WareHouseID,'') = ifnull(T2.WareHouseID,'')
+	</update>
+	
+	<insert id="scminvbal.addByInitBill" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into ScmInvBal(periodId,accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,
+			WareHouseID,CostOrgUnitNo,costCenter,itemId,Unit,
+			PieUnit,baseUnit,Lot,StartQty,StartBaseQty,
+			StartPieQty,StartAmt,startTaxAmt,AddQty,AddBaseQty,
+			AddPieQty,AddAmt,addTaxAmt,OutQty,outBaseQty,OutPieQty,
+			OutAmt,outTaxAmt,AdjQty,AdjBaseQty,AdjPieQty,
+			AdjAmt,adjTaxAmt,EndQty,EndBaseQty,EndPieQty,
+			EndAmt,endTaxAmt)
+		Select T1.periodId,T1.accountYear,T1.accountPeriod,T1.FinOrgUnitNo,T1.OrgUnitNo,
+			T1.WareHouseID,T1.CostOrgUnitNo,T1.CostCentor,T1.itemId,T1.Unit,  
+			T1.PieUnit,T1.BaseUnitId,T1.Lot,T1.Qty,T1.BaseQty,
+			T1.PieQty,T1.Amt,T1.taxAmt,0 as AddQty,0 as AddBaseQty,
+			0 as AddPieQty,0 as AddAmt,0 as addTaxAmt,0 as OutQty,0 as outBaseQty,0 as OutPieQty,
+			0 as OutAmt,0 as outTaxAmt,0 as AdjQty,0 as AdjBaseQty,0 as AdjPieQty,
+			0 as AdjAmt,0 as adjTaxAmt,0 as EndQty,0 as EndBaseQty,0 as EndPieQty,
+			0 as EndAmt,0 as endTaxAmt 
+		From (
+			select T.periodId,T.accountYear,T.accountPeriod,T.FinOrgUnitNo,T.OrgUnitNo,T.WareHouseID,
+				T.CostOrgUnitNo,T.CostCentor,T.itemId,T.Unit,T.BaseUnitId,
+				T.PieUnit,Sum(T.Qty) as Qty,Sum(T.PieQty) as PieQty,Sum(T.Amt) as Amt,
+				T.Lot,Sum(T.BaseQty) as BaseQty,Sum(T.taxAmt) as taxAmt
+			from (
+				select M.periodId,M.InitID,d.LineID,M.Bizdate as InvDate,M.FinOrgUnitNo,M.OrgUnitNo,                  
+					M.WareHouseID,'' as CostOrgUnitNo,'0' as CostCentor,D.itemId,A.Itemname,                  
+					A.Spec,D.Unit,D.PieUnit,D.Lot,D.Qty,                   
+					ifnull(D.PieQty,0) as pieQty,D.Price,D.Amt,D.taxRate,D.taxPrice,D.taxAmt,0 as AllocatedQty,D.ExpDate,
+					M.accountYear,M.accountPeriod,  
+					A.BaseUnitId,E.convrate * D.Qty as BaseQty         
+				from scminvinitbill as M,scminvinitbillentry as D
+					left join scmmaterial as A on D.itemId = A.id
+					left join ScmMaterialUnitRelation E on D.itemId =  E.itemId and D.unit = E.targetUnitId
+				where M.InitID = #{initId} and            
+			  		M.Status = 'A'  and                     
+			  		M.InitID = D.InitID  
+				order by D.lineid) T
+			Group by periodId,accountYear,accountPeriod,Orgunitno,CostOrgUnitNo,itemid,lot,unit,WareHouseID,PieUnit,Spec) T1
+		Left Join ScmInvBal T2 on T1.accountYear = T2.accountYear 
+			And T1.accountPeriod = T2.accountPeriod 
+			And T1.OrgUnitNo = T2.OrgUnitNo 
+			And ifnull(T1.CostOrgUnitNo,'') = ifnull(T2.CostOrgUnitNo,'') 
+			And T1.Itemid = T2.Itemid 
+			And T1.Lot = T2.Lot 
+			And T1.Unit = T2.Unit 
+			And ifnull(T1.WareHouseID,'') = ifnull(T2.WareHouseID,'')
+		where T2.accountYear is null
+	</insert>
+	
+	<update id="scminvbal.updateByCancelInitBill" parameterType="Map">
+		Update ScmInvBal T2,  
+		(Select accountYear,accountPeriod,Orgunitno,CostOrgUnitNo,itemid,
+				lot,unit,WareHouseID,PieUnit,Spec,
+				Sum(Qty) As Qty,Sum(PieQty) as PieQty,  
+				Sum(Amt) as Amt,Sum(BaseQty) as BaseQty,
+				Sum(taxAmt) as taxAmt
+		from
+			(select M.InitID,d.LineID,M.Bizdate as InvDate,M.FinOrgUnitNo,M.OrgUnitNo,                  
+			  M.WareHouseID,'' as CostOrgUnitNo,'N' as CostCentor,D.itemId,A.Itemname,                  
+			  A.Spec,D.Unit,D.PieUnit,D.Lot,D.Qty,                   
+			  ifnull(D.PieQty,0) as pieQty,D.Price,D.Amt,D.taxRate,D.taxPrice,D.taxAmt,0 as AllocatedQty,D.ExpDate,
+				M.accountYear,M.accountPeriod,  
+			  A.BaseUnitId,E.convrate * D.Qty as BaseQty         
+			from scminvinitbill as M,scminvinitbillentry as D
+				left join scmmaterial as A on D.itemId = A.id
+				left join ScmMaterialUnitRelation E on D.itemId =  E.itemId and D.unit = E.targetUnitId
+			where M.InitID = #{initId} and            
+			  M.Status = 'E'  and                     
+			  M.InitID = D.InitID  
+			order by D.lineid) T
+			Group by accountYear,accountPeriod,Orgunitno,CostOrgUnitNo,itemid,lot,unit,WareHouseID,PieUnit,Spec) T1
+		Set T2.StartQty = ifnull(T2.StartQty,0) - T1.Qty,
+			T2.StartPieQty = ifnull(T2.StartPieQty,0) - ifnull(T1.PieQty,0),  
+			T2.StartAmt = ifnull(T2.StartAmt,0) - T1.Amt,
+			T2.StartBaseQty = ifnull(T2.StartBaseQty,0) - T1.BaseQty,
+			T2.PieUnit = T1.PieUnit,
+			T2.startTaxAmt = ifnull(T2.StartTaxAmt,0) - T1.taxAmt
+		Where T1.accountYear = T2.accountYear 
+			And T1.accountPeriod = T2.accountPeriod 
+			And T1.OrgUnitNo = T2.OrgUnitNo 
+			And ifnull(T1.CostOrgUnitNo,'') = ifnull(T2.CostOrgUnitNo,'') 
+			And T1.Itemid = T2.Itemid 
+			And T1.Lot = T2.Lot 
+			And T1.Unit = T2.Unit 
+			And ifnull(T1.WareHouseID,'') = ifnull(T2.WareHouseID,'')
+	</update>
+	
+	<update id="scminvbal.updateByPurInWarehsBillOut" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		T.accountYear,T.accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID,Sum(T.Qty)
+		As Qty,Sum(T.PieQty) as PieQty,
+		Sum(T.Amt) as Amt,Sum(T.BaseQty) as BaseQty,Sum(T.taxAmt) as taxAmt From (select
+		M.WRID,M.BizDate as InvDate,D.FinOrgUnitNo,(CASE
+		IFNULL(D.WareHouseID,0) WHEN 0 THEN D.UseOrgUnitNo ELSE D.OrgUnitNo
+		END) as OrgUnitNo,
+		IFNULL(D.WareHouseID,0) as WareHouseID,IFNULL(D.CostOrgUnitNo,'') as
+		CostOrgUnitNo,D.ItemId,D.Unit,D.PieUnit,D.Lot,D.Qty,IFNULL(D.PieQty,0)
+		as PieQty,
+		D.Price,IFNULL(D.Amt,0) as Amt,D.taxRate,D.taxPrice,IFNULL(D.taxAmt,0) as taxAmt,D.ExpDate,
+		D.sourceBillDtlId as SourceBillID,D.BaseUnit,IFNULL(D.BaseQty,0) as
+		BaseQty,
+		M.accountYear,M.accountPeriod,M.vendorId
+		From scminvpurinwarehsbill as M,scminvpurinwarehsbillEntry as D,scmmaterial
+		as A
+		Where M.WRID = #{wrId} And
+		M.Status = 'A' And
+		M.WRID = D.WRID And
+		D.ItemId = A.id) T
+		Group by
+		T.accountYear,T.accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID)
+		T1 Set T2.AddQty = IFNULL(T2.AddQty,0) - T1.Qty ,T2.AddPieQty = 	IFNULL(T2.AddPieQty,0)- IFNULL(T1.PieQty,0),
+		T2.AddAmt = IFNULL(T2.AddAmt,0)- T1.Amt,T2.AddBaseQty = IFNULL(T2.AddBaseQty,0)-T1.BaseQty,T2.AddTaxAmt = IFNULL(T2.AddTaxAmt,0)- T1.taxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod = T2.accountPeriod And T1.OrgUnitNo = T2.OrgUnitNo And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And T1.itemId	= T2.itemId And
+		T1.Lot = T2.Lot And T1.Unit = T2.Unit And IFNULL(T1.WareHouseID,0) = IFNULL(T2.WareHouseID,0)
+	</update>
+	
+	<update id="scminvbal.updateByCancelPurInWarehsBillOut" parameterType="Map">
+		Update ScmInvBal T2,(Select
+		T.accountYear,T.accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID,Sum(T.Qty)
+		As Qty,Sum(T.PieQty) as PieQty,
+		Sum(T.Amt) as Amt,Sum(T.BaseQty) as BaseQty,Sum(T.taxAmt) as taxAmt From (select
+		M.WRID,M.BizDate as InvDate,D.FinOrgUnitNo,(CASE
+		IFNULL(D.WareHouseID,0) WHEN 0 THEN D.UseOrgUnitNo ELSE D.OrgUnitNo
+		END) as OrgUnitNo,
+		IFNULL(D.WareHouseID,0) as WareHouseID,IFNULL(D.CostOrgUnitNo,'') as
+		CostOrgUnitNo,D.ItemId,D.Unit,D.PieUnit,D.Lot,D.Qty,IFNULL(D.PieQty,0)
+		as PieQty,
+		D.Price,IFNULL(D.Amt,0) as Amt,D.taxRate,D.taxPrice,IFNULL(D.taxAmt,0) as taxAmt,D.ExpDate,
+		D.sourceBillDtlId as SourceBillID,D.BaseUnit,IFNULL(D.BaseQty,0) as
+		BaseQty,M.accountYear,M.accountPeriod,M.vendorId
+		From scminvpurinwarehsbill as M,scminvpurinwarehsbillEntry as D,scmmaterial	as A
+		Where M.WRID = #{wrId} And
+		M.Status = 'E' And
+		M.WRID = D.WRID And
+		D.ItemId = A.id) T
+		Group by
+		T.accountYear,T.accountPeriod,T.Orgunitno,T.CostOrgUnitNo,T.itemId,T.lot,T.unit,T.WareHouseID)
+		T1 Set T2.AddQty = IFNULL(T2.AddQty,0) + T1.qty ,T2.AddPieQty =	IFNULL(T2.AddPieQty,0)+ IFNULL(T1.PieQty,0),
+		T2.AddAmt = IFNULL(T2.AddAmt,0) + T1.Amt,T2.AddBaseQty = IFNULL(T2.AddBaseQty,0)+ T1.BaseQty,T2.AddTaxAmt =	IFNULL(T2.AddTaxAmt,0) + T1.taxAmt
+		Where T1.accountYear = T2.accountYear And T1.accountPeriod =
+		T2.accountPeriod And T1.OrgUnitNo = T2.OrgUnitNo And
+		IFNULL(T1.CostOrgUnitNo,'') = IFNULL(T2.CostOrgUnitNo,'') And T1.itemId
+		= T2.itemId And
+		T1.Lot = T2.Lot And T1.Unit = T2.Unit And IFNULL(T1.WareHouseID,0) =
+		IFNULL(T2.WareHouseID,0)
+	</update>
+	
+	<update id="scminvbal.updateByMoveIssuePost" parameterType="Map">
+		UPDATE ScmInvBal T2, 
+		    (select 
+		        A.accountYear, A.accountPeriod, B.orgUnitNo, B.wareHouseId, B.itemId, B.lot, B.unit,
+		        SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, 
+		        SUM(B.amt) as amt, SUM(B.baseQty) as baseQty,
+		        SUM(B.taxAmt) as taxAmt
+		    from 
+		        scminvmoveissuebill A, scminvmoveissuebillentry B
+		    where 
+		        A.otId = B.otId and
+		        A.otId = #{otId} 
+		    group by A.accountYear, A.accountPeriod, B.orgUnitNo, B.wareHouseId, B.itemId, B.lot, B.unit) T1
+		SET
+		    T2.outQty= IFNULL(T2.outQty,0) + T1.qty,
+		    T2.outPieQty = IFNULL(T2.outPieQty,0) + IFNULL(T1.pieQty,0),
+		    T2.outAmt = IFNULL(T2.outAmt,0) + T1.amt,
+		    T2.outTaxAmt = IFNULL(T2.outTaxAmt,0) + T1.taxAmt,
+		    T2.outBaseQty = IFNULL(T2.outBaseQty,0) + T1.baseQty
+		where 
+		    T1.accountYear = T2.accountYear and 
+		    T1.accountPeriod = T2.accountPeriod and 
+		    T1.wareHouseId = T2.wareHouseId and 
+		    T1.orgUnitNo = T2.orgUnitNo and 
+		    T1.itemId = T2.itemId and 
+		    T1.lot = T2.lot and 
+		    T1.unit = T2.unit	
+    </update>
+    
+	<update id="scminvbal.updateByCostCenter" parameterType="Map">
+		Update ScmInvBal as A,(Select sum(T.QtydIff) as QtydIff,sum(T.AmtdIff)
+		as AmtdIff,sum(T.taxAmtdIff) as taxAmtdIff,sum(T.PieQtydIff) as
+		PieQtydIff,T.OrgUnitNo,T.CostOrgUnitNo,T.itemId,T.Unit,T.Lot,T.convrate
+		From (Select A.UseOrgUnitNo as OrgUnitNo,A.OrgUnitNo as
+		CostOrgUnitNo,B.itemId,B.Lot,B.Unit,B.AccountQty,B.DifferQty as
+		QtydIff,B.DifferAmt as
+		AmtdIff,B.PieUnit,IFNULL(B.DifferPieQty,0) as
+		PieQtydIff,B.DifferTaxAmt as taxAmtdIff,t.convrate as convrate
+		From scminvcountingcostcenter as A,scminvcountingcostcenterEntry as B
+		left join ScmMaterialUnitRelation T on b.itemId=t.itemId
+		AND b.unit=t.targetUnitId,ScmMaterial as C
+		Where A.TaskID = #{taskId} And
+		A.TableID = B.TableID And
+		B.DifferQty != 0 And
+		B.itemId = C.id) T Group By
+		T.OrgUnitNo,T.CostOrgUnitNo,T.itemId,T.Unit,T.Lot) as B 
+		Set A.AdjQty = IFNULL(A.AdjQty,0) + IFNULL(B.QtydIff,0),
+		A.AdjBaseQty = IFNULL(A.AdjBaseQty,0) + IFNULL(B.QtydIff*B.convrate,0), 
+		A.AdjAmt = IFNULL(A.AdjAmt,0) + IFNULL(B.AmtdIff,0),
+		A.AdjPieQty = IFNULL(A.AdjPieQty,0) + IFNULL(B.PieQtydIff,0), 
+		A.AdjTaxAmt = IFNULL(A.AdjTaxAmt,0) + IFNULL(B.taxAmtdIff,0)
+		Where A.OrgUnitNo = B.OrgUnitNo And
+		A.CostOrgUnitNo = B.CostOrgUnitNo And
+		A.itemId = B.itemId And A.Unit = B.Unit And
+		A.accountYear = #{accountYear} And A.Lot = B.Lot And
+		A.accountPeriod = #{accountPeriod}	
+    </update>
+    
+    <update id="scminvbal.updateByMoveIssueUnPost" parameterType="Map">
+        UPDATE ScmInvBal T2, 
+            (select 
+                A.accountYear, A.accountPeriod, B.orgUnitNo, B.wareHouseId, B.itemId, B.lot, B.unit,
+                SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, 
+                SUM(B.amt) as amt, SUM(B.baseQty) as baseQty,
+                SUM(B.taxAmt) as taxAmt
+            from 
+                scminvmoveissuebill A, scminvmoveissuebillentry B
+            where 
+                A.otId = B.otId and
+                A.otId = #{otId} 
+            group by A.accountYear, A.accountPeriod, B.orgUnitNo, B.wareHouseId, B.itemId, B.lot, B.unit) T1
+        SET
+            T2.outQty= IFNULL(T2.outQty,0) - T1.qty,
+            T2.outPieQty = IFNULL(T2.outPieQty,0) - IFNULL(T1.pieQty,0),
+            T2.outAmt = IFNULL(T2.outAmt,0) - T1.amt,
+            T2.outTaxAmt = IFNULL(T2.outTaxAmt,0) - T1.taxAmt,
+            T2.outBaseQty = IFNULL(T2.outBaseQty,0) - T1.baseQty
+        where 
+            T1.accountYear = T2.accountYear and 
+            T1.accountPeriod = T2.accountPeriod and 
+            T1.wareHouseId = T2.wareHouseId and 
+            T1.orgUnitNo = T2.orgUnitNo and 
+            T1.itemId = T2.itemId and 
+            T1.lot = T2.lot and 
+            T1.unit = T2.unit  
+    </update>
+    
+    <update id="scminvbal.updateByCstInitBill" parameterType="Map">
+		update ScmInvBal T2,  
+		(select accountYear, accountPeriod, orgUnitNo, costOrgUnitNo, itemId,
+			lot, unit, wareHouseID, pieUnit, spec,
+			Sum(qty) As qty, Sum(pieQty) as pieQty,  
+			Sum(amt) as amt, Sum(baseQty) as baseQty,
+			Sum(taxAmt) as taxAmt
+		from
+			(select M.initId, d.lineId, M.bizDate as bizDate, M.finOrgUnitNo, M.orgUnitNo,                  
+	  			0 as wareHouseId, M.costOrgUnitNo as costOrgUnitNo, '1' as costCentor, D.itemId, A.itemName,                  
+	  			A.spec, D.unit, D.pieUnit, D.lot, D.qty,                   
+	  			ifnull(D.pieQty,0) as pieQty, D.price, D.amt, D.taxRate, D.taxPrice, 
+				D.taxAmt, 0 as allocatedQty, D.expDate, M.accountYear,
+				M.accountPeriod, A.baseUnitId, E.convrate * D.qty as baseQty         
+			from ScmCstInitBill as M, ScmCstInitBillEntry as D
+			left join ScmMaterial as A on D.itemId = A.id
+			left join ScmMaterialUnitRelation E on D.itemId =  E.itemId and D.unit = E.targetUnitId
+			where M.initId = #{initId}             
+	  			and M.status = 'A'                     
+	  			and M.initId = D.initId                                  
+			order by D.lineId) T
+			group by accountYear, accountPeriod, orgUnitNo, costOrgUnitNo, itemId,
+				lot, unit, wareHouseID, pieUnit, spec) T1
+		set T2.startQty = ifnull(T2.startQty,0) + T1.qty,
+			T2.startPieQty = ifnull(T2.startPieQty,0)+ ifnull(T1.pieQty,0),  
+			T2.startAmt = ifnull(T2.startAmt,0)+ T1.amt,
+			T2.startBaseQty = ifnull(T2.startBaseQty,0)+ T1.baseQty,
+			T2.pieUnit = T1.pieUnit,
+			T2.startTaxAmt = ifnull(T2.startTaxAmt,0)+ T1.taxAmt
+		where T1.accountYear = T2.accountYear 
+			and T1.accountPeriod = T2.accountPeriod 
+			and T1.orgUnitNo = T2.orgUnitNo 
+			and ifnull(T1.costOrgUnitNo,'') = ifnull(T2.costOrgUnitNo,'') 
+			and T1.itemId = T2.itemId 
+			and T1.lot = T2.lot 
+			and T1.unit = T2.unit 
+			and T2.costCenter = 1
+	</update>
+	
+	<insert id="scminvbal.addByCstInitBill" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		insert into ScmInvBal(periodId, accountYear, accountPeriod, finOrgUnitNo, orgUnitNo,
+			wareHouseID, costOrgUnitNo, costCenter, itemId, unit,
+			pieUnit, baseUnit, lot, startQty, startBaseQty,
+			startPieQty, startAmt, startTaxAmt, addQty, addBaseQty,
+			addPieQty, addAmt, addTaxAmt, outQty, outBaseQty,
+			outPieQty, outAmt, outTaxAmt, adjQty, adjBaseQty,
+			adjPieQty, adjAmt, adjTaxAmt, endQty, endBaseQty,
+			endPieQty, endAmt, endTaxAmt)
+		select T1.periodId, T1.accountYear, T1.accountPeriod, T1.finOrgUnitNo, T1.orgUnitNo,
+			T1.wareHouseID, T1.costOrgUnitNo, T1.costCentor, T1.itemId, T1.unit,
+			T1.pieUnit, T1.baseUnitId, T1.lot, T1.qty, T1.baseQty,
+			T1.pieQty, T1.amt, T1.taxAmt, 0 as addQty, 0 as addBaseQty,
+			0 as addPieQty, 0 as addAmt, 0 as addTaxAmt, 0 as outQty, 0 as outBaseQty,
+			0 as outPieQty, 0 as outAmt, 0 as outTaxAmt, 0 as adjQty, 0 as adjBaseQty,
+			0 as adjPieQty, 0 as adjAmt, 0 as adjTaxAmt, 0 as endQty, 0 as endBaseQty,
+			0 as endPieQty, 0 as endAmt, 0 as endTaxAmt
+		from (
+			select T.periodId, T.accountYear, T.accountPeriod, T.finOrgUnitNo, T.orgUnitNo, T.wareHouseID,
+				T.costOrgUnitNo, T.costCentor, T.itemId, T.unit, T.baseUnitId,
+				T.pieUnit, Sum(T.qty) as qty, Sum(T.pieQty) as pieQty, Sum(T.amt) as amt,
+				T.lot, Sum(T.baseQty) as baseQty, Sum(T.taxAmt) as taxAmt
+			from (
+				select M.periodId, M.initId, d.lineId, M.bizDate as invDate, M.finOrgUnitNo, M.orgUnitNo,                  
+		  			0 as wareHouseID, M.costOrgUnitNo as costOrgUnitNo, '1' as costCentor, D.itemId, A.itemName,                  
+		  			A.spec, D.unit, D.pieUnit, D.lot, D.qty,                   
+		  			ifnull(D.pieQty,0) as pieQty, D.price, D.amt, D.taxRate, D.taxPrice, 
+					D.taxAmt, 0 as allocatedQty, D.expDate, M.accountYear,
+					M.accountPeriod, A.baseUnitId, E.convrate * D.qty as baseQty         
+				from ScmCstInitBill as M,ScmCstInitBillEntry as D
+				left join ScmMaterial as A on D.itemId = A.id
+				left join ScmMaterialUnitRelation E on D.itemId =  E.itemId and D.unit = E.targetUnitId
+				where M.initId = #{initId}
+		  			and M.status = 'A'
+		  			and M.initId = D.initId
+				order by D.lineId) T
+			group by periodId,accountYear,accountPeriod,orgUnitNo,costOrgUnitNo,itemId,
+				lot,unit,wareHouseID,pieUnit,spec) T1
+		left join ScmInvBal T2 on T1.accountYear = T2.accountYear 
+			and T1.accountPeriod = T2.accountPeriod 
+			and T1.orgUnitNo = T2.orgUnitNo 
+			and ifnull(T1.costOrgUnitNo,'') = ifnull(T2.costOrgUnitNo,'') 
+			and T1.itemId = T2.itemId 
+			and T1.lot = T2.lot 
+			and T1.unit = T2.unit 
+			and T2.costCenter = 1
+		where T2.lot is null
+	</insert>
+	
+	<update id="scminvbal.updateByCancelCstInitBill" parameterType="Map">
+		update ScmInvBal T2,
+		(select accountYear, accountPeriod, orgunitno, costOrgUnitNo, itemId,
+			lot, unit, wareHouseID, pieUnit, spec,
+			Sum(qty) as qty, Sum(pieQty) as pieQty,
+			Sum(amt) as amt, Sum(baseQty) as baseQty,
+			Sum(taxAmt) as taxAmt
+		from
+			(select M.initId, d.lineId, M.bizdate as invDate, M.finOrgUnitNo, M.orgUnitNo,
+	  			0 as wareHouseID, M.costOrgUnitNo as costOrgUnitNo, '1' as costCentor, D.itemId, A.itemName,
+	  			A.spec, D.unit, D.pieUnit, D.lot, D.qty,
+	  			ifnull(D.pieQty,0) as pieQty, D.price, D.amt, D.taxRate, D.taxPrice,
+					D.taxAmt, 0 as allocatedQty, D.expDate, M.accountYear,
+				M.accountPeriod, A.baseUnitId, E.convrate * D.qty as baseQty
+			from ScmCstInitBill as M, ScmCstInitBillEntry as D
+			left join ScmMaterial as A on D.itemId = A.id
+			left join ScmMaterialUnitRelation E on D.itemId =  E.itemId and D.unit = E.targetUnitId
+			where M.initId = #{initId}
+	  			and M.status = 'E'
+	  			and M.initId = D.initId
+			order by D.lineId) T
+			group by accountYear, accountPeriod, orgUnitNo, costOrgUnitNo, itemId,
+				lot, unit, wareHouseID, pieUnit, spec) T1
+		set T2.startQty = ifnull(T2.startQty,0) - T1.qty,
+			T2.startPieQty = ifnull(T2.startPieQty,0) - ifnull(T1.pieQty,0),
+			T2.startAmt = ifnull(T2.startAmt,0) - T1.amt,
+			T2.startBaseQty = ifnull(T2.startBaseQty,0) - T1.baseQty,
+			T2.pieUnit = T1.pieUnit,
+			T2.startTaxAmt = ifnull(T2.startTaxAmt,0) - T1.taxAmt
+		where T1.accountYear = T2.accountYear
+			and T1.accountPeriod = T2.accountPeriod
+			and T1.orgUnitNo = T2.orgUnitNo
+			and ifnull(T1.costOrgUnitNo,'') = ifnull(T2.costOrgUnitNo,'')
+			and T1.itemId = T2.itemId
+			and T1.lot = T2.lot
+			and T1.unit = T2.unit
+			and T2.costCenter = 1
+	</update>
+    
+    <update id="scminvbal.updateByMoveInWarehsBill" parameterType="Map">
+		update scminvBal T2,
+		    (select
+		        T.fYear, T.period, T.orgUnitNo, T.costOrgUnitNo, T.itemId, T.lot, T.unit, T.wareHouseId, T.pieUnit, T.spec, 
+		        SUM(T.qty) as qty, SUM(T.pieQty) as pieQty, 
+		        SUM(T.amt) as amt, SUM(T.baseQty) as baseQty, SUM(T.taxAmt) as taxAmt
+		    from 
+		    (select 
+		        M.wrId, D.lineId, M.bizDate as invDate, M.finOrgUnitNo, M.orgUnitNo, D.wareHouseId, '' as costOrgUnitNo, 0 as isCostCentor, 
+		        D.itemId, A.itemNo, A.itemName, 
+		        A.spec, D.unit, D.pieUnit, D.lot, D.qty, D.taxRate, D.taxPrice, D.taxAmt,
+		        IFNULL(D.pieQty,0) as pieQty, D.price, D.amt, 0 as allocatedQty, D.expDate, M.accountYear as fYear, M.accountPeriod as period, 
+		        D.sourceBillDtlId as sourceBillDtlId ,
+		        A.baseUnitId as baseUnit, scmmaterialunitrelation.convrate * D.qty as baseQty
+		    FROM 
+		        scminvmoveinwarehsbill as M, scminvmoveinwarehsbillentry as D
+		    left join scmmaterial as A on D.itemId = A.id
+		    left join scmmaterialunitrelation on 
+		    D.itemId = scmmaterialunitrelation.itemId and 
+		    D.unit = scmmaterialunitrelation.targetUnitId
+		    where M.wrId = #{wrId} and 
+		        M.status = 'A' and 
+		        M.wrId = D.wrId
+		    order by D.lineId) T
+		    group by 
+		        T.fYear, T.period, T.orgUnitNo, T.costOrgUnitNo, T.itemNo, T.lot, T.unit, T.wareHouseId, T.pieUnit, T.spec) T1
+		set 
+		    T2.addQty = IFNULL(T2.addQty,0) + T1.qty,
+		    T2.addPieQty = IFNULL(T2.addPieQty,0) + IFNULL(T1.pieQty,0),
+		    T2.addAmt = IFNULL(T2.addAmt,0) + T1.amt,
+		    T2.addBaseQty = IFNULL(T2.addBaseQty,0) + T1.baseQty, 
+		    T2.addTaxAmt = IFNULL(T2.addTaxAmt,0) + T1.taxAmt,
+		    T2.pieUnit = T1.pieUnit
+		where T1.fYear = T2.accountYear and T1.period = T2.accountPeriod and 
+		    T1.orgUnitNo = T2.orgUnitNo and 
+		    IFNULL(T1.costOrgUnitNo,'') = IFNULL(T2.costOrgUnitNo,'') and 
+		    T1.itemId = T2.itemId and 
+		    T1.lot = T2.lot and T1.unit = T2.unit and 
+		    IFNULL(T1.wareHouseId,0) = IFNULL(T2.wareHouseId,0)    
+    </update>
+    
+    <insert id="scminvbal.addByMoveInWarehsBill" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into
+		    ScmInvBal(periodId,accountYear,accountPeriod,FinOrgUnitNo,OrgUnitNo,WareHouseID,CostOrgUnitNo,costCenter,
+		    itemId,Unit,BaseUnit,PieUnit,StartQty,StartPieQty,StartAmt,AddQty,AddPieQty,AddAmt,OutQty,OutPieQty,OutAmt,AdjQty,AdjPieQty,AdjAmt,
+		    EndQty,EndPieQty,EndAmt,Lot,StartBaseQty,AddBaseQty,OutBaseQty,AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt)
+		    Select
+		        T.periodId,T.fYear,T.period,T.finOrgUnitNo,T.orgUnitNo,T.wareHouseId,T.costOrgUnitNo,T.isCostCentor,
+		        T.itemId,T.unit,T.baseUnit,T.pieUnit,0,0,0,T.qty,T.pieQty,T.amt,0,0,0,0,0,0,
+		        0,0,0,T.lot,0,T.BaseQty,0,0,0,0,T.taxAmt,0,0,0
+		    from 
+		        (select
+		            T1.periodId, T1.fYear, T1.period, T1.finOrgUnitNo, T1.orgUnitNo, T1.wareHouseId, T1.costOrgUnitNo,
+		            (case when IFNULL(T1.wareHouseId,0) = 0 then 1 else 0 end) as isCostCentor, 
+		            T1.itemId, T1.unit, T1.baseUnit, T1.pieUnit, SUM(T1.qty) as qty, SUM(T1.pieQty) as pieQty, 
+		            SUM(T1.amt) as amt, T1.lot, SUM(T1.baseQty) as BaseQty, SUM(T1.taxAmt) as taxAmt
+		        from 
+		            (select 
+		                M.periodId, M.wrId, D.lineId, M.bizDate as invDate, M.finOrgUnitNo, M.orgUnitNo, D.wareHouseId, '' as costOrgUnitNo, 0 as isCostCentor, 
+		                D.itemId, A.itemNo, A.itemName, 
+		                A.spec, D.unit, D.pieUnit, D.lot, D.qty, D.taxRate, D.taxPrice, D.taxAmt,
+		                IFNULL(D.pieQty,0) as pieQty, D.price, D.amt, 0 as allocatedQty, D.expDate, M.accountYear as fYear, M.accountPeriod as period, 
+		                D.sourceBillDtlId as sourceBillDtlId ,
+		                A.baseUnitId as baseUnit, scmmaterialunitrelation.convrate * D.qty as baseQty
+		            FROM 
+		                scminvmoveinwarehsbill as M, scminvmoveinwarehsbillentry as D
+		            left join scmmaterial as A on D.itemId = A.id
+		            left join scmmaterialunitrelation on 
+		            D.itemId = scmmaterialunitrelation.itemId and 
+		            D.unit = scmmaterialunitrelation.targetUnitId
+		            where M.wrId = #{wrId} and 
+		                M.status = 'A' and 
+		                M.wrId = D.wrId
+		            order by D.lineId) T1
+		        group by 
+		            T1.periodId, T1.fYear, T1.period, T1.finOrgUnitNo, T1.orgUnitNo, T1.wareHouseId, T1.costOrgUnitNo, 
+		            (case when IFNULL(T1.wareHouseId,0) = 0 then '1' else '0' end),
+		            T1.itemNo, T1.itemName, T1.spec, T1.unit, T1.pieUnit, T1.lot) T
+		    left join scminvBal T2 on T.fYear = T2.accountYear and T.period = T2.accountPeriod and 
+		        T.orgUnitNo = T2.orgUnitNo and 
+		        T.costOrgUnitNo = IFNULL(T2.costOrgUnitNo,'') and T.itemId = T2.itemId and 
+		        T.lot = T2.lot and T.unit = T2.unit and T.wareHouseId = IFNULL(T2.wareHouseId,0)
+		where T2.accountYear is null    
+    </insert>    
+    
+    <update id="scminvbal.updateByCancelMoveInWarehsBill" parameterType="Map">
+		update scminvBal T2,
+		    (select
+		        T.fYear, T.period, T.orgUnitNo, T.costOrgUnitNo, T.itemId, 
+		        T.lot, T.unit, T.wareHouseId, T.pieUnit, T.spec, 
+		        sum(T.qty) as qty, sum(T.pieQty) as pieQty, 
+		        sum(T.amt) as amt, sum(T.baseQty) as baseQty, sum(T.taxAmt) as taxAmt
+		    from 
+		    (select 
+		        M.wrId, D.lineId, M.bizDate as invDate, M.finOrgUnitNo, 
+		        M.orgUnitNo, D.wareHouseId, '' as costOrgUnitNo, 0 as isCostCentor, D.itemId, 
+		        A.itemNo, A.itemName, A.spec, D.unit, D.pieUnit, 
+		        D.lot, D.qty, D.taxRate, D.taxPrice, D.taxAmt,
+		        IFNULL(D.pieQty,0) as pieQty, D.price, D.amt, 0 as allocatedQty, D.expDate, 
+		        M.accountYear as fYear, M.accountPeriod as period, 
+		        D.sourceBillDtlId as sourceBillDtlId ,
+		        A.baseUnitId as baseUnit, scmmaterialunitrelation.convrate * D.qty as baseQty
+		    from 
+		        ScmInvMoveInWarehsBill as M, ScmInvMoveInWarehsBillentry as D
+		    left join ScmMaterial as A on D.itemId = A.id
+		    left join ScmMaterialUnitRelation on 
+		    D.itemId = ScmMaterialUnitRelation.itemId and 
+		    D.unit = ScmMaterialUnitRelation.targetUnitId
+		    where M.wrId = #{wrId}  
+		        and M.status = 'E' 
+		        and M.wrId = D.wrId  
+		    order by D.lineId) T
+		    group by 
+		        T.fYear, T.period, T.orgUnitNo, T.costOrgUnitNo, T.itemNo, 
+		        T.lot, T.unit, T.wareHouseId, T.pieUnit, T.spec) T1
+		set 
+		    T2.addQty = ifnull(T2.addQty,0) - T1.qty,
+		    T2.addPieQty = ifnull(T2.addPieQty,0) - ifnull(T1.pieQty,0),
+		    T2.addAmt = ifnull(T2.addAmt,0) - T1.amt,
+		    T2.addBaseQty = ifnull(T2.addBaseQty,0) - T1.baseQty, 
+		    T2.addTaxAmt = ifnull(T2.addTaxAmt,0) - T1.taxAmt,
+		    T2.pieUnit = T1.pieUnit
+		where T1.fYear = T2.accountYear 
+			and T1.period = T2.accountPeriod 
+		    and T1.orgUnitNo = T2.orgUnitNo 
+		    and ifnull(T1.costOrgUnitNo,'') = ifnull(T2.costOrgUnitNo,'') 
+		    and T1.itemId = T2.itemId 
+		    and T1.lot = T2.lot and T1.unit = T2.unit 
+		    and ifnull(T1.wareHouseId,0) = ifnull(T2.wareHouseId,0)    
+    </update>
+    
+    <update id="scminvbal.updateByCostConsume" parameterType="Map">
+		update ScmInvBal T2,  
+			(select A.periodId, A.accountYear, A.accountPeriod, A.useOrgUnitNo, A.orgUnitNo,
+				B.itemId, B.lot, B.unit, sum(B.qty) as qty, sum(B.pieQty) as pieQty,  
+				sum(B.amt) as amt, sum(baseQty) as baseQty, sum(B.taxAmt) as taxAmt  
+			from ScmInvCostConsume A,ScmInvCostConsumeEntry B  
+			where A.dcId = B.dcId 
+				and A.dcId = #{dcId}  
+		    group by A.accountYear, A.accountPeriod, A.orgUnitNo, A.useOrgUnitNo, B.itemId, 
+		    	B.lot, B.unit) T1  
+		set T2.outQty = ifnull(T2.outQty, 0) + T1.qty,
+			T2.outPieQty = ifnull(T2.outPieQty, 0) + ifnull(T1.pieQty, 0),  
+			T2.outAmt = ifnull(T2.outAmt, 0) + T1.amt,
+			T2.outBaseQty = ifnull(T2.outBaseQty, 0) + T1.baseQty,
+			T2.outTaxAmt = ifnull(T2.outTaxAmt, 0) + T1.taxAmt
+		where T1.accountYear = T2.accountYear 
+			and T1.accountPeriod = T2.accountPeriod 
+			and T1.orgUnitNo = T2.costOrgUnitNo  
+		    and T1.useOrgUnitNo = T2.orgUnitNo 
+		    and T1.itemId = T2.itemId 
+		    and T1.lot = T2.lot 
+		    and T1.unit = T2.unit
+	</update>
+	
+	<insert id="scminvbal.addByCostConsumPost" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+	insert into ScmInvBal 
+		(periodId, accountYear, accountPeriod, finOrgUnitNo, orgUnitNo, wareHouseId, costOrgUnitNo, costCenter, itemId,
+			unit,baseUnit, pieUnit, startQty, startPieQty, StartAmt, addQty, addPieQty, addAmt, outQty, outPieQty, outAmt,
+			adjQty, adjPieQty, adjAmt, endQty, endPieQty, endAmt, lot, startBaseQty, addBaseQty, outBaseQty, adjBaseQty, 
+			endBaseQty, addTaxAmt, startTaxAmt, outTaxAmt, adjTaxAmt, endTaxAmt)
+		select 
+			T1.periodId, T1.accountYear, T1.accountPeriod, T1.finOrgUnitNo, T1.useOrgUnitNo, 0, T1.orgUnitNo,
+			1, T1.itemId, T1.unit, T1.baseUnit,T1.pieUnit, 0, 0, 0, 0, 0, 0, T1.qty, T1.pieQty, T1.amt, 0, 0, 0, 0, 0, 0, T1.lot, 0, 0,T1.baseQty,
+			0, 0, 0, 0, T1.taxAmt, 0, 0
+		from (
+			select 
+					A.periodId, A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.useOrgUnitNo, A.orgUnitNo,
+					B.itemId, B.unit,B.baseUnit, B.pieUnit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.baseQty) as baseQty, 
+					B.price, SUM(B.amt) as amt, B.taxRate, B.taxPrice, SUM(B.taxAmt) as taxAmt, B.lot
+				from 
+					ScmInvCostConsume A,ScmInvCostConsumeEntry B
+				where 
+					A.dcId = B.dcId 
+					and A.dcId = #{dcId} 
+				group by A.periodId, A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.useOrgUnitNo, A.orgUnitNo, 
+					B.itemId, B.unit, B.pieUnit, B.lot) T1
+			left join ScmInvBal T2 on T1.accountYear = T2.accountYear
+			and T1.accountPeriod = T2.accountPeriod
+			and T1.useOrgUnitNo = T2.orgUnitNo
+			and T1.orgUnitNo = T2.costOrgUnitNo
+			and T1.itemId = T2.itemId 
+			and T1.lot = T2.lot
+			and T1.unit = T2.unit
+	where T2.accountYear is null
+	</insert>
+	
+	<update id="scminvbal.updateByCancelCostConsume" parameterType="Map">
+		update ScmInvBal T2,  
+			(select A.periodId, A.accountYear, A.accountPeriod, A.useOrgUnitNo, A.orgUnitNo,
+				B.itemId, B.lot, B.unit, sum(B.qty) as qty, sum(B.pieQty) as pieQty,  
+				sum(B.amt) as amt, sum(baseQty) as baseQty, sum(B.taxAmt) as taxAmt  
+			from ScmInvCostConsume A,ScmInvCostConsumeEntry B  
+			where A.dcId = B.dcId 
+				and A.dcId = #{dcId}  
+		    group by A.accountYear, A.accountPeriod, A.orgUnitNo, A.useOrgUnitNo, B.itemId, 
+		    	B.lot, B.unit) T1  
+		set T2.outQty = ifnull(T2.outQty, 0) - T1.qty,
+			T2.outPieQty = ifnull(T2.outPieQty, 0) - ifnull(T1.pieQty, 0),  
+			T2.outAmt = ifnull(T2.outAmt, 0) - T1.amt,
+			T2.outBaseQty = ifnull(T2.outBaseQty, 0) - T1.baseQty,
+			T2.outTaxAmt = ifnull(T2.outTaxAmt, 0) - T1.taxAmt
+		where T1.accountYear = T2.accountYear 
+			and T1.accountPeriod = T2.accountPeriod 
+			and T1.orgUnitNo = T2.costOrgUnitNo  
+		    and T1.useOrgUnitNo = T2.orgUnitNo 
+		    and T1.itemId = T2.itemId 
+		    and T1.lot = T2.lot 
+		    and T1.unit = T2.unit
+	</update>
+	
+	<insert id="scminvbal.addByCostConsumCancelPost" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+	insert into ScmInvBal 
+		(periodId, accountYear, accountPeriod, finOrgUnitNo, orgUnitNo, wareHouseId, costOrgUnitNo, costCenter, itemId,
+			unit,baseUnit, pieUnit, startQty, startPieQty, StartAmt, addQty, addPieQty, addAmt, outQty, outPieQty, outAmt,
+			adjQty, adjPieQty, adjAmt, endQty, endPieQty, endAmt, lot, startBaseQty, addBaseQty, outBaseQty, adjBaseQty, 
+			endBaseQty, addTaxAmt, startTaxAmt, outTaxAmt, adjTaxAmt, endTaxAmt)
+		select 
+			T1.periodId, T1.accountYear, T1.accountPeriod, T1.finOrgUnitNo, T1.useOrgUnitNo, 0, T1.orgUnitNo,
+			1, T1.itemId, T1.unit, T1.baseUnit,T1.pieUnit, 0, 0, 0, 0, 0, 0, -T1.qty, -T1.pieQty, -T1.amt, 0, 0, 0, 0, 0, 0, T1.lot, 0, 0,-T1.baseQty,
+			0, 0, 0, 0, -T1.taxAmt, 0, 0
+		from (
+			select 
+					A.periodId, A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.useOrgUnitNo, A.orgUnitNo,
+					B.itemId, B.unit,B.baseUnit, B.pieUnit, SUM(B.qty) as qty, SUM(B.pieQty) as pieQty, SUM(B.baseQty) as baseQty, 
+					B.price, SUM(B.amt) as amt, B.taxRate, B.taxPrice, SUM(B.taxAmt) as taxAmt, B.lot
+				from 
+					ScmInvCostConsume A,ScmInvCostConsumeEntry B
+				where 
+					A.dcId = B.dcId 
+					and A.dcId = #{dcId} 
+				group by A.periodId, A.accountYear, A.accountPeriod, A.finOrgUnitNo, A.useOrgUnitNo, A.orgUnitNo, 
+					B.itemId, B.unit, B.pieUnit, B.lot) T1
+			left join ScmInvBal T2 on T1.accountYear = T2.accountYear
+			and T1.accountPeriod = T2.accountPeriod
+			and T1.useOrgUnitNo = T2.orgUnitNo
+			and T1.orgUnitNo = T2.costOrgUnitNo
+			and T1.itemId = T2.itemId 
+			and T1.lot = T2.lot
+			and T1.unit = T2.unit
+	where T2.accountYear is null
+	</insert>
+
+	<update id="scminvbal.calcEndBal" parameterType="Map">
+		update ScmInvBal set endQty = ifnull(startQty, 0) + ifnull(addQty, 0)- ifnull(outQty,0)+ifnull(adjQty,0),
+			endBaseQty = ifnull(startBaseQty, 0) + ifnull(addBaseQty, 0)- ifnull(outBaseQty,0)+ifnull(adjBaseQty,0),  
+			endPieQty = ifnull(startPieQty, 0) + ifnull(addPieQty, 0)- ifnull(outPieQty,0)+ifnull(adjPieQty,0),
+			endAmt = ifnull(startAmt, 0) + ifnull(addAmt, 0)- ifnull(outAmt,0)+ifnull(adjAmt,0),
+			endTaxAmt = ifnull(startTaxAmt, 0) + ifnull(addTaxAmt, 0)- ifnull(outTaxAmt,0)+ifnull(adjTaxAmt,0)
+		where finOrgUnitNo=#{orgUnitNo} and periodId=#{periodId}
+	</update>
+	
+	<insert id="scminvbal.buildNextPeriodStartBal" parameterType="Map"  keyProperty="id" useGeneratedKeys="true">
+		Insert into ScmInvBal(periodId, accountYear, accountPeriod,FinOrgUnitNo, OrgUnitNo, WareHouseID, CostOrgUnitNo, costCenter,
+			itemId, Unit, PieUnit,baseUnit, StartQty, StartPieQty, StartAmt, AddQty,AddPieQty, AddAmt,OutQty, OutPieQty, OutAmt, AdjQty, AdjPieQty, AdjAmt, EndQty, EndPieQty,
+			EndAmt, Lot, StartBaseQty, AddBaseQty, OutBaseQty, AdjBaseQty,EndBaseQty,startTaxAmt,addTaxAmt,outTaxAmt,adjTaxAmt,endTaxAmt)
+		Select #{nextPeriodId}, #{accountYear}, #{accountPeriod},a.FinOrgUnitNo,a.OrgUnitNo,a.WareHouseID,a.CostOrgUnitNo,a.costCenter,
+		a.itemId,a.Unit,a.PieUnit,a.baseUnit,a.EndQty,a.EndPieQty,a.EndAmt, 0,0, 0,0, 0, 0, 0, 0, 0, 0, 0,0,a.Lot,a.EndBaseQty, 0, 0, 0,0,a.endTaxAmt,0,0,0,0
+		From ScmInvBal a where a.finOrgUnitNo=#{orgUnitNo} And a.periodId=#{periodId} And a.endQty &gt; 0
+		ON DUPLICATE KEY UPDATE StartBaseQty=a.endBaseQty,StartQty=a.endQty,StartPieQty=a.endPieQty,StartAmt=a.endAmt,startTaxAmt=a.endTaxAmt
+	</insert>
+	
+	<update id="scminvbal.clearStartBal" parameterType="Map">
+		update ScmInvBal set startQty = 0,startBaseQty = 0, startPieQty = 0,startAmt = 0,startTaxAmt = 0
+		where finOrgUnitNo=#{orgUnitNo} And periodId=#{periodId}
+	</update>
+	<delete id="scminvbal.delDeplete" parameterType="Map">
+		DELETE FROM ScmInvBal WHERE finOrgUnitNo=#{orgUnitNo} and costCenter=1 and costOrgUnitNo in (${costOrgUnitNos})
+	</delete> 
+	<update id="scminvbal.updateByDepositInReturn" parameterType="Map">
+		Update scmInvBal T2 , (Select A.accountYear,A.periodId,B.orgUnitNo,B.wareHouseID,B.itemId,
+		B.lot,B.unit,Sum(B.qty) As qty,Sum(B.pieQty) as pieQty,    
+		Sum(B.Amt) as Amt,Sum(B.baseQty) as baseQty ,Sum(B.TaxAmt) as TaxAmt    
+	    From ScmInvOtherInWarehsBill A,ScmInvOtherInWarehsBillentry B    
+	    Where A.wrId = B.wrId And A.wrId = #{wrId}
+	    Group by A.accountYear,A.periodId,B.orgUnitNo,B.wareHouseID,B.itemId,B.lot,B.unit) T1   
+		Set T2.AddQty = IFNULL(T2.AddQty,0) - T1.Qty,
+		T2.AddPieQty =	IFNULL(T2.AddPieQty,0) - IFNULL(T1.PieQty,0),
+		T2.AddBaseQty = IFNULL(T2.AddBaseQty,0)- T1.BaseQty,
+		T2.AddAmt = IFNULL(T2.AddAmt,0) - T1.Amt,
+		T2.addTaxAmt = IFNULL(T2.addTaxAmt,0) - T1.taxAmt
+		Where T1.accountYear = T2.accountYear And T1.periodId = T2.periodId 
+		And T1.wareHouseID = T2.wareHouseID    
+	    And T1.orgUnitNo = T2.orgUnitNo 
+	    And T1.itemId = T2.itemId 
+	    And T1.lot = T2.lot 
+	    And T1.unit = T2.unit 
+	 </update>
+	 <update id="scminvbal.updateByCancelDepositInReturn" parameterType="Map">
+		Update scmInvBal T2 , (Select A.accountYear,A.periodId,B.orgUnitNo,B.wareHouseID,B.itemId,
+		B.lot,B.unit,Sum(B.qty) As qty,Sum(B.pieQty) as pieQty,    
+		Sum(B.Amt) as Amt,Sum(B.baseQty) as baseQty ,Sum(B.TaxAmt) as TaxAmt    
+	    From ScmInvOtherInWarehsBill A,ScmInvOtherInWarehsBillentry B    
+	    Where A.wrId = B.wrId And A.wrId = #{wrId}
+	    Group by A.accountYear,A.periodId,B.orgUnitNo,B.wareHouseID,B.itemId,B.lot,B.unit) T1   
+		Set T2.AddQty = IFNULL(T2.AddQty,0) + T1.Qty,
+		T2.AddPieQty =	IFNULL(T2.AddPieQty,0) + IFNULL(T1.PieQty,0),
+		T2.AddBaseQty = IFNULL(T2.AddBaseQty,0) + T1.BaseQty,
+		T2.AddAmt = IFNULL(T2.AddAmt,0) + T1.Amt,
+		T2.addTaxAmt = IFNULL(T2.addTaxAmt,0) + T1.taxAmt
+		Where T1.accountYear = T2.accountYear And T1.periodId = T2.periodId 
+		And T1.wareHouseID = T2.wareHouseID    
+	    And T1.orgUnitNo = T2.orgUnitNo 
+	    And T1.itemId = T2.itemId 
+	    And T1.lot = T2.lot 
+	    And T1.unit = T2.unit 
+	 </update>
+	 
+	 <update id="scminvbal.updateByCstFrmLoss" parameterType="Map">
+		update ScmInvBal T2,  
+			(select A.periodId, A.accountYear, A.accountPeriod, A.costOrgUnitNo, A.orgUnitNo,
+				B.itemId, B.lot, B.unit, sum(B.qty) as qty, sum(B.pieQty) as pieQty,  
+				sum(B.amt) as amt, sum(baseQty) as baseQty, sum(B.taxAmt) as taxAmt  
+			from ScmCstFrmLoss A,ScmCstFrmLossEntry B  
+			where A.id = B.billId 
+				and A.id = #{billId}  
+		    group by A.accountYear, A.accountPeriod, A.orgUnitNo, A.costOrgUnitNo, B.itemId, 
+		    	B.lot, B.unit) T1  
+		set T2.outQty = ifnull(T2.outQty, 0) + T1.qty,
+			T2.outPieQty = ifnull(T2.outPieQty, 0) + ifnull(T1.pieQty, 0),  
+			T2.outAmt = ifnull(T2.outAmt, 0) + T1.amt,
+			T2.outBaseQty = ifnull(T2.outBaseQty, 0) + T1.baseQty,
+			T2.outTaxAmt = ifnull(T2.outTaxAmt, 0) + T1.taxAmt
+		where T1.accountYear = T2.accountYear 
+			and T1.accountPeriod = T2.accountPeriod 
+			and T1.orgUnitNo = T2.costOrgUnitNo  
+		    and T1.costOrgUnitNo = T2.orgUnitNo 
+		    and T1.itemId = T2.itemId 
+		    and T1.lot = T2.lot 
+		    and T1.unit = T2.unit
+	</update>
+	
+	<update id="scminvbal.updateByCancelCstFrmLoss" parameterType="Map">
+		update ScmInvBal T2,  
+			(select A.periodId, A.accountYear, A.accountPeriod, A.costOrgUnitNo, A.orgUnitNo,
+				B.itemId, B.lot, B.unit, sum(B.qty) as qty, sum(B.pieQty) as pieQty,  
+				sum(B.amt) as amt, sum(baseQty) as baseQty, sum(B.taxAmt) as taxAmt  
+			from ScmCstFrmLoss A,ScmCstFrmLossEntry B  
+			where A.id = B.billId 
+				and A.id = #{billId}  
+		    group by A.accountYear, A.accountPeriod, A.orgUnitNo, A.costOrgUnitNo, B.itemId, 
+		    	B.lot, B.unit) T1  
+		set T2.outQty = ifnull(T2.outQty, 0) - T1.qty,
+			T2.outPieQty = ifnull(T2.outPieQty, 0) - ifnull(T1.pieQty, 0),  
+			T2.outAmt = ifnull(T2.outAmt, 0) - T1.amt,
+			T2.outBaseQty = ifnull(T2.outBaseQty, 0) - T1.baseQty,
+			T2.outTaxAmt = ifnull(T2.outTaxAmt, 0) - T1.taxAmt
+		where T1.accountYear = T2.accountYear 
+			and T1.accountPeriod = T2.accountPeriod 
+			and T1.orgUnitNo = T2.costOrgUnitNo  
+		    and T1.costOrgUnitNo = T2.orgUnitNo 
+		    and T1.itemId = T2.itemId 
+		    and T1.lot = T2.lot 
+		    and T1.unit = T2.unit
+	</update>
+	<select id="scminvbal.selectCostConsumePage" resultType="ScmInvBal2" parameterType="Map"> 
+		SELECT ScmInvBal.finOrgUnitNo,ScmInvBal.costOrgUnitNo,ScmMaterialGroup.className as groupName,ScmMaterialGroup.classCode as groupCode,ScmMaterialGroup.longNo as longNo,
+		ScmMaterialGroup.id as groupId,sum(ScmInvBal.startAmt) as startAmt,sum(ScmInvBal.startTaxAmt) as startTaxAmt
+		FROM ScmInvBal,ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE  ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id And ScmInvBal.itemId=ScmMaterial.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id 
+		GROUP BY ScmInvBal.finOrgUnitNo,ScmInvBal.costOrgUnitNo,ScmMaterialGroup.classCode
+		ORDER BY ScmInvBal.finOrgUnitNo,ScmInvBal.costOrgUnitNo,ScmMaterialGroup.classCode
+	</select>
+</mapper>

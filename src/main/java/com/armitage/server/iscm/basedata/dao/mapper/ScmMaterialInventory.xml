@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmmaterialinventory">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmmaterialinventory.findAll" resultType="ScmMaterialInventory2" >
+	    SELECT * FROM ScmMaterialInventory WHERE  1=1  
+	</select>
+ 
+	<select id="scmmaterialinventory.findAllPage" resultType="ScmMaterialInventory2" parameterType="Map"> 
+		SELECT * FROM ScmMaterialInventory WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmmaterialinventory.selectById" resultType="ScmMaterialInventory2" parameterType="Long">
+		SELECT * FROM ScmMaterialInventory WHERE id = #{value}
+	</select>
+	<select id="scmmaterialinventory.selectByItemIdAndOrgUnitNo" resultType="ScmMaterialInventory2" parameterType="Map">
+		SELECT * FROM ScmMaterialInventory 
+		WHERE 1=1 and itemId = #{itemId}
+			and orgUnitNo = #{orgUnitNo}
+	</select>
+	
+	<select id="scmmaterialinventory.selectByItemId" resultType="ScmMaterialInventory2" parameterType="Map">
+		SELECT ScmMaterialInventory.itemId
+			,CASE WHEN a.unitId is null THEN ScmMaterialInventory.unitId ELSE a.unitId END AS unitId
+		FROM ScmMaterialInventory LEFT JOIN scmmaterialinventory a  ON ScmMaterialInventory.itemId = a.itemId AND a.orgUnitNo = #{orgUnitNo}
+		WHERE 1=1 and ScmMaterialInventory.itemId = #{itemId}
+			and ScmMaterialInventory.orgUnitNo = #{controlUnitNo}
+	</select>
+	 
+	<select id="scmmaterialinventory.selectByItemStatusPage" resultType="ScmMaterialInventory2" parameterType="Map">
+		SELECT * FROM ScmMaterialInventory WHERE itemId = #{itemId} and status = #{status}
+	</select> 
+	<insert id="scmmaterialinventory.add" parameterType="ScmMaterialInventory"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmMaterialInventory (
+        guId,
+        itemId,
+        orgUnitNo,
+        abcType,
+        defaultWhId,
+        unitId,
+        reorder,
+        maxAmt,
+        oqnum,
+        maxQty,
+        minQty,
+        movedays,
+        periodValid,
+        periodValidDays,
+        ahnum,
+        saleTaxRate,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        freezeOrgUnit,
+        freezeTime,
+        status,
+        controlUnitNo        )
+		VALUES (
+        #{guId},
+        #{itemId},
+        #{orgUnitNo},
+        #{abcType},
+        #{defaultWhId},
+        #{unitId},
+        #{reorder},
+        #{maxAmt},
+        #{oqnum},
+        #{maxQty},
+        #{minQty},
+        #{movedays},
+        #{periodValid},
+        #{periodValidDays},
+        #{ahnum},
+        #{saleTaxRate},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{freezeOrgUnit},
+        #{freezeTime},
+        #{status},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmmaterialinventory.update" parameterType="ScmMaterialInventory">
+		UPDATE ScmMaterialInventory set
+        guId=#{guId},
+        itemId=#{itemId},
+        orgUnitNo=#{orgUnitNo},
+        abcType=#{abcType},
+        defaultWhId=#{defaultWhId},
+        unitId=#{unitId},
+        reorder=#{reorder},
+        maxAmt=#{maxAmt},
+        oqnum=#{oqnum},
+        maxQty=#{maxQty},
+        minQty=#{minQty},
+        movedays=#{movedays},
+        periodValid=#{periodValid},
+        periodValidDays=#{periodValidDays},
+        ahnum=#{ahnum},
+        saleTaxRate=#{saleTaxRate},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        freezeOrgUnit=#{freezeOrgUnit},
+        freezeTime=#{freezeTime},
+        status=#{status},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmmaterialinventory.delete" parameterType="String">
+		DELETE FROM ScmMaterialInventory WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

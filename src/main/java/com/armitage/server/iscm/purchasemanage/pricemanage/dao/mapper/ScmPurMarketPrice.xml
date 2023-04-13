@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurmarketprice">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurmarketprice.findAll" resultType="ScmPurMarketPrice2" >
+	    SELECT * FROM ScmPurMarketPrice WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurmarketprice.findAllPage" resultType="ScmPurMarketPrice2" parameterType="Map"> 
+		SELECT ScmPurMarketPrice.*,ScmPurQuotationPlan.planNo FROM ScmPurMarketPrice
+		Left Join ScmPurQuotationPlan On ScmPurMarketPrice.planId=ScmPurQuotationPlan.id
+		WHERE  1=1 
+		<choose>
+			<when test="sortByDate != null and sortByDate !='' "> 
+				ORDER BY ScmPurMarketPrice.piDate Desc,ScmPurMarketPrice.piNo Desc 
+			</when>
+			<otherwise>
+				ORDER BY ScmPurMarketPrice.piNo Desc 
+			</otherwise>
+		</choose> 
+	</select> 
+	<select id="scmpurmarketprice.selectById" resultType="ScmPurMarketPrice2" parameterType="Long">
+		SELECT * FROM ScmPurMarketPrice WHERE id = #{value}
+	</select> 
+	<select id="scmpurmarketprice.selectMaxIdByDate" resultType="ScmPurMarketPrice2" parameterType="Map">
+		SELECT ScmPurMarketPrice.*
+		FROM ScmPurMarketPrice
+		WHERE ScmPurMarketPrice.createDate &gt;=#{createDate} And ScmPurMarketPrice.createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And ScmPurMarketPrice.controlUnitNo=#{controlUnitNo} Order BY piNo Desc Limit 1
+	</select>
+	<select id="scmpurmarketprice.selectRecentPrice" resultType="ScmPurMarketPrice2" parameterType="Map">
+		Select A.enquiryGroupId,B.price From ScmPurMarketPrice A,ScmPurMarketPriceEntry B,
+		(Select max(B.id) as id from ScmPurMarketPrice A,ScmPurMarketPriceEntry B
+		Where A.id=B.piId  And A.piDate &gt;= #{begDate} And A.piDate &lt;= #{endDate}
+		And B.itemId=${itemId} And A.enquiryGroupId in (${enquiryGroupIds})
+		And A.status = 'E'
+		GROUP BY enquiryGroupId ORDER BY A.piDate Desc,B.id Desc) T
+		Where A.id=B.piId  And A.piDate &gt;= #{begDate} And A.piDate &lt;= #{endDate}
+		And B.itemId=${itemId} And A.enquiryGroupId in (${enquiryGroupIds})
+		And A.status = 'E' and B.id=T.id
+	</select> 
+	<select id="scmpurmarketprice.selectItemsRecentPrice" resultType="ScmPurMarketPrice2" parameterType="Map">
+		Select A.enquiryGroupId,B.price,B.itemId From ScmPurMarketPrice A,ScmPurMarketPriceEntry B,
+		(Select max(B.id) as id from ScmPurMarketPrice A,ScmPurMarketPriceEntry B
+		Where A.id=B.piId  And A.piDate &gt;= #{begDate} And A.piDate &lt;= #{endDate}
+		And B.itemId in(${itemId}) And A.enquiryGroupId in (${enquiryGroupIds})
+		And A.status = 'E'
+		GROUP BY enquiryGroupId,B.itemid ORDER BY A.piDate Desc,B.id Desc) T
+		Where A.id=B.piId  And A.piDate &gt;= #{begDate} And A.piDate &lt;= #{endDate}
+		And B.itemId in(${itemId}) And A.enquiryGroupId in (${enquiryGroupIds})
+		And A.status = 'E' and B.id=T.id
+	</select> 
+	<insert id="scmpurmarketprice.add" parameterType="ScmPurMarketPrice"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurMarketPrice (
+        piNo,
+        piDate,
+        orgUnitNo,
+        finOrgUnitNo,
+        enquiryGroupId,
+        enquiryCode,
+        currencyNo,
+        exchangeRate,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        workFlowNo,
+        stepNo,
+        checker,
+        checkDate,
+        planId,
+        prtcount,
+        status,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{piNo},
+        #{piDate},
+        #{orgUnitNo},
+        #{finOrgUnitNo},
+        #{enquiryGroupId},
+        #{enquiryCode},
+        #{currencyNo},
+        #{exchangeRate},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{workFlowNo},
+        #{stepNo},
+        #{checker},
+        #{checkDate},
+        #{planId},
+        #{prtcount},
+        #{status},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpurmarketprice.update" parameterType="ScmPurMarketPrice">
+		UPDATE ScmPurMarketPrice set
+        piNo=#{piNo},
+        piDate=#{piDate},
+        orgUnitNo=#{orgUnitNo},
+        finOrgUnitNo=#{finOrgUnitNo},
+        enquiryGroupId=#{enquiryGroupId},
+        enquiryCode=#{enquiryCode},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        planId=#{planId},
+        prtcount=#{prtcount},
+        status=#{status},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurmarketprice.delete" parameterType="String">
+		DELETE FROM ScmPurMarketPrice WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

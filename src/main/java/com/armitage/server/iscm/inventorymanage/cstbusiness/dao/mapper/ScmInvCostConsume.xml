@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvcostconsume">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvcostconsume.findAll" resultType="ScmInvCostConsume2" >
+	    SELECT * FROM ScmInvCostConsume WHERE  1=1  
+	</select>
+ 
+	<select id="scminvcostconsume.findAllPage" resultType="ScmInvCostConsume2" parameterType="Map"> 
+		SELECT *,
+			IFNULL((Select sum(amt) FROM ScmInvCostConsumeEntry where dcId=ScmInvCostConsume.dcId),0) as amt,
+			IFNULL((Select sum(taxAmt) FROM ScmInvCostConsumeEntry	where dcId=ScmInvCostConsume.dcId),0) as taxAmt 
+		FROM ScmInvCostConsume WHERE  1=1 and generate=0 ORDER BY dcNo DESC
+	</select>
+	<select id="scminvcostconsume.findByNoPage" resultType="ScmInvCostConsume2" parameterType="Map"> 
+		SELECT *,
+			IFNULL((Select sum(amt) FROM ScmInvCostConsumeEntry where dcId=ScmInvCostConsume.dcId),0) as amt,
+			IFNULL((Select sum(taxAmt) FROM ScmInvCostConsumeEntry	where dcId=ScmInvCostConsume.dcId),0) as taxAmt 
+		FROM ScmInvCostConsume WHERE  1=1 ORDER BY dcNo DESC
+	</select> 
+	<select id="scminvcostconsume.selectById" resultType="ScmInvCostConsume2" parameterType="Long">
+		SELECT *,
+			IFNULL((Select sum(amt) FROM ScmInvCostConsumeEntry where dcId=ScmInvCostConsume.dcId),0) as amt,
+			IFNULL((Select sum(taxAmt) FROM ScmInvCostConsumeEntry	where dcId=ScmInvCostConsume.dcId),0) as taxAmt 
+		FROM ScmInvCostConsume WHERE dcId = #{value}
+	</select> 
+	<select id="scminvcostconsume.countUnPostBill" resultType="Map" parameterType="map">
+		select count(distinct(a.dcNo)) as number,group_concat(distinct(a.dcNo)) as data from
+		ScmInvCostConsume a where a.status not in('E','N') and a.orgUnitNo in (${useOrgUnitNos})
+		and a.bizDate&lt;=#{bizDate} order by a.dcNo
+    </select>
+	<select id="scminvcostconsume.selectMaxIdByDate" resultType="ScmInvCostConsume2" parameterType="String">
+		SELECT * FROM ScmInvCostConsume 
+		WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY dcNo Desc Limit 1
+    </select> 
+    <select id="scminvcostconsume.checkUnPostBill" resultType="ScmInvCostConsume2" parameterType="Map">
+		select * From ScmInvCostConsume Where finOrgUnitNo=#{finOrgUnitNo} and periodId=#{periodId} And status not in ('E','N')
+	</select>  
+	<select id="scminvcostconsume.checkPostedBill" resultType="ScmInvCostConsume2" parameterType="Map">
+		select * From ScmInvCostConsume Where finOrgUnitNo=#{finOrgUnitNo} and periodId=#{periodId} And status='E'
+	</select>
+	<select id="scminvcostconsume.queryForFixPage" resultType="ScmInvCostConsume2" parameterType="map">
+        SELECT * FROM ScmInvCostConsume WHERE finOrgUnitNo = #{finOrgUnitNo} and status = 'E' and generate=0
+        ORDER BY postDate,checkDate,bizDate
+    </select>
+	<insert id="scminvcostconsume.add" parameterType="ScmInvCostConsume"  keyProperty="dcId" useGeneratedKeys="true"> 
+		INSERT INTO  ScmInvCostConsume (
+        dcNo,
+        bizDate,
+        finOrgUnitNo,
+        orgUnitNo,
+        useOrgUnitNo,
+        offset,
+        sourceType,
+        currencyNo,
+        exchangeRate,
+        periodId,
+        accountYear,
+        accountPeriod,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        workFlowNo,
+        stepNo,
+        checker,
+        checkDate,
+        postDate,
+        prtcount,
+        status,
+        remarks,
+        generate,
+        refNo,
+        controlUnitNo        )
+		VALUES (
+        #{dcNo},
+        #{bizDate},
+        #{finOrgUnitNo},
+        #{orgUnitNo},
+        #{useOrgUnitNo},
+        #{offset},
+        #{sourceType},
+        #{currencyNo},
+        #{exchangeRate},
+        #{periodId},
+        #{accountYear},
+        #{accountPeriod},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{workFlowNo},
+        #{stepNo},
+        #{checker},
+        #{checkDate},
+        #{postDate},
+        #{prtcount},
+        #{status},
+        #{remarks},
+        #{generate},
+        #{refNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvcostconsume.update" parameterType="ScmInvCostConsume">
+		UPDATE ScmInvCostConsume set
+        dcNo=#{dcNo},
+        bizDate=#{bizDate},
+        finOrgUnitNo=#{finOrgUnitNo},
+        orgUnitNo=#{orgUnitNo},
+        useOrgUnitNo=#{useOrgUnitNo},
+        offset=#{offset},
+        sourceType=#{sourceType},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        periodId=#{periodId},
+        accountYear=#{accountYear},
+        accountPeriod=#{accountPeriod},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        workFlowNo=#{workFlowNo},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        postDate=#{postDate},
+        prtcount=#{prtcount},
+        status=#{status},
+        remarks=#{remarks},
+        generate=#{generate},
+        refNo=#{refNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE dcId = #{dcId}
+	</update>
+ 	<update id="scminvcostconsume.updatePostedStatus" parameterType="Map">
+ 		UPDATE ScmInvCostConsume set checker=#{checker},checkDate=#{checkDate},
+ 		postDate=#{postDate},status=#{status} Where dcId = #{dcId}
+ 		<choose>
+ 			<when test='status!=null and status=="E"'>
+ 				and status='A'
+ 			</when>
+ 			<otherwise>
+ 				and status='E'
+ 			</otherwise>
+ 		</choose>
+	</update>
+	<delete id="scminvcostconsume.delete" parameterType="String">
+		DELETE FROM ScmInvCostConsume WHERE dcId IN (${value})
+	</delete> 
+	<select id="scminvcostconsume.checkCostCenterFree" resultType="ScmInvCostConsume2" parameterType="Long">
+    	select a.taskId as taskId, a.freeItem as freeItem from scminvcountingtask a, scminvcountingcostcenter b, scminvcostconsume c
+		where a.taskId = b.taskId and 
+		c.dcId = #{value} and 
+		a.costCenter = 1 and 
+		a.status in ('T', 'B') and
+		b.useOrgUnitNo = c.useOrgUnitNo and 
+		a.freeItem = 1	
+    </select>
+    
+    <select id="scminvcostconsume.checkMaterialFree" resultType="Integer" parameterType="Map">
+		select count(1) from scminvcountingcostcenter as a, scminvcountingcostcenterentry as b, 
+		scminvcostconsume c, scminvcostconsumeentry d
+		where a.taskId = #{taskId} and 
+		a.tableId = b.tableId and
+		c.dcId = d.dcId and 
+		c.dcId = #{dcId} and 
+		a.useOrgUnitNo = c.useOrgUnitNo and 
+		b.itemId = d.itemId     
+    </select>
+    <select id="scminvcostconsume.selectGenerateBill" resultType="ScmInvCostConsume2" parameterType="Map">
+    	SELECT dcid FROM ScmInvCostConsume where finOrgUnitNo=#{finOrgUnitNo} and periodId=${periodId} and generate=#{generate} and status="E"
+    </select>
+    <select id="scminvcostconsume.selectGenerateBillBySourceType" resultType="ScmInvCostConsume2" parameterType="Map">
+    	SELECT * FROM ScmInvCostConsume where useOrgUnitNo in (${useOrgUnitNos}) and generate=0 
+    	and sourceType=#{sourceType} and date_format(bizDate,'%Y-%m-%d') = date_format(#{bizDate},'%Y-%m-%d')
+    </select>
+</mapper>
+ 

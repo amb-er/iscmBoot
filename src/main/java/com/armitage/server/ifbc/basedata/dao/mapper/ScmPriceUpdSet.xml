@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpriceupdset">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpriceupdset.findAll" resultType="ScmPriceUpdSet" >
+	    SELECT * FROM ScmPriceUpdSet WHERE  1=1  
+	</select>
+ 
+	<select id="scmpriceupdset.findAllPage" resultType="ScmPriceUpdSet" parameterType="Map"> 
+		SELECT * FROM ScmPriceUpdSet WHERE controlUnitNo=#{controlUnitNo} ORDER BY id ASC 
+	</select> 
+	<select id="scmpriceupdset.selectById" resultType="ScmPriceUpdSet" parameterType="Long">
+		SELECT * FROM ScmPriceUpdSet WHERE id = #{value}
+	</select> 
+	<select id="scmpriceupdset.findRepeat" resultType="ScmPriceUpdSet" parameterType="Map">
+		SELECT * FROM ScmPriceUpdSet WHERE orgUnitNo = #{orgUnitNo}
+	</select>
+	<select id="scmpriceupdset.selectByCtrl" resultType="ScmPriceUpdSet2" parameterType="Map">
+		SELECT ScmPriceUpdSet.*,ScmProductionDept.code as deptCode,ScmProductionDeptMapping.deptNo as deptNo 
+		FROM ScmPriceUpdSet,ScmProductionDept,ScmProductionDeptMapping 
+		WHERE ScmPriceUpdSet.controlUnitNo=#{controlUnitNo} And ScmProductionDept.id=ScmProductionDeptMapping.productDeptId
+		And ScmPriceUpdSet.orgUnitNo=ScmProductionDept.orgUnitNo And ScmPriceUpdSet.flag=1 And ScmProductionDept.flag=1
+		GROUP BY ScmPriceUpdSet.orgUnitNo,ScmProductionDept.code,ScmProductionDeptMapping.deptNo
+		ORDER BY ScmPriceUpdSet.orgUnitNo,ScmProductionDept.code,ScmProductionDeptMapping.deptNo ASC
+	</select> 
+	<insert id="scmpriceupdset.add" parameterType="ScmPriceUpdSet"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPriceUpdSet (
+        orgUnitNo,
+        updPriceType,
+        days,
+        itemPriceUpd,
+        baseCostUpd,
+        priceGetTime,
+        generateCostConsumeTime,
+        calcFbcRptDataTime,
+        flag,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{updPriceType},
+        #{days},
+        #{itemPriceUpd},
+        #{baseCostUpd},
+        #{priceGetTime},
+        #{generateCostConsumeTime},
+        #{calcFbcRptDataTime},
+        #{flag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpriceupdset.update" parameterType="ScmPriceUpdSet">
+		UPDATE ScmPriceUpdSet set
+        orgUnitNo=#{orgUnitNo},
+        updPriceType=#{updPriceType},
+        days=#{days},
+        itemPriceUpd=#{itemPriceUpd},
+        baseCostUpd=#{baseCostUpd},
+        priceGetTime=#{priceGetTime},
+        generateCostConsumeTime=#{generateCostConsumeTime},
+        calcFbcRptDataTime=#{calcFbcRptDataTime},
+        flag=#{flag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpriceupdset.delete" parameterType="String">
+		DELETE FROM ScmPriceUpdSet WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

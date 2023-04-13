@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcookcostcarddetailhistory">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmcookcostcarddetailhistory.findAll" resultType="ScmCookCostCardDetailHistory" >
+	    SELECT * FROM ScmCookCostCardDetailHistory WHERE  1=1  
+	</select>
+ 
+	<select id="scmcookcostcarddetailhistory.findAllPage" resultType="ScmCookCostCardDetailHistory" parameterType="Map"> 
+		SELECT * FROM ScmCookCostCardDetailHistory WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmcookcostcarddetailhistory.selectById" resultType="ScmCookCostCardDetailHistory" parameterType="Long">
+		SELECT * FROM ScmCookCostCardDetailHistory WHERE id = #{value}
+	</select> 
+	<select id="scmcookcostcarddetailhistory.selectByEffectDay" resultType="ScmCookCostCardDetailHistory" parameterType="Map"> 
+		SELECT * FROM ScmCookCostCardDetailHistory WHERE cardId=#{cardId} and beginDate &gt;=#{effectDate}
+	</select> 
+	<update id="scmcookcostcarddetailhistory.updateLastByCostCard" parameterType="Map">
+		UPDATE ScmCookCostCardDetailHistory A,ScmCookCostCard B Set A.endDate=DATE_ADD(B.effectiveDate,INTERVAL -1 DAY)
+		Where A.cardId=B.id And A.cardId=#{cardId} and A.endDate &gt;=B.effectiveDate
+	</update>
+	<update id="scmcookcostcarddetailhistory.updateLastByCostCard2" parameterType="Map">
+		UPDATE ScmCookCostCardDetailHistory A,ScmCookCostCard B Set A.endDate=DATE_ADD(CURRENT_DATE,INTERVAL -1 DAY)
+		Where A.cardId=B.id And A.cardId=#{cardId} and A.endDate &gt;=now()
+	</update>
+	<insert id="scmcookcostcarddetailhistory.addByCostCard" parameterType="map" keyProperty="id" useGeneratedKeys="true">
+		INSERT INTO  ScmCookCostCardDetailHistory (orgUnitNo,beginDate,endDate,cardId,cookId,type,itemId,
+        itemNo,itemName,cstUnit,qty,invUnit,convrate,price,creator,checker,controlUnitNo)
+		SELECT A.orgUnitNo,A.effectiveDate,'2030-12-31',B.cardId,A.cookId,B.type,B.itemId,B.itemNo,B.itemName,
+		B.cstUnit,B.qty,B.invUnit,B.convrate,B.price,B.creator,B.checker,A.controlUnitNo FROM ScmCookCostCard A,ScmCookCostCardDetail B
+		Where A.id=B.cardId and A.id=#{cardId}
+		ON DUPLICATE KEY UPDATE endDate='2030-12-31',type=B.type,itemNo=B.itemNo,itemName=B.itemName,
+		cstUnit=B.cstUnit,qty=B.qty,invUnit=B.invUnit,convrate=B.convrate,price=B.price,creator=B.creator,checker=B.checker
+	</insert> 
+	<insert id="scmcookcostcarddetailhistory.add" parameterType="ScmCookCostCardDetailHistory"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmCookCostCardDetailHistory (
+        cardId,
+        orgUnitNo,
+        beginDate,
+        endDate,
+        cookId,
+        type,
+        itemId,
+        itemNo,
+        itemName,
+        cstUnit,
+        qty,
+        invUnit,
+        convrate,
+        price,
+        creator,
+        checker,
+        controlUnitNo        )
+		VALUES (
+        #{cardId},
+        #{orgUnitNo},
+        #{beginDate},
+        #{endDate},
+        #{cookId},
+        #{type},
+        #{itemId},
+        #{itemNo},
+        #{itemName},
+        #{cstUnit},
+        #{qty},
+        #{invUnit},
+        #{convrate},
+        #{price},
+        #{creator},
+        #{checker},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmcookcostcarddetailhistory.update" parameterType="ScmCookCostCardDetailHistory">
+		UPDATE ScmCookCostCardDetailHistory set
+        cardId=#{cardId},
+        orgUnitNo=#{orgUnitNo},
+        beginDate=#{beginDate},
+        endDate=#{endDate},
+        cookId=#{cookId},
+        type=#{type},
+        itemId=#{itemId},
+        itemNo=#{itemNo},
+        itemName=#{itemName},
+        cstUnit=#{cstUnit},
+        qty=#{qty},
+        invUnit=#{invUnit},
+        convrate=#{convrate},
+        price=#{price},
+        creator=#{creator},
+        checker=#{checker},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmcookcostcarddetailhistory.delete" parameterType="String">
+		DELETE FROM ScmCookCostCardDetailHistory WHERE id IN (${value})
+	</delete> 
+	<delete id="scmcookcostcarddetailhistory.deleteByEffectDay" parameterType="Map">
+		DELETE FROM ScmCookCostCardDetailHistory Where cardId=#{cardId} and beginDate &gt;=#{beginDate}
+	</delete>
+
+</mapper>
+ 

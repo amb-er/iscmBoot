@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurchasetype">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurchasetype.findAll" resultType="ScmPurchaseType2" >
+	    SELECT * FROM ScmPurchaseType WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurchasetype.findAllPage" resultType="ScmPurchaseType2" parameterType="Map"> 
+		SELECT ScmPurchaseType.id,ScmPurchaseType.code, ScmPurchaseType.name, #{orgUnitNo} as orgUnitNo, ScmPurchaseType.remarks,
+				 Case when D.flag is null then ScmPurchaseType.flag else D.flag end as flag, ScmPurchaseType.controlUnitNo,
+				 case when D.sort is null then ScmPurchaseType.sort else D.sort end as sort
+		FROM (Select A.id, A.code, A.name,case when B.flag is null then A.flag else B.flag end as flag, A.controlUnitNo,B.orgUnitNo,
+		  	A.remarks,B.sort From (Select ScmPurchaseType.* From ScmPurchaseType Where controlUnitNo=#{controlUnitNo}) A, 
+				 ScmPurchaseTypeOrg B Where A.id = b.typeId And B.orgUnitNo=#{controlUnitNo}) ScmPurchaseType
+				Left Join ScmPurchaseTypeOrg D ON ScmPurchaseType.id = D.typeId AND D.orgUnitNo=#{orgUnitNo}
+		WHERE 1=1
+		ORDER BY ScmPurchaseType.id ASC	
+	</select> 
+	<select id="scmpurchasetype.selectById" resultType="ScmPurchaseType2" parameterType="Long">
+		SELECT * FROM ScmPurchaseType WHERE id = #{value}
+	</select> 
+	<select id="scmpurchasetype.selectByOrgPage" resultType="ScmPurchaseType2" parameterType="Map"> 
+		SELECT ScmPurchaseType.id,ScmPurchaseType.code, ScmPurchaseType.name, #{orgUnitNo} as orgUnitNo, ScmPurchaseType.remarks,
+				 Case when D.flag is null then ScmPurchaseType.flag else D.flag end as flag, ScmPurchaseType.controlUnitNo,
+				 case when D.sort is null then ScmPurchaseType.sort else D.sort end as sort
+		FROM (Select A.id, A.code, A.name,case when B.flag is null then A.flag else B.flag end as flag, A.controlUnitNo,B.orgUnitNo,
+		  	A.remarks,B.sort From (Select ScmPurchaseType.* From ScmPurchaseType Where controlUnitNo=#{controlUnitNo}) A, 
+				 ScmPurchaseTypeOrg B Where A.id = b.typeId And B.orgUnitNo=#{controlUnitNo}) ScmPurchaseType
+				Left Join ScmPurchaseTypeOrg D ON ScmPurchaseType.id = D.typeId AND D.orgUnitNo=#{orgUnitNo}
+		WHERE Case when D.flag is null then ScmPurchaseType.flag else D.flag end=1
+		ORDER BY ScmPurchaseType.id ASC	
+	</select> 
+	<select id="scmpurchasetype.selectByOrgsPage" resultType="ScmPurchaseType2" parameterType="Map"> 
+		SELECT ScmPurchaseType.id,ScmPurchaseType.code, ScmPurchaseType.name, ScmPurchaseType.remarks,
+				 Case when D.flag is null then ScmPurchaseType.flag else D.flag end as flag, ScmPurchaseType.controlUnitNo,
+				 case when D.sort is null then ScmPurchaseType.sort else D.sort end as sort
+		FROM (Select A.id, A.code, A.name,case when B.flag is null then A.flag else B.flag end as flag, A.controlUnitNo,B.orgUnitNo,
+		  	A.remarks,B.sort From (Select ScmPurchaseType.* From ScmPurchaseType Where controlUnitNo=#{controlUnitNo}) A, 
+				 ScmPurchaseTypeOrg B Where A.id = b.typeId And B.orgUnitNo=#{controlUnitNo}) ScmPurchaseType
+				Left Join ScmPurchaseTypeOrg D ON ScmPurchaseType.id = D.typeId AND D.orgUnitNo in(${orgUnitNos})
+		WHERE Case when D.flag is null then ScmPurchaseType.flag else D.flag end=1
+		ORDER BY ScmPurchaseType.id ASC	
+	</select>
+	<select id="scmpurchasetype.selectByControlUnitPage" resultType="ScmPurchaseType2" parameterType="Map"> 
+		SELECT ScmPurchaseType.id,ScmPurchaseType.code, ScmPurchaseType.name, ScmPurchaseType.remarks,
+				 ScmPurchaseType.flag as flag, ScmPurchaseType.controlUnitNo,ScmPurchaseType.sort as sort
+		FROM (Select A.id, A.code, A.name,case when B.flag is null then A.flag else B.flag end as flag, A.controlUnitNo,B.orgUnitNo,
+		  	A.remarks,B.sort From (Select ScmPurchaseType.* From ScmPurchaseType Where controlUnitNo=#{controlUnitNo}) A, 
+				 ScmPurchaseTypeOrg B Where A.id = b.typeId And B.orgUnitNo=#{controlUnitNo}) ScmPurchaseType
+		WHERE 1=1
+		ORDER BY ScmPurchaseType.id ASC	
+	</select> 
+	<select id="scmpurchasetype.selectByCodeAncCtrl" resultType="ScmPurchaseType2" parameterType="Map">
+		SELECT * FROM ScmPurchaseType WHERE code = #{code} and controlUnitNo=#{controlUnitNo}
+	</select> 
+	<insert id="scmpurchasetype.add" parameterType="ScmPurchaseType"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurchaseType (
+        code,
+        name,
+        remarks,
+        flag,
+        controlUnitNo        )
+		VALUES (
+        #{code},
+        #{name},
+        #{remarks},
+        #{flag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpurchasetype.update" parameterType="ScmPurchaseType">
+		UPDATE ScmPurchaseType set
+        code=#{code},
+        name=#{name},
+        remarks=#{remarks},
+        flag=#{flag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurchasetype.delete" parameterType="String">
+		DELETE FROM ScmPurchaseType WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

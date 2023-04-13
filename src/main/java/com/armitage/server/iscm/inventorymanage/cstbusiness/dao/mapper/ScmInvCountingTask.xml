@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvcountingtask">
+ 
+    <!-- default parameterType="HashMap" -->
+    <select id="scminvcountingtask.findAll" resultType="ScmInvCountingTask2" >
+        SELECT * FROM scminvcountingtask WHERE  1=1  
+    </select>
+ 
+    <select id="scminvcountingtask.findAllPage" resultType="ScmInvCountingTask2" parameterType="Map"> 
+        SELECT scminvcountingtask.*,Case when costCenter=1 Then case when
+        (Select GROUP_CONCAT(useOrgUnitNo) From scminvcountingcostcenter where taskId=scminvcountingtask.taskId) is null then 
+        (Select GROUP_CONCAT(useOrgUnitNo) From scminvcountinglistuserorg where taskId=scminvcountingtask.taskId and scminvcountingtask.assignLocation=1 and selectOrExclude=1) 
+        else (Select GROUP_CONCAT(useOrgUnitNo) From scminvcountingcostcenter where taskId=scminvcountingtask.taskId) end 
+		else (Select GROUP_CONCAT(wareHouseId) From scminvcountingtable where taskId=scminvcountingtask.taskId) end as wrOrDept
+		 FROM scminvcountingtask 
+		<if test="useOrgUnitNo != null and useOrgUnitNo !='' ">
+			JOIN scminvcountingcostcenter on scminvcountingtask.taskId=scminvcountingcostcenter.taskId
+			and scminvcountingcostcenter.useOrgUnitNo=#{useOrgUnitNo}
+		</if>
+		<if test="whNo !=null and whNo !=''">
+			JOIN ScmInvCountingTable on scminvcountingtask.taskId=ScmInvCountingTable.taskId
+			JOIN ScmInvWareHouse on ScmInvWareHouse.id = ScmInvCountingTable.wareHouseId and ScmInvWareHouse.whNo = #{whNo}
+		</if> 
+		WHERE 1=1
+		<choose>
+			<when test="sortByDate != null and sortByDate !='' "> 
+				ORDER BY bizDate Desc,taskNo Desc 
+			</when>
+			<otherwise>
+				ORDER BY taskNo Desc 
+			</otherwise>
+		</choose> 
+    </select> 
+    <select id="scminvcountingtask.selectById" resultType="ScmInvCountingTask2" parameterType="Long">
+        SELECT * FROM scminvcountingtask WHERE taskId = #{value}
+    </select> 
+    
+    <select id="scminvcountingtask.selectMaxIdByDate" resultType="ScmInvCountingTask2" parameterType="Map">
+		SELECT * FROM scminvcountingtask 
+        WHERE controlUnitNo=#{controlUnitNo}
+        <if test="date != null and date != ''">
+			AND createDate &gt;=#{date} And createDate &lt; DATE_ADD(#{date},INTERVAL 1 DAY) 
+		</if>
+		<if test="taskType != null and taskType != ''">
+			AND left(taskNo, 2)=#{taskType}
+		</if>
+		Order BY taskNo Desc Limit 1
+    </select> 
+    
+    <select id="scminvcountingtask.selectByDate" resultType="ScmInvCountingTask2" parameterType="map">
+        SELECT * FROM scminvcountingtask WHERE date_format(bizDate,'%Y-%m-%d') = date_format(#{date},'%Y-%m-%d') and orgUnitNo in (${orgUnitNo})
+    </select>
+    
+    <select id="scminvcountingtask.selectByOrgUnitNoAndWareHouseId" resultType="ScmInvCountingTask2" parameterType="map">
+        select a.* from scminvcountingtask a 
+        left join scminvcountingtable b on a.taskid = b.taskid
+        where a.status not in ('C','O') 
+        and a.costCenter = 0  and a.taskId!=#{taskId}
+        and ((a.finOrgUnitNo = #{finOrgUnitNo} and b.warehouseid in (${warehouseIdList})) or (a.orgUnitNo = #{orgUnitNo} and b.orgunitno is null))
+    </select>
+    
+    <select id="scminvcountingtask.selectByOrgUnitNoAndUseOrgUnitNo" resultType="ScmInvCountingTask2" parameterType="map">
+        select a.* from scminvcountingtask a 
+		left join scminvcountingcostcenter b on a.taskid = b.taskid 
+		where a.status not in ('C','O') 
+		and a.costCenter = 1 and a.taskId!=#{taskId}
+		and ((a.finOrgUnitNo = #{finOrgUnitNo} and b.useorgunitno in (${orgUnitNoList})) or (a.orgUnitNo = #{orgUnitNo} and b.orgunitno is null))
+    </select>
+    <select id="scminvcountingtask.checkUnPostBill" resultType="ScmInvCountingTask2" parameterType="Map">
+		select * From ScmInvCountingTask Where finOrgUnitNo=#{finOrgUnitNo} and periodId=#{periodId} And (status!='C' and status!='O')
+	</select>
+    <insert id="scminvcountingtask.add" parameterType="ScmInvCountingTask"  keyProperty="taskId" useGeneratedKeys="true"> 
+        INSERT INTO  scminvcountingtask (
+        taskNo,
+        bizDate,
+        planBizDate,
+        countingBegTime,
+        countingEndTime,
+        finOrgUnitNo,
+        orgUnitNo,
+        costCenter,
+        fromWhNo,
+        toWhNo,
+        fromDeptNo,
+        toDeptNo,
+        fromItemNo,
+        toItemNo,
+        assignLocation,
+        assignItem,
+        assignItemGroup,
+        freeItem,
+        genTableForZero,
+        genAccQty,
+        periodId,
+        accountYear,
+        accountPeriod,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        checker,
+        checkDate,
+        confirmedBy,
+        status,
+        remarks,
+        controlUnitNo        )
+        VALUES (
+        #{taskNo},
+        #{bizDate},
+        #{planBizDate},
+        #{countingBegTime},
+        #{countingEndTime},
+        #{finOrgUnitNo},
+        #{orgUnitNo},
+        #{costCenter},
+        #{fromWhNo},
+        #{toWhNo},
+        #{fromDeptNo},
+        #{toDeptNo},
+        #{fromItemNo},
+        #{toItemNo},
+        #{assignLocation},
+        #{assignItem},
+        #{assignItemGroup},
+        #{freeItem},
+        #{genTableForZero},
+        #{genAccQty},
+        #{periodId},
+        #{accountYear},
+        #{accountPeriod},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{checker},
+        #{checkDate},
+        #{confirmedBy},
+        #{status},
+        #{remarks},
+        #{controlUnitNo}        )
+    </insert>
+ 
+    <update id="scminvcountingtask.update" parameterType="ScmInvCountingTask">
+        UPDATE scminvcountingtask set
+        taskNo=#{taskNo},
+        bizDate=#{bizDate},
+        planBizDate=#{planBizDate},
+        countingBegTime=#{countingBegTime},
+        countingEndTime=#{countingEndTime},
+        finOrgUnitNo=#{finOrgUnitNo},
+        orgUnitNo=#{orgUnitNo},
+        costCenter=#{costCenter},
+        fromWhNo=#{fromWhNo},
+        toWhNo=#{toWhNo},
+        fromDeptNo=#{fromDeptNo},
+        toDeptNo=#{toDeptNo},
+        fromItemNo=#{fromItemNo},
+        toItemNo=#{toItemNo},
+        assignLocation=#{assignLocation},
+        assignItem=#{assignItem},
+        assignItemGroup=#{assignItemGroup},
+        freeItem=#{freeItem},
+        genTableForZero=#{genTableForZero},
+        genAccQty=#{genAccQty},
+        periodId=#{periodId},
+        accountYear=#{accountYear},
+        accountPeriod=#{accountPeriod},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        confirmedBy=#{confirmedBy},
+        status=#{status},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}       WHERE taskId = #{taskId}
+    </update>
+     <update id="scminvcountingtask.updateFinishStatus" parameterType="Map">
+ 		UPDATE scminvcountingtask Set status=#{status},countingEndTime=#{countingEndTime} 
+ 		WHERE taskId = #{taskId} And Case When costCenter=0 Then status='B' Else Case When #{needConfirm}='Y' Then status='E' Else status in('B','E') End End
+    </update>
+    <delete id="scminvcountingtask.delete" parameterType="String">
+        DELETE FROM scminvcountingtask WHERE taskId IN (${value})
+    </delete> 
+    <select id="scminvcountingtask.queryByTaskNo" resultType="ScmInvCountingTask2" parameterType="Map"> 
+    	SELECT * FROM scminvcountingtask where taskNo=#{TaskNo} and controlUnitNo=#{controlUnitNo}
+    </select>
+ 	
+</mapper>
+ 

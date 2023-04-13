@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcookstdcostinfo">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmcookstdcostinfo.findAll" resultType="ScmCookStdCostInfo" >
+	    SELECT * FROM ScmCookStdCostInfo WHERE  1=1  
+	</select>
+ 
+	<select id="scmcookstdcostinfo.findAllPage" resultType="ScmCookStdCostInfo" parameterType="Map"> 
+		SELECT * FROM ScmCookStdCostInfo WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmcookstdcostinfo.selectById" resultType="ScmCookStdCostInfo" parameterType="Long">
+		SELECT * FROM ScmCookStdCostInfo WHERE id = #{value}
+	</select> 
+	<insert id="scmcookstdcostinfo.batchAdd" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmCookStdCostInfo (orgUnitNo,accDate,deptCode,dishId,cookId,type,itemId,unitId,stdQty,price,stdAmt)
+		SELECT A.orgUnitNo,C.accDate,A.deptCode,A.dishId,A.cookId,B.type,B.itemId,D.invUnitId as unitId,sum(A.saleQty*B.qty/D.convrate) as stdQty,
+		D.invPrice as price,Sum(A.saleQty*B.qty*D.price) as stdAmt
+		FROM ScmFbmSellCookDetail A,ScmCookCostCardDetailHistory B,ScmDateList C,ScmItemCostPriceHistory D
+		WHERE A.orgUnitNo=#{orgUnitNo} AND A.accDate =C.accDate AND A.cookId=B.cookId
+		And B.beginDate &lt;=C.accDate And B.endDate &gt;=C.accDate And C.accDate &gt;=#{begDate} and C.accDate &lt;=#{endDate}
+		And D.orgUnitNo=#{orgUnitNo} And D.accDate =C.accDate And B.itemId=D.itemId
+		GROUP BY A.orgUnitNo,C.accDate,A.dishId,A.cookId,B.type,B.itemId,D.invUnitId,D.invPrice
+		ON DUPLICATE KEY UPDATE stdQty=VALUES(stdQty),price=VALUES(price),stdAmt=VALUES(stdAmt)
+	</insert>
+	<delete id="scmcookstdcostinfo.batchDelete" parameterType="Map">
+		DELETE FROM ScmCookStdCostInfo WHERE orgUnitNo=#{orgUnitNo} and accDate &gt;=#{begDate} and accDate &lt;=#{endDate}
+	</delete>
+	<insert id="scmcookstdcostinfo.add" parameterType="ScmCookStdCostInfo"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmCookStdCostInfo (
+        orgUnitNo,
+        accDate,
+        deptCode,
+        dishId,
+        cookId,
+        type,
+        itemId,
+        unitId,
+        stdQty,
+        price,
+        stdAmt        )
+		VALUES (
+        #{orgUnitNo},
+        #{accDate},
+        #{deptCode},
+        #{dishId},
+        #{cookId},
+        #{type},
+        #{itemId},
+        #{unitId},
+        #{stdQty},
+        #{price},
+        #{stdAmt}        )
+	</insert>
+ 
+	<update id="scmcookstdcostinfo.update" parameterType="ScmCookStdCostInfo">
+		UPDATE ScmCookStdCostInfo set
+        orgUnitNo=#{orgUnitNo},
+        accDate=#{accDate},
+        deptCode=#{deptCode},
+        dishId=#{dishId},
+        cookId=#{cookId},
+        type=#{type},
+        itemId=#{itemId},
+        unitId=#{unitId},
+        stdQty=#{stdQty},
+        price=#{price},
+        stdAmt=#{stdAmt}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmcookstdcostinfo.delete" parameterType="String">
+		DELETE FROM ScmCookStdCostInfo WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

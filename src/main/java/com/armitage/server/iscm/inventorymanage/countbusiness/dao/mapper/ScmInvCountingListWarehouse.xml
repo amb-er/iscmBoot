@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvcountinglistwarehouse">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvcountinglistwarehouse.findAll" resultType="ScmInvCountingListWarehouse2" >
+	    SELECT * FROM scminvcountinglistwarehouse WHERE  1=1  
+	</select>
+ 
+	<select id="scminvcountinglistwarehouse.findAllPage" resultType="ScmInvCountingListWarehouse2" parameterType="Map"> 
+		SELECT scminvcountinglistwarehouse.*,scminvwarehouse.whNo as whNo,scminvwarehouse.whName as whName
+		FROM scminvcountinglistwarehouse
+		left join scminvwarehouse on scminvcountinglistwarehouse.wareHouseId=scminvwarehouse.id
+		WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scminvcountinglistwarehouse.selectById" resultType="ScmInvCountingListWarehouse2" parameterType="Long">
+		SELECT scminvcountinglistwarehouse.*,scminvwarehouse.whNo as whNo,scminvwarehouse.whName as whName
+		FROM scminvcountinglistwarehouse
+		left join scminvwarehouse on scminvcountinglistwarehouse.wareHouseId=scminvwarehouse.id
+		WHERE scminvcountinglistwarehouse.id = #{value}
+	</select> 
+	<select id="scminvcountinglistwarehouse.selectByTaskId" resultType="ScmInvCountingListWarehouse2" parameterType="Map">
+		SELECT scminvcountinglistwarehouse.*,scminvwarehouse.whNo as whNo,scminvwarehouse.whName as whName
+		FROM scminvcountinglistwarehouse
+		left join scminvwarehouse on scminvcountinglistwarehouse.wareHouseId=scminvwarehouse.id
+		WHERE scminvcountinglistwarehouse.taskId = #{taskId}
+	</select>
+	<insert id="scminvcountinglistwarehouse.add" parameterType="ScmInvCountingListWarehouse"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvcountinglistwarehouse (
+        taskId,
+        selectOrExclude,
+        wareHouseId        )
+		VALUES (
+        #{taskId},
+        #{selectOrExclude},
+        #{wareHouseId}        )
+	</insert>
+ 
+	<update id="scminvcountinglistwarehouse.update" parameterType="ScmInvCountingListWarehouse">
+		UPDATE scminvcountinglistwarehouse set
+        taskId=#{taskId},
+        selectOrExclude=#{selectOrExclude},
+        wareHouseId=#{wareHouseId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvcountinglistwarehouse.delete" parameterType="String">
+		DELETE FROM scminvcountinglistwarehouse WHERE id IN (${value})
+	</delete> 
+	
+	<delete id="scminvcountinglistwarehouse.deleteByTaskId" parameterType="Map">
+		DELETE FROM scminvcountinglistwarehouse WHERE taskId = #{taskId}
+	</delete>
+
+</mapper>

@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurorderentry">
+ 	<!-- default parameterType="HashMap" -->
+	<select id="scmpurorderentry.findAll" resultType="ScmPurOrderEntry2" >
+	    SELECT * FROM scmpurorderentry WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurorderentry.findAllPage" resultType="ScmPurOrderEntry2" parameterType="Map"> 
+		SELECT scmpurorderentry.*,scmmaterial.itemNo as itemNo,0 as addInQty,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,ScmPurorder.poNo,C.unitName as pieUnitName,
+		A.unitName as purUnitName,B.unitName as baseUnitName,Case scmpurorderentry.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		ScmMaterialUnitRelation.convrate as convrate
+		FROM scmpurorderentry
+		left join scmmaterial on scmpurorderentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scmpurorderentry.purUnit=A.id 
+		left join ScmMeasureUnit B on scmpurorderentry.baseUnit=B.id
+		left join ScmMeasureUnit C on scmpurorderentry.pieUnit=C.id
+		left join ScmMaterialUnitRelation on scmpurorderentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurorderentry.purUnit=ScmMaterialUnitRelation.targetUnitId,ScmPurorder
+		WHERE  ScmPurorder.id=scmpurorderentry.poId
+		ORDER BY id ASC 
+	</select> 
+	<select id="scmpurorderentry.selectByPvId" resultType="ScmPurOrderEntry2" parameterType="Long">
+		SELECT ScmPurOrderEntry.* FROM ScmPurOrderEntry,ScmPurReceiveEntry
+		WHERE ScmPurOrderEntry.id = ScmPurReceiveEntry.poDtlId
+        And ScmPurReceiveEntry.pvId=#{pvId} 
+	</select> 
+	
+	<select id="scmpurorderentry.selectById" resultType="ScmPurOrderEntry2" parameterType="Long">
+		SELECT scmpurorderentry.*,scmmaterial.itemNo as itemNo,0 as addInQty,C.unitName as pieUnitName,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,Case scmpurorderentry.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		ScmMeasureUnit.unitName as purUnitName,ScmMaterialUnitRelation.convrate as convrate,
+		scmbaseattachment.fileName as attachmentName,(select group_concat(scmauditdetailhistory.oper,'^',scmauditdetailhistory.opinion,'^',date_format(scmauditdetailhistory.operDate,'%Y-%m-%d %T'),'^',scmauditdetailhistory.remarks)
+		from scmauditdetailhistory
+		where scmauditdetailhistory.billId = scmpurorderentry.poId
+		and scmauditdetailhistory.billType = 'PurOrder'
+		and scmauditdetailhistory.lineId = scmpurorderentry.lineId
+		and scmauditdetailhistory.flag=1
+		and ifnull(scmauditdetailhistory.remarks,'')!=''
+		group by scmauditdetailhistory.billId,scmauditdetailhistory.lineId
+		order by scmauditdetailhistory.billId,scmauditdetailhistory.lineId,scmauditdetailhistory.operDate asc) rowAuditRemarks
+		FROM scmpurorderentry
+		LEFT JOIN scmbaseattachment on scmpurorderentry.attachmentId=scmbaseattachment.id
+		left join scmmaterial on scmpurorderentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scmpurorderentry.purUnit=ScmMeasureUnit.id
+		left join ScmMeasureUnit C on scmpurorderentry.pieUnit=C.id
+		left join ScmMaterialUnitRelation on scmpurorderentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurorderentry.purUnit=ScmMaterialUnitRelation.targetUnitId
+		WHERE scmpurorderentry.id = #{value}
+	</select> 
+	<select id="scmpurorderentry.selectByPoId" resultType="ScmPurOrderEntry2" parameterType="Map"> 
+		SELECT scmpurorderentry.*,scmmaterial.itemNo as itemNo,0 as addInQty,Case scmpurorderentry.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,ScmMaterialGroup.classCode,scmpurorder.poNo,
+		A.unitName as purUnitName,B.unitName as baseUnitName,ScmMaterialUnitRelation.convrate as convrate,C.unitName as pieUnitName,
+		scmbaseattachment.fileName as attachmentName,(select group_concat(scmauditdetailhistory.oper,'^',scmauditdetailhistory.opinion,'^',date_format(scmauditdetailhistory.operDate,'%Y-%m-%d %T'),'^',scmauditdetailhistory.remarks)
+		from scmauditdetailhistory
+		where scmauditdetailhistory.billId = scmpurorderentry.poId
+		and scmauditdetailhistory.billType = 'PurOrder'
+		and scmauditdetailhistory.lineId = scmpurorderentry.lineId
+		and scmauditdetailhistory.flag=1
+		and ifnull(scmauditdetailhistory.remarks,'')!=''
+		group by scmauditdetailhistory.billId,scmauditdetailhistory.lineId
+		order by scmauditdetailhistory.billId,scmauditdetailhistory.lineId,scmauditdetailhistory.operDate asc) rowAuditRemarks,
+		(SELECT scmpurrereuse.opinion FROM  scmpurrereuse where scmpurorderentry.prDtlId=scmpurrereuse.entryBillId and scmpurrereuse.flag=1 and scmpurrereuse.rowStatus="I" ORDER BY id desc LIMIT 1)as refuseReason,scmpurrequireentry.idle
+		FROM scmpurorderentry
+		LEFT JOIN scmbaseattachment on scmpurorderentry.attachmentId=scmbaseattachment.id
+		LEFT JOIN scmpurrequireentry on scmpurorderentry.prDtlId=scmpurrequireentry.id
+		left join ScmMeasureUnit A on scmpurorderentry.purUnit=A.id 
+		left join ScmMeasureUnit B on scmpurorderentry.baseUnit=B.id
+		left join ScmMeasureUnit C on scmpurorderentry.pieUnit=C.id
+		left join ScmMaterialUnitRelation on scmpurorderentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurorderentry.purUnit=ScmMaterialUnitRelation.targetUnitId,scmpurorder,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE scmpurorderentry.itemId=scmmaterial.id And scmpurorder.id=scmpurorderentry.poId
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		And scmpurorderentry.poId=#{poId} 
+		<choose>
+		<when test="notsend!=null and notsend!=''">
+			And scmpurorderentry.baseQty &gt; scmpurorderentry.receiveQty And scmpurorderentry.baseQty &gt; scmpurorderentry.movedQty and scmpurorderentry.rowstatus !='N'
+			ORDER BY scmmaterial.itemNo ASC
+		</when>
+		<otherwise>
+			ORDER BY scmpurorderentry.lineId ASC
+		</otherwise>
+		</choose>
+	</select>
+	<select id="scmpurorderentry.selectByPriceId" resultType="ScmPurOrderEntry2" parameterType="Map"> 
+		SELECT scmpurorderentry.*,scmmaterial.itemNo as itemNo,0 as addInQty,Case scmpurorderentry.rowStatus when 'N' Then 'refuse' Else 'agree' end as opinion,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,ScmMaterialGroup.classCode,C.unitName as pieUnitName,
+		A.unitName as purUnitName,B.unitName as baseUnitName,ScmMaterialUnitRelation.convrate as convrate,
+		scmpurorder.orgUnitNo as purOrgUnitNo,scmPurOrder.vendorId as vendorId,scmPurOrder.orderDate as purOrderDate
+		FROM scmpurorderentry
+		left join ScmMeasureUnit A on scmpurorderentry.purUnit=A.id 
+		left join ScmMeasureUnit B on scmpurorderentry.baseUnit=B.id
+		left join ScmMeasureUnit C on scmpurorderentry.pieUnit=C.id
+		left join ScmMaterialUnitRelation on scmpurorderentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurorderentry.purUnit=ScmMaterialUnitRelation.targetUnitId,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard,scmpurorder,scmpurprice
+		WHERE scmpurorderentry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		And scmpurorderentry.priceBillId=#{priceId}
+		and scmpurprice.id=scmpurorderentry.priceBillId
+		and scmpurorderentry.refPriceStatus in ('6','7')
+		and scmpurorder.id=scmpurorderentry.poId
+	</select>
+	<select id="scmpurorderentry.selectByPoIdAndSaleIssueBill" resultType="ScmPurOrderEntry2" parameterType="Map"> 
+		SELECT ScmPurorderentry.Id,ScmPurorderentry.poId,ScmPurorderentry.lineId,ScmPurorderentry.itemId,ScmPurorderentry.purUnit,
+			ScmPurorderentry.reqDate,ScmPurorderentry.deliveryDate,ScmPurorderentry.reqQty,ScmPurorderentry.baseUnit,ScmPurorderentry.baseQty,
+			sum(ScmInvSaleIssueBillEntry.qty) as qty,ScmInvSaleIssueBillEntry.saleTaxPrice/(1+ScmInvSaleIssueBillEntry.saleTaxRate) as price,
+			sum(ScmInvSaleIssueBillEntry.saleTaxAmt)/(1+ScmInvSaleIssueBillEntry.saleTaxRate) as amt,ScmInvSaleIssueBillEntry.saleTaxRate as taxRate,
+			ScmInvSaleIssueBillEntry.saleTaxPrice as taxPrice,sum(ScmInvSaleIssueBillEntry.saleTaxAmt) as taxAmt,ScmPurorderentry.priceNew,
+			ScmPurorderentry.receiveQty,ScmPurorderentry.movedQty,ScmPurorderentry.returnQty,ScmPurorderentry.reqOrgUnitNo,
+			ScmPurorderentry.reqStorageOrgUnitNo,ScmPurorderentry.reqFinOrgUnitNo,ScmPurorderentry.receiveOrgUnitNo,ScmPurorderentry.receiveFinOrgUnitNo,
+			ScmPurorderentry.instead,ScmPurorderentry.receiveWareHouseId,ScmPurorderentry.mstorageOrgUnitNo,ScmPurorderentry.balanceSupplierId,
+			ScmPurorderentry.storageOrgUnitNo,ScmPurorderentry.buyerId,ScmPurorderentry.purGroupId,ScmPurorderentry.prDtlId,
+			ScmPurorderentry.priceBillId,ScmPurorderentry.refPriceStatus,ScmPurorderentry.apprPriceByPo,ScmPurorderentry.rowStatus,
+			ScmPurorderentry.checker,ScmPurorderentry.checkDate,ScmPurorderentry.remarks,scmmaterial.itemNo as itemNo,0 as addInQty,
+			scmmaterial.itemName as itemName,scmmaterial.spec as spec,scmpurorder.poNo,
+			ScmMeasureUnit.unitName as purUnitName,ScmMaterialUnitRelation.convrate as convrate,scminvsaleissuebillentry.pieQty,scminvsaleissuebillentry.pieUnit
+		FROM scmpurorderentry
+		left join scmmaterial on scmpurorderentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scmpurorderentry.purUnit=ScmMeasureUnit.id
+		left join ScmMaterialUnitRelation on scmpurorderentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scmpurorderentry.purUnit=ScmMaterialUnitRelation.targetUnitId,scmpurorder,scminvsaleissuebillentry,scminvsaleorderentry
+		WHERE scminvsaleissuebillentry.otId=#{otId} And scminvsaleissuebillentry.sourceBillDtlId=scminvsaleorderentry.id And scmpurorder.id=scmpurorderentry.poId
+		And scminvsaleorderentry.sourceBillDtlId=scmpurorderentry.Id And scmpurorderentry.poId=#{poId} 
+		GROUP BY ScmPurorderentry.Id,ScmPurorderentry.poId,ScmPurorderentry.lineId,ScmPurorderentry.itemId,ScmPurorderentry.purUnit,
+			ScmPurorderentry.reqDate,ScmPurorderentry.deliveryDate,ScmPurorderentry.reqQty,ScmPurorderentry.baseUnit,
+			ScmInvSaleIssueBillEntry.saleTaxPrice,ScmInvSaleIssueBillEntry.saleTaxRate,
+			ScmInvSaleIssueBillEntry.saleTaxPrice,ScmPurorderentry.priceNew,
+			ScmPurorderentry.receiveQty,ScmPurorderentry.movedQty,ScmPurorderentry.returnQty,ScmPurorderentry.reqOrgUnitNo,
+			ScmPurorderentry.reqStorageOrgUnitNo,ScmPurorderentry.reqFinOrgUnitNo,ScmPurorderentry.receiveOrgUnitNo,ScmPurorderentry.receiveFinOrgUnitNo,
+			ScmPurorderentry.instead,ScmPurorderentry.receiveWareHouseId,ScmPurorderentry.mstorageOrgUnitNo,ScmPurorderentry.balanceSupplierId,
+			ScmPurorderentry.storageOrgUnitNo,ScmPurorderentry.buyerId,ScmPurorderentry.purGroupId,ScmPurorderentry.prDtlId,
+			ScmPurorderentry.priceBillId,ScmPurorderentry.refPriceStatus,ScmPurorderentry.apprPriceByPo,ScmPurorderentry.rowStatus,
+			ScmPurorderentry.checker,ScmPurorderentry.checkDate,ScmPurorderentry.remarks,scmmaterial.itemNo,
+			scmmaterial.itemName,scmmaterial.spec,ScmMeasureUnit.unitName,ScmMaterialUnitRelation.convrate
+		ORDER BY scmmaterial.itemNo ASC
+	</select>
+	<select id="scmpurorderentry.selectByPoIdAndOtherIssueBill" resultType="ScmPurOrderEntry2" parameterType="Map"> 
+		SELECT ScmPurorderentry.Id,ScmPurorderentry.poId,ScmPurorderentry.lineId,ScmPurorderentry.itemId,ScmPurorderentry.purUnit,
+			ScmPurorderentry.reqDate,ScmPurorderentry.deliveryDate,ScmPurorderentry.reqQty,ScmPurorderentry.baseUnit,ScmPurorderentry.baseQty,
+			Sum(ScmInvOtherIssueBillentry.qty*b.convrate/ScmMaterialUnitRelation.convrate) as qty,ScmPurorderentry.price,
+			Sum(ScmInvOtherIssueBillentry.qty*b.convrate/ScmMaterialUnitRelation.convrate)*ScmPurorderentry.price as amt,ScmPurorderentry.taxRate,
+			ScmPurorderentry.taxPrice,Sum(ScmInvOtherIssueBillentry.qty*b.convrate/ScmMaterialUnitRelation.convrate)*ScmPurorderentry.taxPrice as taxAmt,ScmPurorderentry.priceNew,
+			ScmPurorderentry.receiveQty,ScmPurorderentry.movedQty,ScmPurorderentry.returnQty,ScmPurorderentry.reqOrgUnitNo,
+			ScmPurorderentry.reqStorageOrgUnitNo,ScmPurorderentry.reqFinOrgUnitNo,ScmPurorderentry.receiveOrgUnitNo,ScmPurorderentry.receiveFinOrgUnitNo,
+			ScmPurorderentry.instead,ScmPurorderentry.receiveWareHouseId,ScmPurorderentry.mstorageOrgUnitNo,ScmPurorderentry.balanceSupplierId,
+			ScmPurorderentry.storageOrgUnitNo,ScmPurorderentry.buyerId,ScmPurorderentry.purGroupId,ScmPurorderentry.prDtlId,
+			ScmPurorderentry.priceBillId,ScmPurorderentry.refPriceStatus,ScmPurorderentry.apprPriceByPo,ScmPurorderentry.rowStatus,
+			ScmPurorderentry.checker,ScmPurorderentry.checkDate,ScmPurorderentry.remarks,scmmaterial.itemNo as itemNo,0 as addInQty,
+			scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+			ScmMeasureUnit.unitName as purUnitName,ScmMaterialUnitRelation.convrate as convrate,ScmInvOtherIssueBillentry.pieQty,ScmInvOtherIssueBillentry.pieUnit
+		FROM ScmPurOrderEntry
+		left join ScmMaterial on ScmPurOrderEntry.itemId=ScmMaterial.id
+		left join ScmMeasureUnit on ScmPurOrderEntry.purUnit=ScmMeasureUnit.id
+		left join ScmMaterialUnitRelation on ScmPurOrderEntry.itemId=ScmMaterialUnitRelation.itemId
+		AND ScmPurOrderEntry.purUnit=ScmMaterialUnitRelation.targetUnitId,ScmInvOtherIssueBillentry
+		left join ScmMaterialUnitRelation B on ScmInvOtherIssueBillentry.itemId=B.itemId
+		AND ScmInvOtherIssueBillentry.unit=B.targetUnitId
+		WHERE ScmInvOtherIssueBillentry.otId=#{otId} And ScmInvOtherIssueBillentry.sourceBillDtlId=scmpurorderentry.id
+		And scmpurorderentry.poId=#{poId}
+		GROUP BY ScmPurorderentry.Id
+		ORDER BY scmmaterial.itemNo ASC
+	</select>
+	<select id="scmpurorderentry.selectStatusByIds" resultType="ScmPurOrderEntry2" parameterType="Map"> 
+		Select poId,sum(case rowStatus when 'C' Then 1 else 0 end) as closeCount,count(1) as rowCount
+		from scmpurorderentry where id in (${ids})  GROUP BY scmpurorderentry.poId
+	</select>
+	<update id="scmpurorderentry.writeBackInvQty" parameterType="map">
+		UPDATE ScmPurOrderEntry,ScmPurReceiveEntry Set ScmPurOrderEntry.invQty=ScmPurOrderEntry.invQty+${sign}*ScmPurReceiveEntry.baseQty
+		WHERE ScmPurOrderEntry.id = ScmPurReceiveEntry.poDtlId
+        And ScmPurReceiveEntry.pvId=#{pvId} 
+	</update>
+	<insert id="scmpurorderentry.add" parameterType="ScmPurOrderEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurorderentry (
+        poId,
+        lineId,
+        itemId,
+        purUnit,
+        reqDate,
+        deliveryDate,
+        reqQty,
+        baseUnit,
+        baseQty,
+        qty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        priceNew,
+        receiveQty,
+        movedQty,
+        returnQty,
+        invQty,
+        reqOrgUnitNo,
+        reqStorageOrgUnitNo,
+        reqFinOrgUnitNo,
+        receiveOrgUnitNo,
+        receiveFinOrgUnitNo,
+        instead,
+        receiveWareHouseId,
+        mstorageOrgUnitNo,
+        balanceSupplierId,
+        storageOrgUnitNo,
+        buyerId,
+        purGroupId,
+        attachmentId,
+        prDtlId,
+        prNo,
+        priceBillId,
+        refPriceStatus,
+        apprPriceByPo,
+        supplyCycle,
+        rowStatus,
+        checker,
+        checkDate,
+        remarks,
+        recentPrice,
+        stockQty,
+        pieQty,
+        pieUnit        )
+		VALUES (
+        #{poId},
+        #{lineId},
+        #{itemId},
+        #{purUnit},
+        #{reqDate},
+        #{deliveryDate},
+        #{reqQty},
+        #{baseUnit},
+        #{baseQty},
+        #{qty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{priceNew},
+        #{receiveQty},
+        #{movedQty},
+        #{returnQty},
+        #{invQty},
+        #{reqOrgUnitNo},
+        #{reqStorageOrgUnitNo},
+        #{reqFinOrgUnitNo},
+        #{receiveOrgUnitNo},
+        #{receiveFinOrgUnitNo},
+        #{instead},
+        #{receiveWareHouseId},
+        #{mstorageOrgUnitNo},
+        #{balanceSupplierId},
+        #{storageOrgUnitNo},
+        #{buyerId},
+        #{purGroupId},
+        #{attachmentId},
+        #{prDtlId},
+        #{prNo},
+        #{priceBillId},
+        #{refPriceStatus},
+        #{apprPriceByPo},
+        #{supplyCycle},
+        #{rowStatus},
+        #{checker},
+        #{checkDate},
+        #{remarks},
+        #{recentPrice},
+        #{stockQty},
+        #{pieQty},
+        #{pieUnit}        )
+	</insert>
+	
+	<insert id="scmpurorderentry.generateAdd" parameterType="ScmPurOrderEntry"  keyProperty="id" useGeneratedKeys="true">
+		INSERT INTO  scmpurorderentry (
+        poId,
+        lineId,
+        itemId,
+        purUnit,
+        reqDate,
+        deliveryDate,
+        reqQty,
+        baseUnit,
+        baseQty,
+        qty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        priceNew,
+        receiveQty,
+        movedQty,
+        returnQty,
+        invQty,
+        reqOrgUnitNo,
+        reqStorageOrgUnitNo,
+        reqFinOrgUnitNo,
+        receiveOrgUnitNo,
+        receiveFinOrgUnitNo,
+        instead,
+        receiveWareHouseId,
+        mstorageOrgUnitNo,
+        balanceSupplierId,
+        storageOrgUnitNo,
+        buyerId,
+        purGroupId,
+        attachmentId,
+        prDtlId,
+        prNo,
+        priceBillId,
+        refPriceStatus,
+        apprPriceByPo,
+        supplyCycle,
+        rowStatus,
+        checker,
+        checkDate,
+        remarks,
+        recentPrice,
+        stockQty,
+        pieQty,
+        pieUnit        )
+		select 
+        #{poId},
+        #{lineId},
+        #{itemId},
+        #{purUnit},
+        #{reqDate},
+        #{deliveryDate},
+        #{reqQty},
+        #{baseUnit},
+        #{baseQty},
+        #{qty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{priceNew},
+        #{receiveQty},
+        #{movedQty},
+        #{returnQty},
+        #{invQty},
+        #{reqOrgUnitNo},
+        #{reqStorageOrgUnitNo},
+        #{reqFinOrgUnitNo},
+        #{receiveOrgUnitNo},
+        #{receiveFinOrgUnitNo},
+        #{instead},
+        #{receiveWareHouseId},
+        #{mstorageOrgUnitNo},
+        #{balanceSupplierId},
+        #{storageOrgUnitNo},
+        #{buyerId},
+        #{purGroupId},
+        #{attachmentId},
+        #{prDtlId},
+        #{prNo},
+        #{priceBillId},
+        #{refPriceStatus},
+        #{apprPriceByPo},
+        #{supplyCycle},
+        #{rowStatus},
+        #{checker},
+        #{checkDate},
+        #{remarks},
+        #{recentPrice},
+        #{stockQty},
+        #{pieQty},
+        #{pieUnit} FROM scmpurrequireentry where id = #{prDtlId} and rowStatus='E'        
+	</insert>
+ 
+	<update id="scmpurorderentry.update" parameterType="ScmPurOrderEntry">
+		UPDATE scmpurorderentry set
+        poId=#{poId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        purUnit=#{purUnit},
+        reqDate=#{reqDate},
+        deliveryDate=#{deliveryDate},
+        reqQty=#{reqQty},
+        baseUnit=#{baseUnit},
+        baseQty=#{baseQty},
+        qty=#{qty},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        priceNew=#{priceNew},
+        receiveQty=#{receiveQty},
+        movedQty=#{movedQty},
+        returnQty=#{returnQty},
+        invQty=#{invQty},
+        reqOrgUnitNo=#{reqOrgUnitNo},
+        reqStorageOrgUnitNo=#{reqStorageOrgUnitNo},
+        reqFinOrgUnitNo=#{reqFinOrgUnitNo},
+        receiveOrgUnitNo=#{receiveOrgUnitNo},
+        receiveFinOrgUnitNo=#{receiveFinOrgUnitNo},
+        instead=#{instead},
+        receiveWareHouseId=#{receiveWareHouseId},
+        mstorageOrgUnitNo=#{mstorageOrgUnitNo},
+        balanceSupplierId=#{balanceSupplierId},
+        storageOrgUnitNo=#{storageOrgUnitNo},
+        buyerId=#{buyerId},
+        purGroupId=#{purGroupId},
+        attachmentId=#{attachmentId},
+        prDtlId=#{prDtlId},
+        prNo=#{prNo},
+        priceBillId=#{priceBillId},
+        refPriceStatus=#{refPriceStatus},
+        apprPriceByPo=#{apprPriceByPo},
+        supplyCycle=#{supplyCycle},
+        rowStatus=#{rowStatus},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        remarks=#{remarks},
+        recentPrice=#{recentPrice},
+        stockQty=#{stockQty},
+        pieUnit=#{pieUnit},
+        pieQty=#{pieQty}       WHERE id = #{id}
+	</update>
+	
+	<update id="scmpurorderentry.updateRowStatusByPoId" parameterType="map">
+		UPDATE scmpurorderentry set
+        rowStatus=#{rowStatus},
+        checker=#{checker},
+        checkDate=#{checkDate}	 WHERE poId = #{poId}
+	</update>
+ 
+	<delete id="scmpurorderentry.delete" parameterType="String">
+		DELETE FROM scmpurorderentry WHERE id IN (${value})
+	</delete> 
+	
+	<update id="scmpurorderentry.updateRowStatusByLineId" parameterType="map">
+		UPDATE scmpurorderentry set
+	        rowStatus=#{rowStatus},
+	        checker=#{checker},
+	        checkDate=#{checkDate}	 
+        WHERE poId = #{poId} 
+        	AND lineId = #{lineId} 
+	</update>
+	
+	<update id="scmpurorderentry.updatePurOrderPriceBillIdByPmId" parameterType="map">
+		UPDATE scmpurorderentry, scmpurorder
+		set scmpurorderentry.refPriceStatus = '0',
+			scmpurorderentry.priceBillId = 0
+		WHERE scmpurorderentry.poId = scmpurorder.id
+		AND scmpurorderentry.refPriceStatus in ('6','7')
+		AND scmpurorderentry.priceBillId = #{priceId}
+	</update>
+</mapper>

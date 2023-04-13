@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsupplierlinkman">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsupplierlinkman.findAll" resultType="Scmsupplierlinkman" >
+	    SELECT * FROM scmsupplierlinkman WHERE  1=1  
+	</select>
+ 
+	<select id="scmsupplierlinkman.findAllPage" resultType="Scmsupplierlinkman" parameterType="Map"> 
+		SELECT * FROM scmsupplierlinkman WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmsupplierlinkman.selectById" resultType="Scmsupplierlinkman" parameterType="Long">
+		SELECT * FROM scmsupplierlinkman WHERE id = #{value}
+	</select> 
+	<select id="scmsupplierlinkman.selectByVendorId" resultType="Scmsupplierlinkman" parameterType="Map"> 
+		SELECT * FROM scmsupplierlinkman WHERE vendorId=#{vendorId} 
+	</select> 
+	<insert id="scmsupplierlinkman.add" parameterType="Scmsupplierlinkman"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmsupplierlinkman (
+        vendorId,
+        contactPerson,
+        contactPersonPost,
+        tel,
+        mobile,
+        fax,
+        email,
+        postalcode,
+        address        )
+		VALUES (
+        #{vendorId},
+        #{contactPerson},
+        #{contactPersonPost},
+        #{tel},
+        #{mobile},
+        #{fax},
+        #{email},
+        #{postalcode},
+        #{address}        )
+	</insert>
+ 
+	<update id="scmsupplierlinkman.update" parameterType="Scmsupplierlinkman">
+		UPDATE scmsupplierlinkman set
+        vendorId=#{vendorId},
+        contactPerson=#{contactPerson},
+        contactPersonPost=#{contactPersonPost},
+        tel=#{tel},
+        mobile=#{mobile},
+        fax=#{fax},
+        email=#{email},
+        postalcode=#{postalcode},
+        address=#{address}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsupplierlinkman.delete" parameterType="String">
+		DELETE FROM scmsupplierlinkman WHERE id IN (${value})
+	</delete> 
+	
+	<delete id="scmsupplierlinkman.deleteByVendorId" parameterType="Map">
+		DELETE FROM scmsupplierlinkman WHERE vendorId=#{vendorId}
+	</delete> 
+
+</mapper>
+ 

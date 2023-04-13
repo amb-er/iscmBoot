@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcstfrmlossentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmcstfrmlossentry.findAll" resultType="ScmCstFrmLossEntry2" >
+	    SELECT * FROM scmcstfrmlossentry WHERE  1=1  
+	</select>
+ 
+	<select id="scmcstfrmlossentry.findAllPage" resultType="ScmCstFrmLossEntry2" parameterType="Map"> 
+		SELECT scmcstfrmlossentry.*,scmmaterial.itemNo as itemNo,scmcstfrmloss.billNo,scmcstfrmloss.status,D.unitName as pieUnitName,
+			scmcstfrmloss.bizDate,scmcstfrmloss.postDate,scmcstfrmloss.creator,scmmaterial.itemName as itemName,scmcstfrmloss.periodId,
+			scmmaterial.spec as spec,scmcstfrmloss.costOrgUnitNo,scmcstfrmloss.orgUnitNo as useOrgUnitNo,A.unitName as unitName,
+			ScmMaterialGroup.className as groupName,ScmMaterialGroup.classCode as groupCode,ScmMaterialGroup.longNo as longNo,ScmMaterialGroup.id as groupId
+		FROM scmcstfrmloss,scmcstfrmlossEntry
+		left join scmmeasureunit D on scmcstfrmlossentry.pieUnit=D.id 
+		left join ScmMeasureUnit A on scmcstfrmlossEntry.unit=A.id,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE  scmcstfrmloss.Id=scmcstfrmlossEntry.billId And scmcstfrmlossEntry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		ORDER BY scmcstfrmlossEntry.id ASC
+	</select> 
+	<select id="scmcstfrmlossentry.selectById" resultType="ScmCstFrmLossEntry2" parameterType="Long">
+			select ScmCstFrmLossEntry.* , scmbaseattachment.fileName as attachmentName,
+            scmmaterial.itemNo as itemNo, scmmaterial.itemName as itemName,scmmaterial.spec as spec, 
+            A.unitName as unitName, B.unitName as baseUnitName,
+            scmmaterialunitrelation.convrate as convrate,D.unitName as pieUnitName
+            from ScmCstFrmLossEntry
+            LEFT JOIN scmbaseattachment on ScmCstFrmLossEntry.attachmentId=scmbaseattachment.id
+            left join scmmaterial on ScmCstFrmLossEntry.itemId=scmmaterial.id
+            left join scmmeasureunit A on ScmCstFrmLossEntry.unit=A.id
+            left join scmmeasureunit B on ScmCstFrmLossEntry.baseUnit=B.id
+		    left join scmmeasureunit D on scmcstfrmlossentry.pieUnit=D.id
+            left join scmmaterialunitrelation on ScmCstFrmLossEntry.itemId=scmmaterialunitrelation.itemId
+            and ScmCstFrmLossEntry.unit=scmmaterialunitrelation.targetUnitId
+            left join (
+                select ScmMaterial.id,ScmMaterialGroup.className as className 
+                    from ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+                    where ScmMaterial.id=ScmMaterialGroupDetail.itemId
+                    and ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+                    and ScmMaterialGroupStandard.standardType='1'
+                    and ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+            ) C on ScmCstFrmLossEntry.itemId=C.id
+            where ScmCstFrmLossEntry.id=#{value}
+	</select> 
+	<insert id="scmcstfrmlossentry.add" parameterType="ScmCstFrmLossEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmcstfrmlossentry (
+        billId,
+        lineId,
+        itemId,
+        unit,
+        pieUnit,
+        baseUnit,
+        lot,
+        qty,
+        pieQty,
+        baseQty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        expDate,
+        stockId,
+        invDate,
+        orgSourceId,
+        orgSourceVendorId,
+        remarks,
+        attachmentId        )
+		VALUES (
+        #{billId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{baseUnit},
+        #{lot},
+        #{qty},
+        #{pieQty},
+        #{baseQty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{expDate},
+        #{stockId},
+        #{invDate},
+        #{orgSourceId},
+        #{orgSourceVendorId},
+        #{remarks},
+        #{attachmentId}        )
+	</insert>
+ 
+	<update id="scmcstfrmlossentry.update" parameterType="ScmCstFrmLossEntry">
+		UPDATE scmcstfrmlossentry set
+        billId=#{billId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        baseUnit=#{baseUnit},
+        lot=#{lot},
+        qty=#{qty},
+        pieQty=#{pieQty},
+        baseQty=#{baseQty},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        expDate=#{expDate},
+        stockId=#{stockId},
+        invDate=#{invDate},
+        orgSourceId=#{orgSourceId},
+        orgSourceVendorId=#{orgSourceVendorId},
+        remarks=#{remarks},
+        attachmentId=#{attachmentId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmcstfrmlossentry.delete" parameterType="String">
+		DELETE FROM scmcstfrmlossentry WHERE id IN (${value})
+	</delete> 
+	
+	<select id="scmcstfrmlossentry.selectByBillId" resultType="ScmCstFrmLossEntry2" parameterType="Map"> 
+            select scmcstfrmlossentry.* , 
+            scmmaterial.itemNo as itemNo, scmmaterial.itemName as itemName,scmmaterial.spec as spec, 
+            A.unitName as unitName, B.unitName as baseUnitName,scmbaseattachment.fileName as attachmentName,
+            scmmaterialunitrelation.convrate as convrate,D.unitName as pieUnitName
+            from scmcstfrmlossentry
+            left join scmmaterial on scmcstfrmlossentry.itemId=scmmaterial.id
+            LEFT JOIN scmbaseattachment on scmcstfrmlossentry.attachmentId=scmbaseattachment.id
+            left join scmmeasureunit A on scmcstfrmlossentry.unit=A.id
+            left join scmmeasureunit B on scmcstfrmlossentry.baseUnit=B.id
+						left join scmmeasureunit D on scmcstfrmlossentry.pieUnit=D.id
+            left join scmmaterialunitrelation on scmcstfrmlossentry.itemId=scmmaterialunitrelation.itemId
+            and scmcstfrmlossentry.unit=scmmaterialunitrelation.targetUnitId
+            left join (
+                select ScmMaterial.id,ScmMaterialGroup.className as className 
+                    from ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+                    where ScmMaterial.id=ScmMaterialGroupDetail.itemId
+                    and ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+                    and ScmMaterialGroupStandard.standardType='1'
+                    and ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+            ) C on scmcstfrmlossentry.itemId=C.id
+            where scmcstfrmlossentry.billId=#{billId}
+            order by scmcstfrmlossentry.lineId ASC
+    </select>
+    
+    <delete id="scmcstfrmlossentry.deleteByBillId" parameterType="Map">
+        DELETE FROM scmcstfrmlossentry WHERE billId=#{billId}
+    </delete>
+    
+    <select id="scmcstfrmlossentry.selectOutEffectRow" resultType="ScmCstFrmLossEntry2" parameterType="Map"> 
+		select C.orgUnitNo, C.costOrgunitNo, B.itemId, B.lot, B.unit,
+			sum(B.qty) as qty, sum(B.pieQty)as pieQty, sum(amt) as amt, sum(baseQty) as baseQty,
+			sum(taxAmt) as taxAmt ,B.stockId  
+		from ScmCstFrmLossEntry as B, ScmCstFrmLoss C  
+		where C.id = B.billId 
+ 			and C.id = #{billId}
+		group by C.orgUnitNo, C.costOrgunitNo, B.itemId, B.lot, B.unit, B.stockId
+	</select>
+
+</mapper>

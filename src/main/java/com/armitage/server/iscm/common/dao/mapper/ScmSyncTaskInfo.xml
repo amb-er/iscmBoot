@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsynctaskinfo">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsynctaskinfo.findAll" resultType="ScmSyncTaskInfo2" >
+	    SELECT * FROM ScmSyncTaskInfo WHERE  1=1  
+	</select>
+ 
+	<select id="scmsynctaskinfo.findAllPage" resultType="ScmSyncTaskInfo2" parameterType="Map"> 
+		SELECT * FROM ScmSyncTaskInfo WHERE  1=1 ORDER BY createTime DESC 
+	</select>
+	<select id="scmsynctaskinfo.findPengdingTaskPage" resultType="ScmSyncTaskInfo2" parameterType="Map"> 
+		SELECT * FROM ScmSyncTaskInfo WHERE taskCode=#{taskCode} AND taskAction=#{taskAction}
+		AND taskType=#{taskType} AND productCode=#{productCode}
+		AND taskOwner=#{taskOwner} AND taskStatus=#{taskStatus}
+		AND controlUnitNo=#{controlUnitNo}
+		ORDER BY createTime ASC 
+	</select>
+	<select id="scmsynctaskinfo.findDeleteTaskPage" resultType="ScmSyncTaskInfo2" parameterType="Map"> 
+		SELECT * FROM ScmSyncTaskInfo WHERE taskCode=#{taskCode}
+		AND productCode=#{productCode}
+		AND controlUnitNo=#{controlUnitNo}
+		AND createTime &lt;#{createTime}
+		ORDER BY createTime ASC 
+	</select> 
+	<select id="scmsynctaskinfo.selectById" resultType="ScmSyncTaskInfo2" parameterType="Long">
+		SELECT * FROM ScmSyncTaskInfo WHERE id = #{value}
+	</select> 
+	<select id="scmsynctaskinfo.selectByScmSyncTaskInfo" resultType="ScmSyncTaskInfo2" parameterType="Map">
+		SELECT * FROM ScmSyncTaskInfo WHERE ScmSyncTaskInfo.syncDataId=#{syncDataId} and ScmSyncTaskInfo.orgUnitNo=#{orgUnitNo}
+		and ScmSyncTaskInfo.taskCode=#{taskCode} and ScmSyncTaskInfo.taskAction=#{taskAction}
+		and ScmSyncTaskInfo.taskType=#{taskType} and ScmSyncTaskInfo.taskOwner=#{taskOwner}
+		and ScmSyncTaskInfo.taskStatus=#{taskStatus} order by id asc limit 1
+	</select> 
+	<insert id="scmsynctaskinfo.add" parameterType="ScmSyncTaskInfo"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmSyncTaskInfo (
+		bizCode,
+        orgUnitNo,
+        taskCode,
+        taskAction,
+        taskType,
+        productCode,
+        begDate,
+        endDate,
+        syncDataId,
+        taskOwner,
+        taskStatus,
+        logtime,
+        taskExecutor,
+        statusMessage,
+        updateTime,
+        createTime,
+        taskSource,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+		#{bizCode},
+        #{orgUnitNo},
+        #{taskCode},
+        #{taskAction},
+        #{taskType},
+        #{productCode},
+        #{begDate},
+        #{endDate},
+        #{syncDataId},
+        #{taskOwner},
+        #{taskStatus},
+        #{logtime},
+        #{taskExecutor},
+        #{statusMessage},
+        #{updateTime},
+        #{createTime},
+        #{taskSource},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsynctaskinfo.update" parameterType="ScmSyncTaskInfo">
+		UPDATE ScmSyncTaskInfo set
+		bizCode=#{bizCode},
+        orgUnitNo=#{orgUnitNo},
+        taskCode=#{taskCode},
+        taskAction=#{taskAction},
+        taskType=#{taskType},
+        productCode=#{productCode},
+        begDate=#{begDate},
+        endDate=#{endDate},
+        syncDataId=#{syncDataId},
+        taskOwner=#{taskOwner},
+        taskStatus=#{taskStatus},
+        logtime=#{logtime},
+        taskExecutor=#{taskExecutor},
+        statusMessage=#{statusMessage},
+        updateTime=#{updateTime},
+        createTime=#{createTime},
+        taskSource=#{taskSource},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsynctaskinfo.delete" parameterType="String">
+		DELETE FROM ScmSyncTaskInfo WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

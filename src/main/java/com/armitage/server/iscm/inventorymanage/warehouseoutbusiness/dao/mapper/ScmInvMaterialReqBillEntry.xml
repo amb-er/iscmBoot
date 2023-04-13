@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvmaterialreqbillentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvmaterialreqbillentry.findAll" resultType="ScmInvMaterialReqBillEntry2" >
+	    SELECT * FROM scminvmaterialreqbillentry WHERE  1=1  
+	</select>
+ 
+	<select id="scminvmaterialreqbillentry.findAllPage" resultType="ScmInvMaterialReqBillEntry2" parameterType="Map"> 
+		SELECT scminvmaterialreqbillentry.*,scmmaterial.itemNo as itemNo,ScmInvMaterialReqBill.otNo,ScmInvMaterialReqBill.status,ScmMaterialGroup.className,ScmMaterial.brandId,
+		ScmInvMaterialReqBill.bizType,ScmInvMaterialReqBill.bizDate,ScmInvMaterialReqBill.postDate,ScmInvMaterialReqBill.creator,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,ScmInvMaterialReqBill.useOrgUnitNo,ScmInvMaterialReqBill.costOrgUnitNo,
+		A.unitName as unitName,B.unitName as baseUnitName,ScmMaterialUnitRelation.convrate as convrate,ScmMaterialGroup.className as groupName,
+		ScmInvMaterialReqBill.orgUnitNo,ScmInvMaterialReqBill.wareHouseId,C.unitName as pieUnitName,
+		ScmMaterialGroup.classCode as groupCode,ScmMaterialGroup.longNo as longNo,ScmMaterialGroup.id as groupId,
+		ScmInvWareHouse.whName as whName,ScmInvMaterialReqBill.periodId 
+		FROM ScmInvMaterialReqBill left join ScmInvWareHouse on ScmInvMaterialReqBill.wareHouseId=ScmInvWareHouse.id,
+        ScmInvMaterialReqBillEntry
+		left join ScmMeasureUnit A on ScmInvMaterialReqBillEntry.unit=A.id 
+		left join ScmMeasureUnit B on ScmInvMaterialReqBillEntry.baseUnit=B.id
+		left join ScmMeasureUnit C on ScmInvMaterialReqBillEntry.pieUnit=C.id
+		left join ScmMaterialUnitRelation on ScmInvMaterialReqBillEntry.itemId=ScmMaterialUnitRelation.itemId
+		AND ScmInvMaterialReqBillEntry.unit=ScmMaterialUnitRelation.targetUnitId,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmInvMaterialReqBill.otId=ScmInvMaterialReqBillEntry.otId And ScmInvMaterialReqBillEntry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroup.standardId
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		ORDER BY scminvmaterialreqbillentry.id ASC 
+	</select> 
+	<select id="scminvmaterialreqbillentry.selectById" resultType="ScmInvMaterialReqBillEntry2" parameterType="Long">
+		SELECT scminvmaterialreqbillentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,D.unitName as pieUnitName,
+		scmbaseattachment.id as attachmentId,scmbaseattachment.fileName as attachmentName,
+		A.unitName as unitName,B.unitName as baseUnitName,
+		ScmMaterialUnitRelation.convrate as convrate,
+		C.className as groupName
+		FROM scminvmaterialreqbillentry
+		LEFT JOIN (SELECT * FROM (SELECT * FROM scmbaseattachment ORDER BY createTime DESC) r GROUP BY r.billtype,r.billId)scmbaseattachment
+		on scminvmaterialreqbillentry.itemId=scmbaseattachment.billId and scmbaseattachment.billtype="ScmMaterial"
+		left join scmmaterial on scminvmaterialreqbillentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scminvmaterialreqbillentry.unit=A.id 
+		left join ScmMeasureUnit B on scminvmaterialreqbillentry.baseUnit=B.id
+		left join ScmMeasureUnit D on ScmInvMaterialReqBillEntry.pieUnit=D.id
+		left join ScmMaterialUnitRelation on scminvmaterialreqbillentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scminvmaterialreqbillentry.unit=ScmMaterialUnitRelation.targetUnitId
+		left join (SELECT ScmMaterial.id,ScmMaterialGroup.className as className 
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+        and ScmMaterialGroupStandard.standardType='1') C on scminvmaterialreqbillentry.itemId=C.id
+		WHERE scminvmaterialreqbillentry.id = #{value}
+	</select> 
+	<select id="scminvmaterialreqbillentry.selectByOtId" resultType="ScmInvMaterialReqBillEntry2" parameterType="Map"> 
+		SELECT scminvmaterialreqbillentry.*,scmmaterial.itemNo as itemNo,
+		scmbaseattachment.id as attachmentId,scmbaseattachment.fileName as attachmentName,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		A.unitName as unitName,B.unitName as baseUnitName,D.unitName as pieUnitName,
+		ScmMaterialUnitRelation.convrate as convrate,
+		C.className as groupName,C.classId as groupId
+		FROM scminvmaterialreqbillentry
+		LEFT JOIN (SELECT * FROM (SELECT * FROM scmbaseattachment ORDER BY createTime DESC) r GROUP BY r.billtype,r.billId)scmbaseattachment
+		on scminvmaterialreqbillentry.itemId=scmbaseattachment.billId and scmbaseattachment.billtype="ScmMaterial"
+		left join scmmaterial on scminvmaterialreqbillentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scminvmaterialreqbillentry.unit=A.id 
+		left join ScmMeasureUnit B on scminvmaterialreqbillentry.baseUnit=B.id
+		left join ScmMeasureUnit D on ScmInvMaterialReqBillEntry.pieUnit=D.id
+		left join ScmMaterialUnitRelation on scminvmaterialreqbillentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scminvmaterialreqbillentry.unit=ScmMaterialUnitRelation.targetUnitId
+		left join (SELECT ScmMaterial.id,ScmMaterialGroup.className as className,ScmMaterialGroup.id as classId
+		FROM ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard 
+		WHERE ScmMaterial.id=ScmMaterialGroupDetail.itemId
+		AND ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+		and ScmMaterialGroupStandard.id=ScmMaterialGroup.standardId
+        and ScmMaterialGroupStandard.standardType='1') C on scminvmaterialreqbillentry.itemId=C.id
+		WHERE scminvmaterialreqbillentry.otId=#{otId} 
+		ORDER BY scminvmaterialreqbillentry.lineId ASC
+	</select>
+	<select id="scminvmaterialreqbillentry.deleteByOtId" resultType="ScmInvMaterialReqBillEntry2" parameterType="Map"> 
+		DELETE FROM scminvmaterialreqbillentry WHERE otId=#{otId}
+	</select>
+	<select id="scminvmaterialreqbillentry.checkStockByOutWareHouse" resultType="ScmInvMaterialReqBillEntry2" parameterType="Map"> 
+		SELECT T1.ItemNo,T1.ItemName,T1.Lot,T1.Qty,IFNULL(Sum(T2.Qty), 0) AS InvQty
+		FROM (SELECT B.OrgUnitNo,B.WareHouseID,A.itemId,C.ItemNo,C.ItemName,A.Lot,A.Unit,sum(A.Qty) as Qty,B.BizDate
+				FROM ScmInvMaterialReqBillEntry A left join scmmaterial C on A.itemId=C.id,
+					ScmInvMaterialReqBill B
+				WHERE A.OTID = B.OTID
+				AND A.OTID = #{otId}
+			GROUP BY B.OrgUnitNo,B.WareHouseID,A.itemId,C.ItemNo,C.ItemName,A.Lot,A.Unit,B.BizDate) T1
+		LEFT JOIN scminvstock T2 ON T1.OrgUnitNo = T2.OrgUnitNo
+		AND T1.WareHouseID = T2.WareHouseID
+		AND T2.costcenter = 0
+		AND T1.ItemId = T2.ItemId
+		AND T1.Unit = T2.Unit
+		AND T2.InvDate &lt;= T1.BizDate
+		AND T2.Qty &gt; 0
+		GROUP BY T1.ItemNo,T1.ItemName,T1.Lot,T1.Qty
+		HAVING T1.Qty &gt; IFNULL(Sum(T2.Qty), 0) 
+	</select> 
+	<select id="scminvmaterialreqbillentry.checkStockByReturnWareHouse" resultType="ScmInvMaterialReqBillEntry2" parameterType="Map"> 
+		SELECT T1.ItemNo,T1.ItemName,T1.Lot,T1.Qty,IFNULL(Sum(T2.Qty), 0) AS InvQty
+		FROM (SELECT B.CostOrgUnitNo,B.UseOrgUnitNo,A.itemId,C.ItemNo,C.ItemName,A.Lot,A.Unit,A.Qty,B.BizDate
+				FROM ScmInvMaterialReqBillEntry A left join scmmaterial C on A.itemId=C.id,
+					ScmInvMaterialReqBill B
+				WHERE A.OTID = B.OTID
+				AND A.OTID = #{otId}
+			) T1
+		LEFT JOIN scminvstock T2 ON T1.UseOrgUnitNo = T2.OrgUnitNo
+		AND T1.CostOrgUnitNo = T2.CostOrgUnitNo
+		AND T2.costcenter = 1
+		AND T1.ItemId = T2.ItemId
+		AND T1.Unit = T2.Unit
+		AND T2.InvDate &lt;= T1.BizDate
+		AND T2.Qty &gt; 0
+		AND (T1.Lot = T2.Lot OR IFNULL(T1.Lot, '') = '')
+		GROUP BY T1.ItemNo,T1.ItemName,T1.Lot,T1.Qty
+		HAVING T1.Qty &gt; IFNULL(Sum(T2.Qty), 0) 
+	</select>
+	<select id="scminvmaterialreqbillentry.selectOutEffectRow" resultType="ScmInvMaterialReqBillEntry2" parameterType="Map"> 
+		Select
+		c.OrgUnitNo,c.WareHouseId,b.itemId,b.lot,b.unit,
+		sum(b.Qty) as
+		Qty,sum(IFNULL(b.PieQty,0)) as PieQty,Sum(b.BaseQty) as
+		BaseQty,Sum(b.Amt) as Amt,Sum(b.taxAmt) as taxAmt,
+		c.BizDate,b.stockId
+		From scminvmaterialreqbillEntry as b,scminvmaterialreqbill c
+		Where c.OTID = b.OTID And C.OTID = #{otId}
+		Group By c.OrgUnitNo,c.WareHouseId,b.itemId,b.lot,b.unit,c.BizDate,b.stockId
+	</select>
+	<select id="scminvmaterialreqbillentry.selectReturnEffectRow" resultType="ScmInvMaterialReqBillEntry2" parameterType="Map"> 
+		Select
+		c.UseOrgUnitNo,c.CostOrgUnitNo,b.itemId,b.lot,b.unit,
+		sum(b.Qty) as Qty,Sum(b.BaseQty) as BaseQty,Sum(IFNULL(b.PieQty,0)) as
+		PieQty,Sum(b.Amt) as Amt,Sum(b.TaxAmt) as TaxAmt,
+		c.BizDate,b.stockId
+		From scminvmaterialreqbillEntry as b,scminvmaterialreqbill c
+		Where c.OTID = b.OTID And C.OTID = #{otId}
+		Group By c.UseOrgUnitNo,c.CostOrgUnitNo,b.itemId,b.lot,b.unit,c.BizDate,b.stockId
+	</select>
+	<select id="scminvmaterialreqbillentry.selectCancelOutEffectDeptRow" resultType="ScmInvMaterialReqBillEntry2" parameterType="Map"> 
+		Select
+		A.OTID,A.BIZDate,A.FinOrgUnitNo,A.UseOrgUnitNo,A.CostOrgUnitNo,1 as
+		costCenter,
+		B.itemId,B.Unit,B.PieUnit,B.Lot,Sum(B.Qty) as Qty,
+		Sum(IFNULL(B.PieQty,0)) as PieQty,Sum(B.Amt) as Amt,B.ExpDate,B.BaseUnit,Sum(B.BaseQty) as
+		BaseQty,Sum(B.TaxAmt) as TaxAmt
+		From scminvmaterialreqbill A,scminvmaterialreqbillEntry B
+		where A.OTID = B.OTID And A.OTID = #{otId} 
+		Group BY A.OTID,A.BIZDate,A.FinOrgUnitNo,A.UseOrgUnitNo,A.CostOrgUnitNo,
+		B.itemId,B.Unit,B.PieUnit,B.Lot,B.ExpDate,B.BaseUnit
+	</select>
+	<select id="scminvmaterialreqbillentry.selectCancelOutEffectWareHsRow" resultType="ScmInvMaterialReqBillEntry2" parameterType="Map"> 
+		Select
+		c.OrgUnitNo,c.WareHouseId,b.itemId,b.lot,b.unit,
+		sum(b.Qty) as
+		Qty,sum(IFNULL(b.PieQty,0)) as PieQty,Sum(b.BaseQty) as
+		BaseQty,Sum(b.Amt) as Amt,Sum(b.taxAmt) as taxAmt,
+		c.BizDate,b.stockId
+		From scminvmaterialreqbillEntry as b,scminvmaterialreqbill c
+		Where c.OTID = b.OTID And C.OTID = #{otId}
+		Group By c.OrgUnitNo,c.WareHouseId,b.itemId,b.lot,b.unit,c.BizDate,b.stockId
+	</select>
+	<insert id="scminvmaterialreqbillentry.add" parameterType="ScmInvMaterialReqBillEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvmaterialreqbillentry (
+        otId,
+        lineId,
+        itemId,
+        unit,
+        pieUnit,
+        baseUnit,
+        lot,
+        reqQty,
+        qty,
+        pieQty,
+        baseQty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        expDate,
+        offset,
+        sourceBillDtlId,
+        stockId,
+        invDate,
+        orgSourceId,
+        orgSourceVendorId,
+        remarks,
+        costUseTypeId        )
+		VALUES (
+        #{otId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{baseUnit},
+        #{lot},
+        #{reqQty},
+        #{qty},
+        #{pieQty},
+        #{baseQty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{expDate},
+        #{offset},
+        #{sourceBillDtlId},
+        #{stockId},
+        #{invDate},
+        #{orgSourceId},
+        #{orgSourceVendorId},
+        #{remarks},
+        #{costUseTypeId}        )
+	</insert>
+ 
+	<update id="scminvmaterialreqbillentry.update" parameterType="ScmInvMaterialReqBillEntry">
+		UPDATE scminvmaterialreqbillentry set
+        otId=#{otId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        baseUnit=#{baseUnit},
+        lot=#{lot},
+        reqQty=#{reqQty},
+        qty=#{qty},
+        pieQty=#{pieQty},
+        baseQty=#{baseQty},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        expDate=#{expDate},
+        offset=#{offset},
+        sourceBillDtlId=#{sourceBillDtlId},
+        stockId=#{stockId},
+        invDate=#{invDate},
+        orgSourceId=#{orgSourceId},
+        orgSourceVendorId=#{orgSourceVendorId},
+        remarks=#{remarks},
+        costUseTypeId=#{costUseTypeId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvmaterialreqbillentry.delete" parameterType="String">
+		DELETE FROM scminvmaterialreqbillentry WHERE id IN (${value})
+	</delete> 
+	<select id="scminvmaterialreqbillentry.selectCostConsumePage" resultType="ScmInvMaterialReqBillEntry2" parameterType="Map"> 
+		SELECT ScmInvMaterialReqBill.finOrgUnitNo,ScmInvMaterialReqBill.costOrgUnitNo,ScmMaterialGroup.className as groupName,ScmMaterialGroup.classCode as groupCode,ScmMaterialGroup.longNo as longNo,
+		ScmMaterialGroup.id as groupId,ScmInvMaterialReqBillEntry.costUseTypeId,sum(case when ScmInvMaterialReqBill.bizType = '2' Then -ScmInvMaterialReqBillEntry.amt else ScmInvMaterialReqBillEntry.amt end) as amt,
+		sum(case when ScmInvMaterialReqBill.bizType = '2' Then -ScmInvMaterialReqBillEntry.taxAmt else ScmInvMaterialReqBillEntry.taxAmt end) as taxAmt
+		FROM ScmInvMaterialReqBill,ScmInvMaterialReqBillEntry,
+		ScmMaterial,ScmMaterialGroupDetail,ScmMaterialGroup,ScmMaterialGroupStandard
+		WHERE ScmInvMaterialReqBill.otId=ScmInvMaterialReqBillEntry.otId And ScmInvMaterialReqBillEntry.itemId=scmmaterial.id
+		And ScmMaterial.id=ScmMaterialGroupDetail.itemId And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id and ScmInvMaterialReqBill.controlUnitNo=#{controlUnitNo}
+		And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+		GROUP BY ScmInvMaterialReqBill.finOrgUnitNo,ScmInvMaterialReqBill.costOrgUnitNo,ScmMaterialGroup.id,ScmInvMaterialReqBillEntry.costUseTypeId
+		ORDER BY ScmInvMaterialReqBill.finOrgUnitNo,ScmInvMaterialReqBill.costOrgUnitNo,ScmMaterialGroup.classCode,ScmInvMaterialReqBillEntry.costUseTypeId
+	</select> 
+</mapper>

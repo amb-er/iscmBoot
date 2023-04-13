@@ -1,0 +1,20 @@
+<%@ CodeTemplate Language="C#" TargetLanguage="XML" Description="Generates a db<->class mapping file for use with NHibnate." %>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" Category="Context" Description="Table that the mapping file is based on" %>
+ 
+  
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Text.RegularExpressions" %> 
+<!-- #include file="common.inc" --> 
+
+-- ****************<%=SourceTable.Name%>***********************
+INSERT INTO Resource(code, valueCn, valueEn) VALUES ('field.<%=SourceTable.Name%>','cn_<%=SourceTable.Name%>','<%=PascalCase(SourceTable.Name)%>')
+ON DUPLICATE KEY UPDATE valueCn='cn_<%=SourceTable.Name%>',valueEn='<%=SourceTable.Name%>';
+
+<%foreach(ColumnSchema prop in SourceTable.NonPrimaryKeyColumns){%> 
+INSERT INTO Resource(code, valueCn, valueEn) VALUES ('field.<%=SourceTable.Name%>.<%=prop.Name%>','cn_<%=prop.Name%>','<%=PascalCase(prop.Name)%>')
+ON DUPLICATE KEY UPDATE valueCn='cn_<%=prop.Name%>',valueEn='<%=PascalCase(prop.Name)%>';
+
+<%}%>

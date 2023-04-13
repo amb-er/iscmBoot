@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmbaseattachment">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmbaseattachment.findAll" resultType="ScmBaseAttachment" >
+	    SELECT * FROM ScmBaseAttachment WHERE  1=1  
+	</select>
+ 				
+	<select id="scmbaseattachment.findAllPage" resultType="ScmBaseAttachment" parameterType="Map"> 
+		SELECT * FROM ScmBaseAttachment WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmbaseattachment.selectById" resultType="ScmBaseAttachment" parameterType="Long">
+		SELECT * FROM ScmBaseAttachment WHERE id = #{value}
+	</select> 
+	<insert id="scmbaseattachment.add" parameterType="ScmBaseAttachment"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmBaseAttachment (
+        billId,
+        docType,
+        fileName,
+        filePath,
+        creator,
+        createTime,
+        billtype,
+        controlUnitNo        )
+		VALUES (
+        #{billId},
+        #{docType},
+        #{fileName},
+        #{filePath},
+        #{creator},
+        #{createTime},
+        #{billtype},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmbaseattachment.update" parameterType="ScmBaseAttachment">
+		UPDATE ScmBaseAttachment set
+        billId=#{billId},
+        docType=#{docType},
+        fileName=#{fileName},
+        filePath=#{filePath},
+        creator=#{creator},
+        createTime=#{createTime},
+        billtype=#{billtype},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmbaseattachment.delete" parameterType="String">
+		DELETE FROM ScmBaseAttachment WHERE id IN (${value})
+	</delete>
+	<select id="scmbaseattachment.findBybillId" parameterType="Map" resultType="ScmBaseAttachment">
+		SELECT *
+		FROM (SELECT * FROM scmbaseattachment where billId=#{billId}
+		<if test="billType != null and billType != ''">
+			And billType=#{billType}
+		</if> 
+		AND controlUnitNo=#{controlUnitNo} 
+		ORDER BY createTime DESC) r
+		GROUP BY r.billtype,r.billId
+		ORDER BY r.id DESC
+	</select>
+	<select id="scmbaseattachment.findBybillTypeIdPage" parameterType="Map" resultType="ScmBaseAttachment">
+    SELECT * FROM scmbaseattachment 
+    WHERE billId in (${billIds})
+      AND billtype=#{billtype} 
+      AND controlUnitNo=#{controlUnitNo} ORDER BY id ASC
+  </select>
+  <select id="scmbaseattachment.findBybillTypeId" parameterType="Map" resultType="ScmBaseAttachment">
+    SELECT * FROM scmbaseattachment 
+    WHERE billId=#{billId}
+      AND billtype=#{billtype} 
+      AND controlUnitNo=#{controlUnitNo} ORDER BY id ASC
+  </select>
+</mapper>
+ 

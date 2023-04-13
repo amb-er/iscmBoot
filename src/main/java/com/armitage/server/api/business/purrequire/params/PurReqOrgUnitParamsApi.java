@@ -1,0 +1,18 @@
+package com.armitage.server.api.business.purrequire.params;
+
+import com.armitage.server.api.common.RequestParams;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+@ApiModel(value="PurReqOrgUnitParamsApi")
+public class PurReqOrgUnitParamsApi extends RequestParams {
+	@ApiModelProperty(required = true)
+	private PurReqOrgUnitParams params;
+
+	public PurReqOrgUnitParams getParams() {
+		return params;
+	}
+	public void setParams(PurReqOrgUnitParams params) {
+		this.params = params;
+	}
+}

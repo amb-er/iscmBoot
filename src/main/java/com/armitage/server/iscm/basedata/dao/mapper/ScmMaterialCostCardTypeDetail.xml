@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmmaterialcostcardtypedetail">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmmaterialcostcardtypedetail.findAll" resultType="ScmMaterialCostCardTypeDetail2" >
+	    SELECT * FROM ScmMaterialCostCardTypeDetail WHERE  1=1  
+	</select>
+ 
+	<select id="scmmaterialcostcardtypedetail.findAllPage" resultType="ScmMaterialCostCardTypeDetail2" parameterType="Map"> 
+		SELECT * FROM ScmMaterialCostCardTypeDetail WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmmaterialcostcardtypedetail.selectById" resultType="ScmMaterialCostCardTypeDetail2" parameterType="Long">
+		SELECT * FROM ScmMaterialCostCardTypeDetail WHERE id = #{value}
+	</select> 
+	<select id="scmmaterialcostcardtypedetail.selectByTypeId" resultType="ScmMaterialCostCardTypeDetail2" parameterType="Long">
+		SELECT * FROM ScmMaterialCostCardTypeDetail WHERE costCardTypeId = #{costCardTypeId}
+	</select> 
+	<insert id="scmmaterialcostcardtypedetail.add" parameterType="ScmMaterialCostCardTypeDetail"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmMaterialCostCardTypeDetail (
+        costCardTypeId,
+        itemId        )
+		VALUES (
+        #{costCardTypeId},
+        #{itemId}        )
+	</insert>
+ 
+	<update id="scmmaterialcostcardtypedetail.update" parameterType="ScmMaterialCostCardTypeDetail">
+		UPDATE ScmMaterialCostCardTypeDetail set
+        costCardTypeId=#{costCardTypeId},
+        itemId=#{itemId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmmaterialcostcardtypedetail.delete" parameterType="String">
+		DELETE FROM ScmMaterialCostCardTypeDetail WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

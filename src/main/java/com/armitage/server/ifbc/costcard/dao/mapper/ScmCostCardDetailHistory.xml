@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcostcarddetailhistory">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmcostcarddetailhistory.findAll" resultType="ScmCostCardDetailHistory" >
+	    SELECT * FROM ScmCostCardDetailHistory WHERE  1=1  
+	</select>
+ 
+	<select id="scmcostcarddetailhistory.findAllPage" resultType="ScmCostCardDetailHistory" parameterType="Map"> 
+		SELECT * FROM ScmCostCardDetailHistory WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmcostcarddetailhistory.selectById" resultType="ScmCostCardDetailHistory" parameterType="Long">
+		SELECT * FROM ScmCostCardDetailHistory WHERE id = #{value}
+	</select> 
+	<select id="scmcostcarddetailhistory.selectByEffectDay" resultType="ScmCostCardDetailHistory" parameterType="Map"> 
+		SELECT * FROM ScmCostCardDetailHistory WHERE cardId=#{cardId} and beginDate &gt;=#{effectDate}
+	</select> 
+	<insert id="scmcostcarddetailhistory.addByCostCard" parameterType="map" keyProperty="id" useGeneratedKeys="true">
+		INSERT INTO  ScmCostCardDetailHistory (orgUnitNo,beginDate,endDate,cardId,dishId,dishCode,dishName,fbmStatCode,
+		fbmStatName,dishSpecId,salePrice,type,itemId,itemNo,itemName,cstUnit,qty,invUnit,convrate,price,creator,checker,flag,resOrgUnitNo,controlUnitNo)
+		SELECT A.orgUnitNo,A.effectiveDate,'2030-12-31',B.cardId,A.dishId,A.dishCode,A.dishName,A.fbmStatCode,A.fbmStatName,A.dishSpecId,A.salePrice,B.type,B.itemId,B.itemNo,B.itemName,
+		B.cstUnit,B.qty,B.invUnit,B.convrate,B.price,B.creator,B.checker,A.flag,A.resOrgUnitNo,A.controlUnitNo FROM ScmCostCard A,ScmCostCardDetail B
+		Where A.id=B.cardId and A.id=#{cardId}
+		ON DUPLICATE KEY UPDATE endDate='2030-12-31',type=B.type,itemNo=B.itemNo,itemName=B.itemName,
+		cstUnit=B.cstUnit,qty=B.qty,invUnit=B.invUnit,convrate=B.convrate,price=B.price,creator=B.creator,checker=B.checker
+	</insert> 
+	<update id="scmcostcarddetailhistory.updateLastByCostCard" parameterType="Map">
+		UPDATE ScmCostCardDetailHistory A,ScmCostCard B Set A.endDate=DATE_ADD(B.effectiveDate,INTERVAL -1 DAY) 
+		Where A.cardId=B.id And A.cardId=#{cardId} and A.endDate &gt;=B.effectiveDate
+	</update>
+	<update id="scmcostcarddetailhistory.updateLastByCostCard2" parameterType="Map">
+		UPDATE ScmCostCardDetailHistory A,ScmCostCard B Set A.endDate=DATE_ADD(CURRENT_DATE,INTERVAL -1 DAY) 
+		Where A.cardId=B.id And A.cardId=#{cardId} and A.endDate &gt;=now()
+	</update>
+	<delete id="scmcostcarddetailhistory.deleteByEffectDay" parameterType="Map">
+		DELETE FROM ScmCostCardDetailHistory Where cardId=#{cardId} and beginDate &gt;=#{effectDate}
+	</delete>
+	<insert id="scmcostcarddetailhistory.add" parameterType="ScmCostCardDetailHistory"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmCostCardDetailHistory (
+        orgUnitNo,
+        beginDate,
+        endDate,
+        cardId,
+        dishId,
+        dishCode,
+        dishName,
+        fbmStatCode,
+        fbmStatName,
+        dishSpecId,
+        salePrice,
+        type,
+        itemId,
+        itemNo,
+        itemName,
+        cstUnit,
+        qty,
+        invUnit,
+        convrate,
+        price,
+        creator,
+        checker,
+        flag,
+        resOrgUnitNo,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{beginDate},
+        #{endDate},
+        #{cardId},
+        #{dishId},
+        #{dishCode},
+        #{dishName},
+        #{fbmStatCode},
+        #{fbmStatName},
+        #{dishSpecId},
+        #{salePrice},
+        #{type},
+        #{itemId},
+        #{itemNo},
+        #{itemName},
+        #{cstUnit},
+        #{qty},
+        #{invUnit},
+        #{convrate},
+        #{price},
+        #{creator},
+        #{checker},
+        #{flag},
+        #{resOrgUnitNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmcostcarddetailhistory.update" parameterType="ScmCostCardDetailHistory">
+		UPDATE ScmCostCardDetailHistory set
+        orgUnitNo=#{orgUnitNo},
+        beginDate=#{beginDate},
+        endDate=#{endDate},
+        cardId=#{cardId},
+        dishId=#{dishId},
+        dishCode=#{dishCode},
+        dishName=#{dishName},
+        fbmStatCode=#{fbmStatCode},
+        fbmStatName=#{fbmStatName},
+        dishSpecId=#{dishSpecId},
+        salePrice=#{salePrice},
+        type=#{type},
+        itemId=#{itemId},
+        itemNo=#{itemNo},
+        itemName=#{itemName},
+        cstUnit=#{cstUnit},
+        qty=#{qty},
+        invUnit=#{invUnit},
+        convrate=#{convrate},
+        price=#{price},
+        creator=#{creator},
+        checker=#{checker},
+        flag=#{flag},
+        resOrgUnitNo=#{resOrgUnitNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmcostcarddetailhistory.delete" parameterType="String">
+		DELETE FROM ScmCostCardDetailHistory WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

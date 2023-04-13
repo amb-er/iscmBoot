@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvmovereqbillentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvmovereqbillentry.findAll" resultType="ScmInvMoveReqBillEntry2" >
+	    SELECT * FROM scminvmovereqbillentry WHERE  1=1  
+	</select>
+ 
+	<select id="scminvmovereqbillentry.findAllPage" resultType="ScmInvMoveReqBillEntry2" parameterType="Map"> 
+		SELECT scminvmovereqbillentry.*,scmmaterial.itemNo as itemNo,scminvmovereqbill.currencyNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,scminvmovereqbill.finOrgUnitNo,
+		A.unitName as unitName,B.unitName as baseUnitName,scminvmovereqbill.reqOrgUnitNo,
+		ScmMaterialUnitRelation.convrate as convrate,scminvmovereqbill.exchangeRate
+		FROM scminvmovereqbill,scminvmovereqbillentry
+		left join scmmaterial on scminvmovereqbillentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scminvmovereqbillentry.unit=A.id 
+		left join ScmMeasureUnit B on scminvmovereqbillentry.baseUnit=B.id
+		left join ScmMaterialUnitRelation on scminvmovereqbillentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scminvmovereqbillentry.unit=ScmMaterialUnitRelation.targetUnitId
+		WHERE  scminvmovereqbill.ReqID = scminvmovereqbillentry.ReqID ORDER BY scminvmovereqbillentry.id ASC 
+	</select> 
+	<select id="scminvmovereqbillentry.findGrantPage" resultType="ScmInvMoveReqBillEntry2" parameterType="Map"> 
+		SELECT scminvmovereqbill.ReqNo as reqNo,ScmMaterial.itemNo as itemNo,scminvmovereqbill.currencyNo,
+			ScmMaterial.itemName as itemName,ScmMaterial.spec as spec,scminvmovereqbill.finOrgUnitNo,
+			ScmMeasureUnit.unitName as unitName,scminvmovereqbill.reqOrgUnitNo,
+			scminvmovereqbillentry.*,scminvmovereqbill.exchangeRate,
+			ScmMaterialGroup.className as groupName,
+			(SELECT IFNULL(sum(a.Qty), 0) AS Qty FROM scminvstock a Where a.orgunitno = scminvmovereqbill.ReqOrgUnitNo AND a.itemId = scminvmovereqbillentry.itemId group by a.warehouseid, a.itemId, a.Unit order by sum(a.Qty) desc, a.warehouseid LIMIT 1) AS InvQty,
+			(SELECT ScmMeasureUnit.unitName FROM scminvstock a LEFT JOIN ScmMeasureUnit ON a.Unit = ScmMeasureUnit.id Where a.orgunitno = scminvmovereqbill.ReqOrgUnitNo AND a.itemId = scminvmovereqbillentry.itemId group by a.warehouseid, a.itemId, a.Unit order by sum(a.BaseQty) desc, a.warehouseid LIMIT 1) AS invUnitName
+     	FROM scminvmovereqbill,   
+             scminvmovereqbillentry
+		  	 left join ScmMeasureUnit on scminvmovereqbillentry.unit=ScmMeasureUnit.id,
+		  	 ScmMaterialGroup,ScmMaterialGroupStandard,ScmMaterialGroupDetail,ScmMaterial    
+   		WHERE scminvmovereqbill.ReqID = scminvmovereqbillentry.ReqID 
+		 	And ScmMaterialGroup.StandardID = ScmMaterialGroupStandard.id
+			And ScmMaterialGroup.id = ScmMaterialGroupDetail.classId
+			and ScmMaterialGroupDetail.StandardID = ScmMaterialGroupStandard.id
+			And ScmMaterial.Id = ScmMaterialGroupDetail.ItemId
+			And scminvmovereqbillentry.itemId = ScmMaterial.Id 
+			And ScmMaterialGroupStandard.StandardType='1' 
+			And (scminvmovereqbillentry.RowStatus in ('A','E','C')) 
+			And scminvmovereqbillentry.MoveBaseQty = 0 
+		ORDER BY scminvmovereqbill.reqId DESC
+	</select> 
+	<select id="scminvmovereqbillentry.selectById" resultType="ScmInvMoveReqBillEntry2" parameterType="Long">
+		SELECT scminvmovereqbillentry.*,scmmaterial.itemNo as itemNo,scminvmovereqbill.currencyNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,scminvmovereqbill.finOrgUnitNo,
+		A.unitName as unitName,B.unitName as baseUnitName,scminvmovereqbill.reqOrgUnitNo,
+		ScmMaterialUnitRelation.convrate as convrate,scminvmovereqbill.exchangeRate
+		FROM scminvmovereqbill,scminvmovereqbillentry
+		left join scmmaterial on scminvmovereqbillentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scminvmovereqbillentry.unit=A.id 
+		left join ScmMeasureUnit B on scminvmovereqbillentry.baseUnit=B.id
+		left join ScmMaterialUnitRelation on scminvmovereqbillentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scminvmovereqbillentry.unit=ScmMaterialUnitRelation.targetUnitId
+		WHERE scminvmovereqbill.ReqID = scminvmovereqbillentry.ReqID And scminvmovereqbillentry.id = #{value}
+	</select> 
+	<select id="scminvmovereqbillentry.selectByReqId" resultType="ScmInvMoveReqBillEntry2" parameterType="Map"> 
+		SELECT scminvmovereqbillentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		A.unitName as unitName,B.unitName as baseUnitName,
+		ScmMaterialUnitRelation.convrate as convrate
+		FROM scminvmovereqbillentry
+		left join scmmaterial on scminvmovereqbillentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit A on scminvmovereqbillentry.unit=A.id 
+		left join ScmMeasureUnit B on scminvmovereqbillentry.baseUnit=B.id
+		left join ScmMaterialUnitRelation on scminvmovereqbillentry.itemId=ScmMaterialUnitRelation.itemId
+		AND scminvmovereqbillentry.unit=ScmMaterialUnitRelation.targetUnitId
+		WHERE scminvmovereqbillentry.reqId=#{reqId} 
+		ORDER BY scminvmovereqbillentry.lineId ASC
+	</select>
+	<insert id="scminvmovereqbillentry.add" parameterType="ScmInvMoveReqBillEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvmovereqbillentry (
+        reqId,
+        lineId,
+        itemId,
+        unit,
+        pieUnit,
+        baseUnit,
+        issueOrgUnitNo,
+        issueWareHouseId,
+        reqWareHouseId,
+        useOrgUnitNo,
+        lot,
+        qty,
+        pieQty,
+        baseQty,
+        price,
+        amt,
+        rowStatus,
+        moveBaseQty,
+        sourceBillDtlId,
+        remarks        )
+		VALUES (
+        #{reqId},
+        #{lineId},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{baseUnit},
+        #{issueOrgUnitNo},
+        #{issueWareHouseId},
+        #{reqWareHouseId},
+        #{useOrgUnitNo},
+        #{lot},
+        #{qty},
+        #{pieQty},
+        #{baseQty},
+        #{price},
+        #{amt},
+        #{rowStatus},
+        #{moveBaseQty},
+        #{sourceBillDtlId},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scminvmovereqbillentry.update" parameterType="ScmInvMoveReqBillEntry">
+		UPDATE scminvmovereqbillentry set
+        reqId=#{reqId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        baseUnit=#{baseUnit},
+        issueOrgUnitNo=#{issueOrgUnitNo},
+        issueWareHouseId=#{issueWareHouseId},
+        reqWareHouseId=#{reqWareHouseId},
+        useOrgUnitNo=#{useOrgUnitNo},
+        lot=#{lot},
+        qty=#{qty},
+        pieQty=#{pieQty},
+        baseQty=#{baseQty},
+        price=#{price},
+        amt=#{amt},
+        rowStatus=#{rowStatus},
+        moveBaseQty=#{moveBaseQty},
+        sourceBillDtlId=#{sourceBillDtlId},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+	
+	<update id="scminvmovereqbillentry.updateRowStatusByReqId" parameterType="map">
+		UPDATE scminvmovereqbillentry set
+        rowStatus=#{rowStatus} WHERE reqId = #{reqId}
+	</update>
+	
+	<delete id="scminvmovereqbillentry.deleteByReqId" parameterType="Map">
+		DELETE FROM scminvmovereqbillentry WHERE reqId=#{reqId}
+	</delete>
+ 
+	<delete id="scminvmovereqbillentry.delete" parameterType="String">
+		DELETE FROM scminvmovereqbillentry WHERE id IN (${value})
+	</delete> 
+
+</mapper>

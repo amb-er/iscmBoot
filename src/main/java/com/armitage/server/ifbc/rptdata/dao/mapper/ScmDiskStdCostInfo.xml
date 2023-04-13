@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmdiskstdcostinfo">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmdiskstdcostinfo.findAll" resultType="ScmDiskStdCostInfo" >
+	    SELECT * FROM ScmDiskStdCostInfo WHERE  1=1  
+	</select>
+ 
+	<select id="scmdiskstdcostinfo.findAllPage" resultType="ScmDiskStdCostInfo" parameterType="Map"> 
+		SELECT * FROM ScmDiskStdCostInfo WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmdiskstdcostinfo.selectById" resultType="ScmDiskStdCostInfo" parameterType="Long">
+		SELECT * FROM ScmDiskStdCostInfo WHERE id = #{value}
+	</select>
+	<select id="scmdiskstdcostinfo.selectByResOrgUnitNos" resultType="ScmDiskStdCostInfo" parameterType="Map">
+		SELECT C.deptCode,C.itemId,C.unitId,sum(C.stdQty) as stdQty,
+		case When sum(C.stdQty)=0 Then 0 Else sum(C.stdAmt)/sum(C.stdQty) end as price,sum(C.stdAmt) as stdAmt FROM
+		(SELECT A.deptCode,A.itemId,A.unitId,A.stdQty,A.stdAmt FROM ScmDiskStdCostInfo A
+		WHERE A.orgUnitNo in (${resOrgUnitNos}) And A.accDate &gt;=#{begDate} and A.accDate &lt;=#{endDate}
+		Union All
+		SELECT B.deptCode,B.itemId,B.unitId,B.stdQty,B.stdAmt FROM ScmCookStdCostInfo B
+		WHERE B.orgUnitNo in (${resOrgUnitNos}) And B.accDate &gt;=#{begDate} and B.accDate &lt;=#{endDate}) C
+		GROUP BY C.deptCode,C.itemId,C.unitId
+		ORDER BY C.deptCode,C.itemId,C.unitId ASC
+	</select> 
+	<insert id="scmdiskstdcostinfo.batchAdd" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmDiskStdCostInfo (orgUnitNo,accDate,deptCode,dishId,dishSpecId,type,itemId,unitId,stdQty,price,stdAmt)
+		SELECT A.orgUnitNo,C.accDate,A.deptCode,A.dishId,A.dishSpecId,B.type,B.itemId,D.invUnitId as unitId,round(sum(A.saleQty*B.qty/D.convrate),6) as stdQty,
+		D.invPrice as price,round(Sum(A.saleQty*B.qty*D.price),4) as stdAmt
+		FROM ScmFbmSellDetail A,ScmCostCardDetailHistory B,ScmDateList C,ScmItemCostPriceHistory D
+		WHERE A.orgUnitNo=#{orgUnitNo} AND A.accDate =C.accDate AND A.dishId=B.dishId AND A.dishSpecId=B.dishSpecId
+		And B.beginDate &lt;=C.accDate And B.endDate &gt;=C.accDate And C.accDate &gt;=#{begDate} and C.accDate &lt;=#{endDate}
+		And D.orgUnitNo=#{orgUnitNo} And D.accDate =C.accDate And B.itemId=D.itemId
+		GROUP BY A.orgUnitNo,C.accDate,A.dishId,B.type,B.itemId,D.invUnitId,D.invPrice
+		Union
+		SELECT A.orgUnitNo,C.accDate,A.deptCode,A.dishId,E.dishSpecId,B.type,B.itemId,D.invUnitId as unitId,round(sum(A.saleQty*B.qty*E.costRatio/D.convrate),6) as stdQty,
+		D.invPrice as price,round(Sum(A.saleQty*B.qty*D.price*E.costRatio),4) as stdAmt
+		FROM ScmFbmSellDetail A,ScmCostCardDetailHistory B,ScmDateList C,ScmItemCostPriceHistory D,ScmDishCostRatio E
+		WHERE A.orgUnitNo=#{orgUnitNo} AND A.accDate =C.accDate AND A.dishId=B.dishId AND B.cardId=E.cardId And A.dishSpecId=E.dishSpecId
+		And B.beginDate &lt;=C.accDate And B.endDate &gt;=C.accDate And C.accDate &gt;=#{begDate} and C.accDate &lt;=#{endDate}
+		And D.orgUnitNo=#{orgUnitNo} And D.accDate =C.accDate And B.itemId=D.itemId
+		GROUP BY A.orgUnitNo,C.accDate,A.dishId,B.type,B.itemId,D.invUnitId,D.invPrice
+		ON DUPLICATE KEY UPDATE stdQty=VALUES(stdQty),price=VALUES(price),stdAmt=VALUES(stdAmt)
+	</insert>
+	<delete id="scmdiskstdcostinfo.batchDelete" parameterType="Map">
+		DELETE FROM ScmDiskStdCostInfo WHERE orgUnitNo =#{orgUnitNo} and accDate &gt;=#{begDate} and accDate &lt;=#{endDate}
+	</delete>	
+	<insert id="scmdiskstdcostinfo.add" parameterType="ScmDiskStdCostInfo"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmDiskStdCostInfo (
+        orgUnitNo,
+        accDate,
+        deptCode,
+        dishId,
+        dishSpecId,
+        type,
+        itemId,
+        unitId,
+        stdQty,
+        price,
+        stdAmt        )
+		VALUES (
+        #{orgUnitNo},
+        #{accDate},
+        #{deptCode},
+        #{dishId},
+        #{dishSpecId},
+        #{type},
+        #{itemId},
+        #{unitId},
+        #{stdQty},
+        #{price},
+        #{stdAmt}        )
+	</insert>
+ 
+	<update id="scmdiskstdcostinfo.update" parameterType="ScmDiskStdCostInfo">
+		UPDATE ScmDiskStdCostInfo set
+        orgUnitNo=#{orgUnitNo},
+        accDate=#{accDate},
+        deptCode=#{deptCode},
+        dishId=#{dishId},
+        dishSpecId=#{dishSpecId},
+        type=#{type},
+        itemId=#{itemId},
+        unitId=#{unitId},
+        stdQty=#{stdQty},
+        price=#{price},
+        stdAmt=#{stdAmt}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmdiskstdcostinfo.delete" parameterType="String">
+		DELETE FROM ScmDiskStdCostInfo WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

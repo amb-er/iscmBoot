@@ -1,0 +1,13 @@
+
+K
+java:S1874["0Remove this use of "position"; it is deprecated.(ˆñöàúÿÿÿÿ
+F
+java:S18748"0Remove this use of "position"; it is deprecated.(´‘‘
+>
+java:S1148x"#Use a logger to log this exception.(€ÉÔ…ýÿÿÿÿ
+`
+java:S44887"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(Ÿ½‰”
+P
+java:S1141s"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ
+e
+java:S4488Z"JReplace "@RequestMapping(method = RequestMethod.POST)" with "@PostMapping"(µ¿¾”üÿÿÿÿ

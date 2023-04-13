@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurpriceprepareentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurpriceprepareentry.findAll" resultType="ScmPurPricePrepareEntry2" >
+	    SELECT * FROM scmpurpriceprepareentry WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurpriceprepareentry.findAllPage" resultType="ScmPurPricePrepareEntry2" parameterType="Map"> 
+		SELECT * FROM scmpurpriceprepareentry WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpurpriceprepareentry.selectById" resultType="ScmPurPricePrepareEntry2" parameterType="Long">
+		SELECT scmpurpriceprepareentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as purUnitName,ifnull(scmpurpriceentry.selVndrId,0) as selVndrId
+		FROM scmpurpriceprepareentry
+		left join scmmaterial on scmpurpriceprepareentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scmpurpriceprepareentry.purUnit=ScmMeasureUnit.id
+		left join scmpurpriceentry on scmpurpriceprepareentry.itemId=scmpurpriceentry.itemId
+		and scmpurpriceprepareentry.pmId=scmpurpriceentry.pmId and scmpurpriceentry.selVndrId &gt;0
+		WHERE scmpurpriceprepareentry.id = #{value}
+	</select> 
+	<select id="scmpurpriceprepareentry.selectByPmId" resultType="ScmPurPricePrepareEntry2" parameterType="Map"> 
+		SELECT scmpurpriceprepareentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as purUnitName,ifnull(scmpurpriceentry.selVndrId,0) as selVndrId
+		FROM scmpurpriceprepareentry
+		left join scmmaterial on scmpurpriceprepareentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scmpurpriceprepareentry.purUnit=ScmMeasureUnit.id
+		left join scmpurpriceentry on scmpurpriceprepareentry.itemId=scmpurpriceentry.itemId
+		and scmpurpriceprepareentry.pmId=scmpurpriceentry.pmId and scmpurpriceentry.selVndrId &gt;0
+		WHERE scmpurpriceprepareentry.pmId=#{pmId}  
+		and scmpurpriceprepareentry.flag=1
+	</select>
+	<insert id="scmpurpriceprepareentry.add" parameterType="ScmPurPricePrepareEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurpriceprepareentry (
+        pmId,
+        itemId,
+        purUnit,
+        vendorId1,
+        vendorId2,
+        vendorId3,
+        preSelVndrId,
+        price1,
+        price2,
+        price3,
+        prePrice1,
+        prePrice2,
+        prePrice3,
+        preTaxRate1,
+        preTaxRate2,
+        preTaxRate3,
+        editor,
+        editDate,
+        flag,
+        remarks        )
+		VALUES (
+        #{pmId},
+        #{itemId},
+        #{purUnit},
+        #{vendorId1},
+        #{vendorId2},
+        #{vendorId3},
+        #{preSelVndrId},
+        #{price1},
+        #{price2},
+        #{price3},
+        #{prePrice1},
+        #{prePrice2},
+        #{prePrice3},
+        #{preTaxRate1},
+        #{preTaxRate2},
+        #{preTaxRate3},
+        #{editor},
+        #{editDate},
+        #{flag},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scmpurpriceprepareentry.update" parameterType="ScmPurPricePrepareEntry">
+		UPDATE scmpurpriceprepareentry set
+        pmId=#{pmId},
+        itemId=#{itemId},
+        purUnit=#{purUnit},
+        vendorId1=#{vendorId1},
+        vendorId2=#{vendorId2},
+        vendorId3=#{vendorId3},
+        preSelVndrId=#{preSelVndrId},
+        price1=#{price1},
+        price2=#{price2},
+        price3=#{price3},
+        prePrice1=#{prePrice1},
+        prePrice2=#{prePrice2},
+        prePrice3=#{prePrice3},
+        preTaxRate1=#{preTaxRate1},
+        preTaxRate2=#{preTaxRate2},
+        preTaxRate3=#{preTaxRate3},
+        editor=#{editor},
+        editDate=#{editDate},
+        flag=#{flag},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurpriceprepareentry.delete" parameterType="String">
+		DELETE FROM scmpurpriceprepareentry WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

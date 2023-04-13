@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcostusetype">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmcostusetype.findAll" resultType="ScmCostUseType" >
+	    SELECT * FROM scmcostusetype WHERE  1=1  
+	</select>
+ 	<select id="scmcostusetype.queryByNameOrCode" resultType="ScmCostUseType" parameterType="Map">
+		SELECT * from scmcostusetype where flag=1 and controlUnitNo=${controlUnitNo} and (name like "%${queryValue}%" or code like "%${queryValue}%")
+		ORDER BY sort DESC
+	</select>
+	<select id="scmcostusetype.findAllPage" resultType="ScmCostUseType" parameterType="Map"> 
+		SELECT * FROM scmcostusetype WHERE  1=1 ORDER BY sort DESC 
+	</select> 
+	<select id="scmcostusetype.selectById" resultType="ScmCostUseType" parameterType="Long">
+		SELECT * FROM scmcostusetype WHERE id = #{value}
+	</select> 
+	<insert id="scmcostusetype.add" parameterType="ScmCostUseType"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmcostusetype (
+        code,
+        name,
+        sort,
+        flag,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{code},
+        #{name},
+        #{sort},
+        #{flag},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmcostusetype.update" parameterType="ScmCostUseType">
+		UPDATE scmcostusetype set
+        code=#{code},
+        name=#{name},
+        sort=#{sort},
+        flag=#{flag},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmcostusetype.delete" parameterType="String">
+		DELETE FROM scmcostusetype WHERE id IN (${value})
+	</delete> 
+	<select id="scmcostusetype.selectAll" resultType="ScmCostUseType" parameterType="Map">
+		SELECT * from scmcostusetype where flag=1 and controlUnitNo=#{controlUnitNo}
+		ORDER BY sort DESC
+	</select>
+	<select id="scmcostusetype.selectAllPage" resultType="ScmCostUseType" parameterType="Map">
+		SELECT * FROM scmcostusetype WHERE flag=1 AND controlUnitNo=#{controlUnitNo}
+		ORDER BY sort DESC
+	</select>
+
+</mapper>
+ 

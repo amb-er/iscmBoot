@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurrequire">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurrequire.findAll" resultType="ScmPurRequire2" >
+	    SELECT * FROM scmpurrequire WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurrequire.findAllPage" resultType="ScmPurRequire2" parameterType="Map"> 
+		SELECT Distinct scmpurrequire.*,ifnull(sum(scmpurrequireentry.amt),0) as totalAmt 
+		FROM scmpurrequire,scmpurrequireentry,ScmMaterial WHERE scmpurrequire.id=scmpurrequireentry.prId 
+		And ScmMaterial.id = scmpurrequireentry.itemId
+		GROUP BY scmpurrequire.id 
+		<choose>
+			<when test="sortByDate != null and sortByDate !='' "> 
+				ORDER BY scmpurrequire.applyDate Desc,scmpurrequire.prNo Desc 
+			</when>
+			<otherwise>
+				ORDER BY scmpurrequire.prNo Desc 
+			</otherwise>
+		</choose> 
+	</select> 
+	<select id="scmpurrequire.selectById" resultType="ScmPurRequire2" parameterType="Long">
+		SELECT *,ifnull((Select sum(amt) From scmpurrequireentry Where prId=scmpurrequire.id),0) as totalAmt FROM scmpurrequire WHERE id = #{value}
+	</select> 
+	<select id="scmpurrequire.selectByIds" resultType="ScmPurRequire2" parameterType="String">
+		SELECT *,ifnull((Select sum(amt) From scmpurrequireentry Where prId=scmpurrequire.id),0) as totalAmt FROM scmpurrequire WHERE id in(${ids})
+	</select>
+	<select id="scmpurrequire.selectMaxIdByDate" resultType="ScmPurRequire2" parameterType="String">
+		SELECT *
+		FROM ScmPurRequire
+		WHERE createDate &gt;=#{createDate} And createDate &lt; DATE_ADD(#{createDate},INTERVAL 1 DAY) 
+		And controlUnitNo=#{controlUnitNo} Order BY prNo Desc Limit 1
+	</select> 
+	
+	<select id="scmpurrequire.selectPurRequireTotalAmt" resultType="Map" parameterType="Map">
+		select scmpurrequire.id,sum(scmpurrequireentry.amt) as totalAmt from scmpurrequire,scmpurrequireentry 
+		where scmpurrequire.id=#{requireId} and scmpurrequire.id=scmpurrequireentry.prId
+		and scmpurrequireentry.rowStatus in ('D','P')
+		group by scmpurrequire.id
+	</select> 
+	
+	<select id="scmpurrequire.selectDrillBills" resultType="ScmPurBillDrillResult" parameterType="Map">
+		SELECT cast(scmpurrequireentry.id as char) as prDetailId,scmpurrequireentry.itemId,scmmaterial.itemNo,scmmaterial.itemName,
+		a.poNo,a.poIds,a.status as poStatus,b.pvNo,b.pvIds,b.status as pvStatus,c.wrNo,c.wrIds,c.status as wrStatus,
+		case when scmpurprice.pmNo is null then scmpurquotation.pqNo else scmpurprice.pmNo end as priceBillNo,
+		case when scmpurprice.status is null then scmpurquotation.status else scmpurprice.status end as priceBillStatus,
+		scmpurrequireentry.refPriceStatus,(SELECT scmpurrereuse.opinion FROM  scmpurrereuse where scmpurrequireentry.Id=scmpurrereuse.entryBillId
+		and scmpurrereuse.rowStatus='C' and scmpurrereuse.flag=1 ORDER BY id desc LIMIT 1)as refuseReason,
+		case when scmpurrequireentry.rowStatus ='C' then (Case WHEN a.id is null Then 'C' else 'E' END) else scmpurrequireentry.rowStatus END as 'rowStatus'
+ 		from scmpurrequire,scmpurrequireentry 
+		LEFT JOIN (select scmpurorderentry.id,scmpurorder.poNo,scmpurorder.status,group_concat(distinct scmpurorder.id) as poIds,
+		scmpurorderentry.itemId
+ 		from scmpurorder,scmpurorderentry,scmpurrequireentry where scmpurorder.id=scmpurorderentry.poId
+		and scmpurorderentry.prDtlId=scmpurrequireentry.id and scmpurrequireentry.prId=${prId}
+		group by scmpurorderentry.itemId order by scmpurorder.id asc) a on scmpurrequireentry.itemId=a.itemId
+		LEFT JOIN (select scmpurreceive.pvNo,scmpurreceive.status,group_concat(distinct scmpurreceive.id) as pvIds,
+		scmpurreceiveentry.itemId
+ 		from scmpurreceive,scmpurreceiveentry,scmpurorderentry,scmpurrequireentry where scmpurreceive.id=scmpurreceiveentry.pvId
+		and scmpurreceiveentry.poDtlId=scmpurorderentry.id and scmpurorderentry.prDtlId=scmpurrequireentry.id and scmpurrequireentry.prId=${prId}
+		group by scmpurreceiveentry.itemId order by scmpurreceive.id asc) b on scmpurrequireentry.itemId=b.itemId
+		LEFT JOIN (select scminvpurinwarehsbill.wrNo,scminvpurinwarehsbill.status,group_concat(distinct scminvpurinwarehsbill.wrId) as wrIds,
+	    scminvpurinwarehsbillentry.itemId
+	    from scminvpurinwarehsbill left join scminvpurinwarehsbillentry on scminvpurinwarehsbill.wrId=scminvpurinwarehsbillentry.wrId
+	    left join scmpurreceiveentry on scminvpurinwarehsbillentry.sourceBillDtlId=scmpurreceiveentry.id
+	    left join scmpurorderentry on scmpurreceiveentry.poDtlId=scmpurorderentry.id
+	    left join scmpurrequireentry on scmpurorderentry.prDtlId=scmpurrequireentry.id where scmpurrequireentry.prId=${prId}
+	    group by scminvpurinwarehsbillentry.itemId order by scminvpurinwarehsbill.wrId asc) c on scmpurrequireentry.itemId=c.itemId
+		LEFT JOIN scmpurprice on scmpurrequireentry.priceBillId=scmpurprice.id and IFNULL(scmpurrequireentry.refPriceStatus,'')!='' and scmpurrequireentry.refPriceStatus!='1'
+		LEFT JOIN scmpurquotation on scmpurrequireentry.priceBillId=scmpurquotation.id and IFNULL(scmpurrequireentry.refPriceStatus,'')!='' and scmpurrequireentry.refPriceStatus='1'
+		,scmmaterial
+		where scmpurrequire.id=scmpurrequireentry.prId
+		and scmpurrequire.id=${prId}
+		and scmpurrequireentry.itemId=scmmaterial.id
+		group by scmpurrequireentry.itemId
+	</select>  
+	
+	<select id="scmpurrequire.selectByTemplate" resultType="ScmPurRequire2" parameterType="Map"> 
+        SELECT * FROM scmpurrequire WHERE orgUnitNo in (${orgUnitNo}) and templete = 1;
+    </select> 
+	<insert id="scmpurrequire.add" parameterType="ScmPurRequire"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurrequire (
+        prNo,
+        orgUnitNo,
+        applicants,
+        applyDate,
+        reqDate,
+        bizType,
+        billType,
+        finOrgUnitNo,
+        toWareHouse,
+        receiveWareHouseId,
+        purOrgUnitNo,
+        templete,
+        currencyNo,
+        exchangeRate,
+        taxAmt,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        checker,
+        checkDate,
+        prtcount,
+        reqNo,
+        otherAuditNo,
+        outAuditType,
+        status,
+        remarks,
+        workFlowNo,
+        stepNo,
+        subscribeReason,
+        purRequireTheme,
+        controlUnitNo        )
+		VALUES (
+        #{prNo},
+        #{orgUnitNo},
+        #{applicants},
+        #{applyDate},
+        #{reqDate},
+        #{bizType},
+        #{billType},
+        #{finOrgUnitNo},
+        #{toWareHouse},
+        #{receiveWareHouseId},
+        #{purOrgUnitNo},
+        #{templete},
+        #{currencyNo},
+        #{exchangeRate},
+        #{taxAmt},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{checker},
+        #{checkDate},
+        #{prtcount},
+        #{reqNo},
+        #{otherAuditNo},
+        #{outAuditType},
+        #{status},
+        #{remarks},
+        #{workFlowNo},
+        #{stepNo},
+        #{subscribeReason},
+        #{purRequireTheme},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpurrequire.update" parameterType="ScmPurRequire">
+		UPDATE scmpurrequire set
+        prNo=#{prNo},
+        orgUnitNo=#{orgUnitNo},
+        applicants=#{applicants},
+        applyDate=#{applyDate},
+        reqDate=#{reqDate},
+        bizType=#{bizType},
+        billType=#{billType},
+        finOrgUnitNo=#{finOrgUnitNo},
+        toWareHouse=#{toWareHouse},
+        receiveWareHouseId=#{receiveWareHouseId},
+        purOrgUnitNo=#{purOrgUnitNo},
+        templete=#{templete},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        taxAmt=#{taxAmt},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        prtcount=#{prtcount},
+        reqNo=#{reqNo},
+        otherAuditNo=#{otherAuditNo},
+        outAuditType=#{outAuditType},
+        status=#{status},
+        remarks=#{remarks},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        subscribeReason=#{subscribeReason},
+        purRequireTheme=#{purRequireTheme},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+	
+	<update id="scmpurrequire.updateOutAudit" parameterType="Map">
+		UPDATE scmpurrequire set outAuditType = #{outAuditType}
+		<if test="otherAuditNo!=null and otherAuditNo!=''">
+			,otherAuditNo = #{otherAuditNo}
+		</if>
+		WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurrequire.delete" parameterType="String">
+		DELETE FROM scmpurrequire WHERE id IN (${value})
+	</delete> 
+    <select id="scmpurrequire.selectByTypeCode" resultType="ScmPurRequire2" parameterType="Map"> 
+    	SELECT * FROM scmpurrequire where bizType=#{bizType} and controlUnitNo=#{controlUnitNo} LIMIT 1
+    </select>
+    
+    <select id="scmpurrequire.selectByPrNo" resultType="ScmPurRequire2" parameterType="Map"> 
+    	SELECT * FROM scmpurrequire where prNo=#{prNo} and controlUnitNo=#{controlUnitNo}
+    </select>
+    
+</mapper>

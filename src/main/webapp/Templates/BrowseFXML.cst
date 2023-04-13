@@ -1,0 +1,26 @@
+<%@ CodeTemplate Language="C#" TargetLanguage="XML" Description="Generates a db<->class mapping file for use with NHibnate." %>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" Category="Context" Description="Table that the mapping file is based on" %>
+ 
+  
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Text.RegularExpressions" %> 
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<!-- #include file="common.inc" --> 
+<fx:root id="" type="javafx.scene.control.TableView" prefHeight="400.0" prefWidth="683.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2">
+  <columns>
+  <% 
+        foreach(ColumnSchema prop in SourceTable.NonPrimaryKeyColumns){%> 
+    <TableColumn id="<%=prop.Name%>" maxWidth="5000.0" minWidth="10.0" prefWidth="120.0" text="%field.<%=SourceTable.Name%>.<%=prop.Name%>" />  
+  <%}%>
+ 
+  </columns>
+</fx:root>

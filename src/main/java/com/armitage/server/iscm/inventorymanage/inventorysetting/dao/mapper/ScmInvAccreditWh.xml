@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvaccreditwh">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvaccreditwh.findAll" resultType="ScmInvAccreditWh2" >
+	    SELECT * FROM ScmInvAccreditWh WHERE  1=1  
+	</select>
+ 
+	<select id="scminvaccreditwh.findAllPage" resultType="ScmInvAccreditWh2" parameterType="Map"> 
+		SELECT ScmInvAccreditWh.*,scminvwarehouse.whNo,scminvwarehouse.whName,scminvwarehouse.usePermission
+		FROM ScmInvAccreditWh,scminvwarehouse 
+		WHERE ScmInvAccreditWh.wareHouseId=scminvwarehouse.id
+		And scminvwarehouse.status='Y' ORDER BY ScmInvAccreditWh.id ASC 
+	</select> 
+	<select id="scminvaccreditwh.selectById" resultType="ScmInvAccreditWh2" parameterType="Long">
+		SELECT ScmInvAccreditWh.*,scminvwarehouse.whNo as whNo,scminvwarehouse.whName as whName
+		FROM ScmInvAccreditWh 
+		left join scminvwarehouse on ScmInvAccreditWh.wareHouseId=scminvwarehouse.id
+		WHERE ScmInvAccreditWh.id = #{value}
+	</select> 
+	<select id="scminvaccreditwh.selectByWareHouseIdList" resultType="ScmInvAccreditWh2" parameterType="Map">
+		SELECT * FROM ScmInvAccreditWh 
+		WHERE ScmInvAccreditWh.wareHouseId in (${wareHouseIdList})
+	</select> 
+	<select id="scminvaccreditwh.selectByWareHouseId" resultType="ScmInvAccreditWh2" parameterType="Map">
+		SELECT * FROM Scminvaccreditwh WHERE ScmInvAccreditWh.wareHouseId = #{wareHouseId} and orgUnitNo=#{orgUnitNo}
+	</select> 
+	<insert id="scminvaccreditwh.add" parameterType="ScmInvAccreditWh"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmInvAccreditWh (
+        wareHouseId,
+        orgUnitNo,
+        morgUnitNo,
+        endInit,
+        periodId,
+        stockType,
+        status        )
+		VALUES (
+        #{wareHouseId},
+        #{orgUnitNo},
+        #{morgUnitNo},
+        #{endInit},
+        #{periodId},
+        #{stockType},
+        #{status}        )
+	</insert>
+ 
+	<update id="scminvaccreditwh.update" parameterType="ScmInvAccreditWh">
+		UPDATE ScmInvAccreditWh set
+        wareHouseId=#{wareHouseId},
+        orgUnitNo=#{orgUnitNo},
+        morgUnitNo=#{morgUnitNo},
+        endInit=#{endInit},
+        periodId=#{periodId},
+        stockType=#{stockType},
+        status=#{status}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvaccreditwh.delete" parameterType="String">
+		DELETE FROM ScmInvAccreditWh WHERE id IN (${value})
+	</delete> 
+
+    <update id="scminvaccreditwh.updateEndInit" parameterType="map">
+        UPDATE ScmInvAccreditWh set
+        endInit=#{endInit},
+        periodId=#{periodId},
+        status=#{status}
+        WHERE orgUnitNo = #{orgUnitNo}
+        and wareHouseId = #{wareHouseId}
+    </update>
+    
+    <select id="scminvaccreditwh.selectCount" resultType="Integer" parameterType="Map">
+		SELECT sum(cnt) from
+		(
+		    SELECT count(1) as cnt from scminvpurinwarehsbillentry,scminvpurinwarehsbill where scminvpurinwarehsbill.wrId=scminvpurinwarehsbillentry.wrId And scminvpurinwarehsbillentry.orgUnitNo = #{orgUnitNo} and scminvpurinwarehsbillentry.wareHouseId = #{wareHouseId} and scminvpurinwarehsbill.status='E'
+		    UNION
+		    SELECT count(1) as cnt from scminvsaleissuebillentry,scminvsaleissuebill where scminvsaleissuebillentry.otId=scminvsaleissuebill.otId And scminvsaleissuebillentry.orgUnitNo = #{orgUnitNo} and scminvsaleissuebillentry.wareHouseId = #{wareHouseId} and scminvsaleissuebill.status='E'
+		    UNION
+		    SELECT count(1) as cnt from scminvmaterialreqbill where orgUnitNo = #{orgUnitNo} and wareHouseId = #{wareHouseId} and status='E'
+		    UNION
+		    SELECT count(1) as cnt from scminvmoveissuebillentry,scminvmoveissuebill where scminvmoveissuebillentry.otId=scminvmoveissuebill.otId and scminvmoveissuebillentry.orgUnitNo = #{orgUnitNo} and scminvmoveissuebillentry.wareHouseId = #{wareHouseId} and scminvmoveissuebill.status='E'
+		    UNION
+		    SELECT count(1) as cnt from scminvmoveinwarehsbillentry,scminvmoveinwarehsbill where scminvmoveinwarehsbillentry.wrId = scminvmoveinwarehsbill.wrId and scminvmoveinwarehsbillentry.orgUnitNo = #{orgUnitNo} and scminvmoveinwarehsbillentry.wareHouseId = #{wareHouseId} and scminvmoveinwarehsbill.status='E'
+		    UNION
+		    SELECT count(1) as cnt from scminvotherissuebillentry,scminvotherissuebill where scminvotherissuebillentry.otId=scminvotherissuebill.otId and scminvotherissuebillentry.orgUnitNo = #{orgUnitNo} and scminvotherissuebillentry.wareHouseId = #{wareHouseId} and scminvotherissuebill.status='E'
+		    UNION
+		    SELECT count(1) as cnt from scminvotherissuebillentry,scminvotherissuebill where scminvotherissuebillentry.otId=scminvotherissuebill.otId and scminvotherissuebillentry.orgUnitNo = #{orgUnitNo} and scminvotherissuebillentry.wareHouseId = #{wareHouseId} and scminvotherissuebill.status='E'
+		    UNION
+		    SELECT count(1) as cnt from scminvcountingtable A, scminvcountingtable B, scminvcountingtask C 
+		        where A.tableId = B.tableId and B.taskId = C.taskId and C.status != 'C' and A.orgUnitNo = #{orgUnitNo} and A.wareHouseId = #{wareHouseId}
+		) AS tmp
+    </select>
+    
+    <update id="scminvaccreditwh.updateReverseInit" parameterType="map">
+        UPDATE ScmInvAccreditWh set
+        endInit=#{endInit},
+        periodId=#{periodId},
+        status=#{status}
+        WHERE orgUnitNo = #{orgUnitNo}
+        and wareHouseId = #{wareHouseId}
+    </update>
+</mapper>

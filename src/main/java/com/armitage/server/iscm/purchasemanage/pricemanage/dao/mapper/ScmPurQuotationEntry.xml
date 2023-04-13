@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurquotationentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurquotationentry.findAll" resultType="ScmPurQuotationEntry2" >
+	    SELECT * FROM scmpurquotationentry WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurquotationentry.findAllPage" resultType="ScmPurQuotationEntry2" parameterType="Map"> 
+		SELECT scmpurquotationentry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as purUnitName
+		FROM scmpurquotationentry
+		left join scmmaterial on scmpurquotationentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scmpurquotationentry.purUnit=ScmMeasureUnit.id
+		WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpurquotationentry.selectById" resultType="ScmPurQuotationEntry2" parameterType="Long">
+		SELECT scmpurquotationentry.*,scmmaterial.itemNo as itemNo,scmbaseattachment.id as attachmentId,scmbaseattachment.fileName as attachmentName,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as purUnitName
+		FROM scmpurquotationentry
+		LEFT JOIN (SELECT * FROM (SELECT * FROM scmbaseattachment ORDER BY createTime DESC) r GROUP BY r.billtype,r.billId)scmbaseattachment
+		on scmpurquotationentry.itemId=scmbaseattachment.billId and scmbaseattachment.billtype="ScmMaterial"
+		left join scmmaterial on scmpurquotationentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scmpurquotationentry.purUnit=ScmMeasureUnit.id
+		WHERE scmpurquotationentry.id = #{value}
+	</select> 
+	<select id="scmpurquotationentry.selectByPqId" resultType="ScmPurQuotationEntry2" parameterType="Map"> 
+		SELECT scmpurquotationentry.*,scmmaterial.itemNo as itemNo,scmbaseattachment.id as attachmentId,scmbaseattachment.fileName as attachmentName,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as purUnitName
+		FROM scmpurquotationentry
+		LEFT JOIN (SELECT * FROM (SELECT * FROM scmbaseattachment ORDER BY createTime DESC) r GROUP BY r.billtype,r.billId)scmbaseattachment
+		on scmpurquotationentry.itemId=scmbaseattachment.billId and scmbaseattachment.billtype="ScmMaterial"
+		left join scmmaterial on scmpurquotationentry.itemId=scmmaterial.id
+		left join ScmMeasureUnit on scmpurquotationentry.purUnit=ScmMeasureUnit.id
+		WHERE scmpurquotationentry.pqId=#{pqId} 
+		ORDER BY scmpurquotationentry.lineId ASC
+	</select> 
+	<insert id="scmpurquotationentry.add" parameterType="ScmPurQuotationEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmpurquotationentry (
+        pqId,
+        lineId,
+        itemId,
+        purUnit,
+        prePrice,
+        preTaxPrice,
+        price,
+        taxRate,
+        taxPrice,
+        rowStatus,
+        checker,
+        checkDate,
+        remarks        )
+		VALUES (
+        #{pqId},
+        #{lineId},
+        #{itemId},
+        #{purUnit},
+        #{prePrice},
+        #{preTaxPrice},
+        #{price},
+        #{taxRate},
+        #{taxPrice},
+        #{rowStatus},
+        #{checker},
+        #{checkDate},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scmpurquotationentry.update" parameterType="ScmPurQuotationEntry">
+		UPDATE scmpurquotationentry set
+        pqId=#{pqId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        purUnit=#{purUnit},
+        prePrice=#{prePrice},
+        preTaxPrice=#{preTaxPrice},
+        price=#{price},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        rowStatus=#{rowStatus},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+	
+	<update id="scmpurquotationentry.updateRowStatusByPqId" parameterType="map">
+		UPDATE scmpurquotationentry set
+        rowStatus=#{rowStatus},
+        checker=#{checker},
+        checkDate=#{checkDate}	 WHERE pqId = #{pqId}
+	</update>
+	
+	<select id="scmpurquotationentry.selectTaxRateByPqId" resultType="ScmPurQuotationEntry2" parameterType="Map">
+		SELECT id,pqId,taxRate FROM scmpurquotationentry WHERE id=(
+		SELECT MAX(id) FROM scmpurquotationentry WHERE pqId=#{pqId} and itemId =#{itemId})
+	</select>
+ 
+	<delete id="scmpurquotationentry.delete" parameterType="String">
+		DELETE FROM scmpurquotationentry WHERE id IN (${value})
+	</delete> 
+	
+</mapper>

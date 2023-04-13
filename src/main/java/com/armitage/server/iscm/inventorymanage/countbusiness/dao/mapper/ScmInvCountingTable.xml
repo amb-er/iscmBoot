@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvcountingtable">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvcountingtable.findAll" resultType="ScmInvCountingTable2" >
+	    SELECT * FROM scminvcountingtable WHERE  1=1  
+	</select>
+ 
+	<select id="scminvcountingtable.findAllPage" resultType="ScmInvCountingTable2" parameterType="Map"> 
+		SELECT scminvcountingtable.*,
+		scminvcountingtask.taskNo as taskNo,
+		scminvwarehouse.whName as whName
+		FROM scminvcountingtable
+		left join scminvcountingtask on scminvcountingtable.taskId=scminvcountingtask.taskId
+		left join scminvwarehouse on scminvcountingtable.wareHouseId=scminvwarehouse.id
+		WHERE  1=1 ORDER BY scminvcountingtable.tableId ASC 
+	</select> 
+	<select id="scminvcountingtable.selectById" resultType="ScmInvCountingTable2" parameterType="Long">
+		SELECT scminvcountingtable.*,
+		scminvcountingtask.taskNo as taskNo,
+		scminvwarehouse.whName as whName,
+		ifnull((Select sum(amt) from scminvcountingtableEntry Where tableId=scminvcountingtable.tableId),0) as amt,
+        	ifnull((Select sum(taxAmt) from scminvcountingtableEntry Where tableId=scminvcountingtable.tableId),0) as taxAmt
+		FROM scminvcountingtable
+		left join scminvcountingtask on scminvcountingtable.taskId=scminvcountingtask.taskId
+		left join scminvwarehouse on scminvcountingtable.wareHouseId=scminvwarehouse.id
+		WHERE scminvcountingtable.tableId = #{value}
+	</select> 
+	<select id="scminvcountingtable.findDifference" resultType="ScmInvCountingTable2" parameterType="Map">
+		SELECT distinct scminvcountingtable.*,
+		scminvcountingtask.taskNo as taskNo,
+		scminvwarehouse.whName as whName
+		FROM scminvcountingtable
+		left join scminvcountingtask on scminvcountingtable.taskId=scminvcountingtask.taskId
+		left join scminvwarehouse on scminvcountingtable.wareHouseId=scminvwarehouse.id,scminvcountingtableentry
+		WHERE scminvcountingtable.taskId = #{taskId}
+		and scminvcountingtable.tableId=scminvcountingtableentry.tableId
+		and scminvcountingtableentry.differQty != 0
+	</select> 
+	<select id="scminvcountingtable.selectByTaskNo" resultType="ScmInvCountingTable2" parameterType="Map">
+		SELECT ScmInvCountingTable.* FROM ScmInvCountingTable,ScmInvCountingTask
+		WHERE ScmInvCountingTable.taskId=ScmInvCountingTask.taskId
+		AND ScmInvCountingTask.taskNo = #{taskNo} And ScmInvCountingTask.controlUnitNo=#{controlUnitNo}
+	</select> 
+	<select id="scminvcountingtable.selectByTaskNoAndWhNo" resultType="ScmInvCountingTable2" parameterType="Map">
+		SELECT ScmInvCountingTable.* FROM ScmInvCountingTable,ScmInvCountingTask,ScmInvWarehouse
+		WHERE ScmInvCountingTable.taskId=ScmInvCountingTask.taskId And ScmInvCountingTable.wareHouseId = ScmInvWarehouse.id
+		AND ScmInvCountingTask.taskNo = #{taskNo} And ScmInvWarehouse.whNo=#{whNo}
+		And ScmInvCountingTask.controlUnitNo=#{controlUnitNo}
+	</select>
+	<insert id="scminvcountingtable.add" parameterType="ScmInvCountingTable"  keyProperty="tableId" useGeneratedKeys="true"> 
+		INSERT INTO  scminvcountingtable (
+        taskId,
+        orgUnitNo,
+        wareHouseId,
+        bizDate,
+        taskBegTime,
+        taskEndTime,
+        countingPerson,
+        countingAgainPerson,
+        countingMonitorer,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        status,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{taskId},
+        #{orgUnitNo},
+        #{wareHouseId},
+        #{bizDate},
+        #{taskBegTime},
+        #{taskEndTime},
+        #{countingPerson},
+        #{countingAgainPerson},
+        #{countingMonitorer},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{status},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvcountingtable.update" parameterType="ScmInvCountingTable">
+		UPDATE scminvcountingtable set
+        taskId=#{taskId},
+        orgUnitNo=#{orgUnitNo},
+        wareHouseId=#{wareHouseId},
+        bizDate=#{bizDate},
+        taskBegTime=#{taskBegTime},
+        taskEndTime=#{taskEndTime},
+        countingPerson=#{countingPerson},
+        countingAgainPerson=#{countingAgainPerson},
+        countingMonitorer=#{countingMonitorer},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        status=#{status},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE tableId = #{tableId}
+	</update>
+ 
+	<delete id="scminvcountingtable.delete" parameterType="String">
+		DELETE FROM scminvcountingtable WHERE tableId IN (${value})
+	</delete> 
+	
+	<delete id="scminvcountingtable.deleteNotExist" parameterType="Map">
+		DELETE FROM scminvcountingtable WHERE TableID not in (select distinct TableID from scminvcountingtableentry  group by TableID)  
+		and taskId = #{taskId}
+	</delete>
+
+</mapper>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurchasetypeorg">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurchasetypeorg.findAll" resultType="ScmPurchaseTypeOrg" >
+	    SELECT * FROM ScmPurchaseTypeOrg WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurchasetypeorg.findAllPage" resultType="ScmPurchaseTypeOrg" parameterType="Map"> 
+		SELECT * FROM ScmPurchaseTypeOrg WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpurchasetypeorg.selectById" resultType="ScmPurchaseTypeOrg" parameterType="Long">
+		SELECT * FROM ScmPurchaseTypeOrg WHERE id = #{value}
+	</select> 
+	<select id="scmpurchasetypeorg.selectByTypeAndOrgNo" resultType="ScmPurchaseTypeOrg" parameterType="Map">
+		SELECT * FROM ScmPurchaseTypeOrg WHERE typeId = #{typeId} and orgUnitNo=#{orgUnitNo}
+	</select> 
+	<insert id="scmpurchasetypeorg.add" parameterType="ScmPurchaseTypeOrg"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurchaseTypeOrg (
+        typeId,
+        orgUnitNo,
+        flag,
+        sort        )
+		VALUES (
+        #{typeId},
+        #{orgUnitNo},
+        #{flag},
+        #{sort}        )
+	</insert>
+ 
+	<update id="scmpurchasetypeorg.update" parameterType="ScmPurchaseTypeOrg">
+		UPDATE ScmPurchaseTypeOrg set
+        typeId=#{typeId},
+        orgUnitNo=#{orgUnitNo},
+        flag=#{flag},
+        sort=#{sort}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurchasetypeorg.delete" parameterType="String">
+		DELETE FROM ScmPurchaseTypeOrg WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

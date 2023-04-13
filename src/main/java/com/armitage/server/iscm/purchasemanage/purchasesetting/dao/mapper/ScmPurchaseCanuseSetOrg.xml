@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurchasecanusesetorg">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurchasecanusesetorg.findAll" resultType="ScmPurchaseCanuseSetOrg2" >
+	    SELECT * FROM ScmPurchaseCanuseSetOrg WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurchasecanusesetorg.findAllPage" resultType="ScmPurchaseCanuseSetOrg2" parameterType="Map"> 
+		SELECT * FROM ScmPurchaseCanuseSetOrg WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpurchasecanusesetorg.selectById" resultType="ScmPurchaseCanuseSetOrg2" parameterType="Long">
+		SELECT * FROM ScmPurchaseCanuseSetOrg WHERE id = #{value}
+	</select> 
+	<insert id="scmpurchasecanusesetorg.add" parameterType="ScmPurchaseCanuseSetOrg"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurchaseCanuseSetOrg (
+        pcsId,
+        orgUnitNo        )
+		VALUES (
+        #{pcsId},
+        #{orgUnitNo}        )
+	</insert>
+ 
+	<update id="scmpurchasecanusesetorg.update" parameterType="ScmPurchaseCanuseSetOrg">
+		UPDATE ScmPurchaseCanuseSetOrg set
+        pcsId=#{pcsId},
+        orgUnitNo=#{orgUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurchasecanusesetorg.delete" parameterType="String">
+		DELETE FROM ScmPurchaseCanuseSetOrg WHERE id IN (${value})
+	</delete> 
+	
+	<select id="scmpurchasecanusesetorg.selectByPcsId" resultType="ScmPurchaseCanuseSetOrg2" parameterType="Map">
+		SELECT * FROM ScmPurchaseCanuseSetOrg WHERE pcsId = #{pcsId}
+	</select> 
+</mapper>
+ 

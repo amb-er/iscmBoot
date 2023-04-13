@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmstandardratiodetail">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmstandardratiodetail.findAll" resultType="ScmStandardRatioDetail" >
+	    SELECT * FROM ScmStandardRatioDetail WHERE  1=1  
+	</select>
+ 
+	<select id="scmstandardratiodetail.findAllPage" resultType="ScmStandardRatioDetail" parameterType="Map"> 
+		SELECT * FROM ScmStandardRatioDetail WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmstandardratiodetail.selectById" resultType="ScmStandardRatioDetail" parameterType="Long">
+		SELECT * FROM ScmStandardRatioDetail WHERE id = #{value}
+	</select> 
+	<select id="scmstandardratiodetail.selectByRateId" resultType="ScmStandardRatioDetail" parameterType="Map">
+		SELECT * FROM ScmStandardRatioDetail WHERE rateId = #{rateId}
+	</select> 
+	<insert id="scmstandardratiodetail.add" parameterType="ScmStandardRatioDetail"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmStandardRatioDetail (
+        rateId,
+        itemId,
+        invUnit,
+        qty,
+        netRate        )
+		VALUES (
+        #{rateId},
+        #{itemId},
+        #{invUnit},
+        #{qty},
+        #{netRate}        )
+	</insert>
+ 
+	<update id="scmstandardratiodetail.update" parameterType="ScmStandardRatioDetail">
+		UPDATE ScmStandardRatioDetail set
+        rateId=#{rateId},
+        itemId=#{itemId},
+        invUnit=#{invUnit},
+        qty=#{qty},
+        netRate=#{netRate}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmstandardratiodetail.delete" parameterType="String">
+		DELETE FROM ScmStandardRatioDetail WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

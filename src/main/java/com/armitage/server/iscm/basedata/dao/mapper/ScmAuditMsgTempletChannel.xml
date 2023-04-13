@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmauditmsgtempletchannel">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmauditmsgtempletchannel.findAll" resultType="ScmAuditMsgTempletChannel" >
+	    SELECT * FROM ScmAuditMsgTempletChannel WHERE  1=1  
+	</select>
+ 
+	<select id="scmauditmsgtempletchannel.findAllPage" resultType="ScmAuditMsgTempletChannel" parameterType="Map"> 
+		SELECT * FROM ScmAuditMsgTempletChannel WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmauditmsgtempletchannel.selectById" resultType="ScmAuditMsgTempletChannel" parameterType="Long">
+		SELECT * FROM ScmAuditMsgTempletChannel WHERE id = #{value}
+	</select> 
+	<select id="scmauditmsgtempletchannel.selectByTempetId" resultType="ScmAuditMsgTempletChannel" parameterType="Map">
+		SELECT * FROM ScmAuditMsgTempletChannel WHERE templetId = #{templetId}
+	</select> 
+	<insert id="scmauditmsgtempletchannel.add" parameterType="ScmAuditMsgTempletChannel"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmAuditMsgTempletChannel (
+        templetId,
+        channelCode,
+        templateId        )
+		VALUES (
+        #{templetId},
+        #{channelCode},
+        #{templateId}        )
+	</insert>
+ 
+	<update id="scmauditmsgtempletchannel.update" parameterType="ScmAuditMsgTempletChannel">
+		UPDATE ScmAuditMsgTempletChannel set
+        templetId=#{templetId},
+        channelCode=#{channelCode},
+        templateId=#{templateId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmauditmsgtempletchannel.delete" parameterType="String">
+		DELETE FROM ScmAuditMsgTempletChannel WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvwarehouse">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvwarehouse.findAll" resultType="ScmInvWareHouse" >
+	    SELECT * FROM scminvwarehouse WHERE  1=1  
+	</select>
+ 
+	<select id="scminvwarehouse.findAllPage" resultType="ScmInvWareHouse" parameterType="Map"> 
+		SELECT * FROM scminvwarehouse WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scminvwarehouse.selectById" resultType="ScmInvWareHouse" parameterType="Long">
+		SELECT * FROM scminvwarehouse WHERE id = #{value}
+	</select>
+	<select id="scminvwarehouse.selectByOrgUnitNo" resultType="ScmInvWareHouse" parameterType="Map">
+		SELECT scminvwarehouse.* FROM scminvwarehouse,scminvaccreditwh
+		WHERE scminvwarehouse.id = scminvaccreditwh.wareHouseId
+		and scminvaccreditwh.status='Y'
+		and scminvaccreditwh.endInit = 1
+		and scminvaccreditwh.morgUnitNo = #{orgUnitNo}
+		<if test="fromWhNo != null and fromWhNo != ''">
+			and scminvwarehouse.whNo &gt;= #{fromWhNo}
+		</if>
+		<if test="toWhNo != null and toWhNo != ''">
+			and scminvwarehouse.whNo &lt;= #{toWhNo}
+		</if>
+	</select>
+	
+	<select id="scminvwarehouse.selectByOrgUnitNoPage" resultType="ScmInvWareHouse" parameterType="Map">
+		SELECT scminvwarehouse.* FROM scminvwarehouse,scminvaccreditwh
+		WHERE scminvwarehouse.id = scminvaccreditwh.wareHouseId
+		and scminvaccreditwh.status='Y' and scminvaccreditwh.endInit=1
+		and scminvaccreditwh.endInit = 1
+		and scminvaccreditwh.morgUnitNo = #{orgUnitNo}
+	</select>
+	
+	<select id="scminvwarehouse.selectByOrgUnitNosPage" resultType="ScmInvWareHouse" parameterType="Map">
+		SELECT scminvwarehouse.* FROM scminvwarehouse,scminvaccreditwh
+		WHERE scminvwarehouse.id = scminvaccreditwh.wareHouseId
+		and scminvaccreditwh.status='Y' and scminvaccreditwh.endInit=1
+		and scminvaccreditwh.endInit = 1
+		and scminvaccreditwh.morgUnitNo in (${orgUnitNo})
+		GROUP BY whNo
+	</select>
+	
+	<select id="scminvwarehouse.selectByControlUnitNoPage" resultType="ScmInvWareHouse" parameterType="Map">
+		SELECT scminvwarehouse.* FROM scminvwarehouse,scminvaccreditwh
+		WHERE scminvwarehouse.id = scminvaccreditwh.wareHouseId
+		and scminvaccreditwh.status='Y' and scminvaccreditwh.endInit=1
+		and scminvaccreditwh.endInit = 1
+		and scminvwarehouse.controlUnitNo = #{controlUnitNo}
+	</select>
+	<select id="scminvwarehouse.selectByUsrAndOrgPage" resultType="ScmInvWareHouse" parameterType="Map">
+		SELECT scminvwarehouse.* FROM scminvwarehouse,scminvaccreditwh
+		WHERE scminvwarehouse.id = scminvaccreditwh.wareHouseId
+		and scminvaccreditwh.status='Y' and scminvaccreditwh.endInit=1
+		and scminvaccreditwh.endInit = 1
+		and scminvaccreditwh.morgUnitNo = #{orgUnitNo}
+		And (scminvwarehouse.usePermission=0 or (scminvwarehouse.usePermission=1 
+		And EXISTS(SELECT 1 FROM ScmInvWareHouseUsr Where wareHouseId=scminvwarehouse.id And usrCode=#{usrCode})))
+	</select>
+	
+	<select id="scminvwarehouse.selectByUsrAndOrgsPage" resultType="ScmInvWareHouse" parameterType="Map">
+		SELECT scminvwarehouse.* FROM scminvwarehouse,scminvaccreditwh
+		WHERE scminvwarehouse.id = scminvaccreditwh.wareHouseId
+		and scminvaccreditwh.status='Y' and scminvaccreditwh.endInit=1
+		and scminvaccreditwh.endInit = 1
+		and scminvaccreditwh.morgUnitNo in(${orgUnitNo}) 
+		And (scminvwarehouse.usePermission=0 or (scminvwarehouse.usePermission=1 
+		And EXISTS(SELECT 1 FROM ScmInvWareHouseUsr Where wareHouseId=scminvwarehouse.id And usrCode=#{usrCode}))) GROUP BY whNo
+	</select>
+	
+	<select id="scminvwarehouse.selectForAssign" resultType="ScmInvWareHouse" parameterType="Map">
+		SELECT scminvwarehouse.* FROM scminvwarehouse,scminvaccreditwh
+		WHERE scminvwarehouse.id = scminvaccreditwh.wareHouseId
+		and scminvaccreditwh.status='Y'
+		and scminvaccreditwh.endInit = 1
+		and scminvaccreditwh.orgUnitNo = #{orgUnitNo} 
+	</select>
+	<select id="scminvwarehouse.selectInitEndWs" resultType="ScmInvWareHouse" parameterType="map">
+        SELECT 
+		    scminvwarehouse.id, scminvaccreditwh.wareHouseId, scminvwarehouse.`status`,
+		    scminvwarehouse.whNo, scminvwarehouse.whName,
+		    scminvaccreditwh.`status` as initStatus, scminvaccreditwh.endInit
+		FROM 
+		    scminvaccreditwh, scminvwarehouse
+		WHERE 
+		    scminvaccreditwh.wareHouseId = scminvwarehouse.id
+		and scminvaccreditwh.orgUnitNo = scminvwarehouse.orgUnitNo
+		and scminvaccreditwh.orgUnitNo = #{orgUnitNo} 
+		and scminvaccreditwh.endInit = #{endInit}  
+	</select> 
+	<select id="scminvwarehouse.selectMaxId" resultType="ScmInvWareHouse">
+		SELECT * FROM scminvwarehouse WHERE id = (SELECT MAX(id) FROM scminvwarehouse)
+	</select> 
+	<select id="scminvwarehouse.selectByWhNo" resultType="ScmInvWareHouse" parameterType="Map">
+		SELECT * FROM scminvwarehouse
+		WHERE scminvwarehouse.orgUnitNo = #{orgUnitNo}
+		and scminvwarehouse.whNo = #{whNo}
+	</select>
+	
+	<select id="scminvwarehouse.selectByINWH" resultType="ScmInvWareHouse" parameterType="Map">
+		SELECT scminvwarehouse.id,scminvwarehouse.WhNo,scminvwarehouse.WhName  
+    	FROM scminvaccreditwh,scminvwarehouse  
+   		WHERE scminvaccreditwh.wareHouseID = scminvwarehouse.id 
+   		AND scminvaccreditwh.Status = 'Y'
+   		and scminvaccreditwh.endInit = 1
+		<if test="orgUnitNo != null and orgUnitNo != ''"> 
+			AND scminvaccreditwh.orgUnitNo = #{orgUnitNo}
+		</if>
+   		<if test="mOrgUnitNo != null and mOrgUnitNo != ''"> 
+			AND scminvaccreditwh.mOrgUnitNo = #{mOrgUnitNo}
+		</if>
+	</select>
+	
+	<select id="scminvwarehouse.selectByOutWH" resultType="ScmInvWareHouse" parameterType="Map">
+		select DISTINCT scminvwarehouse.id, scminvwarehouse.whNo, scminvwarehouse.whName 
+		from
+		  scminvaccreditwh, scminvwarehouse, scminvstock
+		where scminvaccreditwh.wareHouseId = scminvwarehouse.id
+		  and scminvaccreditwh.`status` = 'Y'
+		  and scminvaccreditwh.endInit = 1
+		  and scminvaccreditwh.orgUnitNo = scminvstock.orgUnitNo
+		  and scminvwarehouse.id = scminvstock.wareHouseId
+		  <if test="itemId != null and itemId != ''">
+		      and scminvstock.itemId = #{itemId}
+		  </if>
+		  and scminvaccreditwh.orgUnitNo = #{orgUnitNo}
+		  and scminvstock.qty &gt; 0        
+    </select>
+	
+	<insert id="scminvwarehouse.add" parameterType="scminvwarehouse"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvwarehouse (
+        whNo,
+        whName,
+        orgUnitNo,
+        address,
+        contactor,
+        tel,
+        usePermission,
+        pym,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        remarks,
+        status,
+        controlUnitNo        )
+		VALUES (
+        #{whNo},
+        #{whName},
+        #{orgUnitNo},
+        #{address},
+        #{contactor},
+        #{tel},
+        #{usePermission},
+        #{pym},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{remarks},
+        #{status},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scminvwarehouse.update" parameterType="ScmInvWareHouse">
+		UPDATE scminvwarehouse set
+        whNo=#{whNo},
+        whName=#{whName},
+        orgUnitNo=#{orgUnitNo},
+        address=#{address},
+        contactor=#{contactor},
+        tel=#{tel},
+        usePermission=#{usePermission},
+        pym=#{pym},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        remarks=#{remarks},
+        status=#{status},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvwarehouse.delete" parameterType="String">
+		DELETE FROM scminvwarehouse WHERE id IN (${value})
+	</delete> 
+	
+	<select id="scminvwarehouse.selectByWhName" resultType="ScmInvWareHouse" parameterType="Map">
+		SELECT * FROM ScmInvWareHouse WHERE 1=1 AND whName=#{whName} and id !=#{id} AND controlUnitNo=#{controlUnitNo}
+	</select>  
+</mapper>
+ 

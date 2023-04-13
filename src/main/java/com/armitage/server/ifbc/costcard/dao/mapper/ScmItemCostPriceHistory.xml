@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmitemcostpricehistory">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmitemcostpricehistory.findAll" resultType="ScmItemCostPriceHistory" >
+	    SELECT * FROM ScmItemCostPriceHistory WHERE  1=1  
+	</select>
+ 
+	<select id="scmitemcostpricehistory.findAllPage" resultType="ScmItemCostPriceHistory" parameterType="Map"> 
+		SELECT * FROM ScmItemCostPriceHistory WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmitemcostpricehistory.selectById" resultType="ScmItemCostPriceHistory" parameterType="Long">
+		SELECT * FROM ScmItemCostPriceHistory WHERE id = #{value}
+	</select> 
+	<insert id="scmitemcostpricehistory.batchAddItemPriceHistory" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		Insert into ScmItemCostPriceHistory(orgUnitNo,accDate,itemId,invUnitId,invPrice,convrate,cstUnitId,price,priceSourceBillType,priceSourceBillId,billNo,controlUnitNo)
+		Select A.orgUnitNo,C.accDate,B.itemId,B.invUnitId,B.invPrice,B.convrate,B.cstUnitId,B.price,B.priceSourceBillType,B.priceSourceBillId,B.billNo,A.controlUnitNo
+		from ScmItemCostPricelog A,ScmItemCostPricelogDetail B,ScmDateList C
+		Where A.id=B.logId and A.id=#{logId} And A.beginDate &lt;=C.accDate And A.endDate &gt;=C.accDate
+		ON DUPLICATE KEY UPDATE invPrice=VALUES(invPrice),invUnitId=VALUES(invUnitId),convrate=VALUES(convrate),cstUnitId=VALUES(cstUnitId),price=VALUES(price),
+		priceSourceBillType=VALUES(priceSourceBillType),priceSourceBillId=VALUES(priceSourceBillId),billNo=VALUES(billNo)
+	</insert>
+	<insert id="scmitemcostpricehistory.add" parameterType="ScmItemCostPriceHistory"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmItemCostPriceHistory (
+        orgUnitNo,
+        accDate,
+        itemId,
+        invUnitId,
+        invPrice,
+        convrate,
+        cstUnitId,
+        price,
+        priceSourceBillType,
+        priceSourceBillId,
+        billNo,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{accDate},
+        #{itemId},
+        #{invUnitId},
+        #{invPrice},
+        #{convrate},
+        #{cstUnitId},
+        #{price},
+        #{priceSourceBillType},
+        #{priceSourceBillId},
+        #{billNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmitemcostpricehistory.update" parameterType="ScmItemCostPriceHistory">
+		UPDATE ScmItemCostPriceHistory set
+        orgUnitNo=#{orgUnitNo},
+        accDate=#{accDate},
+        itemId=#{itemId},
+        invUnitId=#{invUnitId},
+        invPrice=#{invPrice},
+        convrate=#{convrate},
+        cstUnitId=#{cstUnitId},
+        price=#{price},
+        priceSourceBillType=#{priceSourceBillType},
+        priceSourceBillId=#{priceSourceBillId},
+        billNo=#{billNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmitemcostpricehistory.delete" parameterType="String">
+		DELETE FROM ScmItemCostPriceHistory WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

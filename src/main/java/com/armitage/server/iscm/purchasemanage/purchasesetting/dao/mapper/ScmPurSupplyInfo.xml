@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpursupplyinfo">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpursupplyinfo.findAll" resultType="ScmPurSupplyInfo2" >
+	    SELECT * FROM ScmPurSupplyInfo WHERE 1=1
+	</select>
+ 
+	<select id="scmpursupplyinfo.findAllPage" resultType="ScmPurSupplyInfo2" parameterType="Map"> 
+		SELECT ScmPurSupplyInfo.*,ScmMaterial.itemNo,ScmMaterial.itemName,ScmMaterial.spec,ScmSupplier.vendorName
+		FROM ScmPurSupplyInfo,ScmMaterial,ScmSupplier WHERE ScmPurSupplyInfo.itemId=ScmMaterial.id And ScmPurSupplyInfo.vendorId=ScmSupplier.id  ORDER BY ScmMaterial.itemNo ASC 
+	</select> 
+	<select id="scmpursupplyinfo.selectById" resultType="ScmPurSupplyInfo2" parameterType="Long">
+		SELECT * FROM ScmPurSupplyInfo WHERE id = #{value}
+	</select> 
+	<select id="scmpursupplyinfo.findVendor" resultType="ScmPurSupplyInfo2" parameterType="Map">
+		SELECT distinct ScmPurSupplyInfo.vendorId,ScmSupplier.vendorName FROM ScmPurSupplyInfo,ScmSupplier,ScmMaterial WHERE ScmPurSupplyInfo.vendorId=ScmSupplier.id
+		And ScmPurSupplyInfo.itemId=ScmMaterial.id And ScmPurSupplyInfo.orgUnitNo = #{orgUnitNo}
+		<if test="vendorId!=null and vendorId!=0">
+			And vendorId=#{vendorId}
+		</if>
+		<if test="itemName!=null and itemName!=''">
+			And ScmPurSupplyInfo.itemId in (Select id From ScmMaterial Where controlUnitNo=#{controlUnitNo} and (itemNo like #{itemName} or itemName like #{itemName}))
+		</if>
+	</select>
+	<select id="scmpursupplyinfo.getSupplyInfoByItem" resultType="ScmPurSupplyInfo2" parameterType="Map">
+		Select ScmPurSupplyInfo.vendorId,ScmPurSupplyInfo.directPurchase from ScmPurSupplyInfo
+		Where ScmPurSupplyInfo.status='A' And ScmPurSupplyInfo.orgUnitNo=#{purOrgUnitNo} And ScmPurSupplyInfo.itemId=#{itemId} 
+		And ((ScmPurSupplyInfo.isAssignOrg=1 And EXISTS(Select 1 From ScmPurSupplyRecOrg Where ScmPurSupplyInfo.id=supplyId And receiveOrgUnitNo=#{invOrgUnitNo})) or ScmPurSupplyInfo.isAssignOrg=0)
+		And ScmPurSupplyInfo.begDate &lt;=#{bizDate} And ScmPurSupplyInfo.endDate &gt;=#{bizDate}
+		And NOT EXISTS(SELECT 1 FROM ScmSupplierPurchaseInfo where vendorId=ScmPurSupplyInfo.vendorId and orgUnitNo=#{purOrgUnitNo} and status!='A')
+		ORDER BY ScmPurSupplyInfo.bizDate DESC,ScmPurSupplyInfo.updateTime DESC Limit 1
+	</select>
+	<select id="scmpursupplyinfo.getSupplyInfoByItemAndVendor" resultType="ScmPurSupplyInfo2" parameterType="Map">
+		Select ScmPurSupplyInfo.vendorId,ScmPurSupplyInfo.directPurchase from ScmPurSupplyInfo
+		Where ScmPurSupplyInfo.status='A' And ScmPurSupplyInfo.orgUnitNo=#{purOrgUnitNo} And ScmPurSupplyInfo.itemId=#{itemId} 
+		And ((ScmPurSupplyInfo.isAssignOrg=1 And EXISTS(Select 1 From ScmPurSupplyRecOrg Where ScmPurSupplyInfo.id=supplyId And receiveOrgUnitNo=#{invOrgUnitNo})) or ScmPurSupplyInfo.isAssignOrg=0)
+		And ScmPurSupplyInfo.begDate &lt;=#{bizDate} And ScmPurSupplyInfo.endDate &gt;=#{bizDate} And ScmPurSupplyInfo.vendorId=#{vendorId}
+		And NOT EXISTS(SELECT 1 FROM ScmSupplierPurchaseInfo where vendorId=ScmPurSupplyInfo.vendorId and orgUnitNo=#{purOrgUnitNo} and status!='A')
+		ORDER BY ScmPurSupplyInfo.bizDate DESC,ScmPurSupplyInfo.updateTime DESC Limit 1
+	</select>
+	<select id="scmpursupplyinfo.getSupplyInfoByItemSAndVendorS" resultType="ScmPurSupplyInfo2" parameterType="Map">
+		<foreach collection="ScmPurPriceQuery" item="item" separator="union">
+			(Select ScmPurSupplyInfo.vendorId,ScmPurSupplyInfo.directPurchase,ScmPurSupplyInfo.itemId from ScmPurSupplyInfo
+			Where ScmPurSupplyInfo.status='A' And ScmPurSupplyInfo.orgUnitNo=#{item.purOrgUnitNo} And ScmPurSupplyInfo.itemId=#{item.itemId} 
+			And ((ScmPurSupplyInfo.isAssignOrg=1 And EXISTS(Select 1 From ScmPurSupplyRecOrg Where ScmPurSupplyInfo.id=supplyId And receiveOrgUnitNo=#{item.invOrgUnitNo})) or ScmPurSupplyInfo.isAssignOrg=0)
+			And ScmPurSupplyInfo.begDate &lt;=#{item.bizDate} And ScmPurSupplyInfo.endDate &gt;=#{item.bizDate} And ScmPurSupplyInfo.vendorId=#{item.vendorId}
+			And NOT EXISTS(SELECT 1 FROM ScmSupplierPurchaseInfo where vendorId=ScmPurSupplyInfo.vendorId and orgUnitNo=#{item.purOrgUnitNo} and status!='A')
+			ORDER BY ScmPurSupplyInfo.bizDate DESC,ScmPurSupplyInfo.updateTime DESC Limit 1)
+		</foreach>
+	</select>
+	<select id="scmpursupplyinfo.getSupplyInfoByItems" resultType="ScmPurSupplyInfo2" parameterType="Map">
+		SELECT * FROM (
+		Select distinct ScmPurSupplyInfo.itemId,ScmPurSupplyInfo.vendorId from ScmPurSupplyInfo
+		Where ScmPurSupplyInfo.status='A' And orgUnitNo=#{purOrgUnitNo} And itemId in (${itemIds}) 
+		And ScmPurSupplyInfo.begDate &lt;=#{bizDate} And ScmPurSupplyInfo.endDate &gt;=#{bizDate} 
+		And ((ScmPurSupplyInfo.isAssignOrg=1 And EXISTS(Select 1 From ScmPurSupplyRecOrg Where ScmPurSupplyInfo.id=supplyId And receiveOrgUnitNo=#{invOrgUnitNo})) or ScmPurSupplyInfo.isAssignOrg=0)
+		ORDER BY ScmPurSupplyInfo.bizDate DESC,ScmPurSupplyInfo.updateTime DESC)A GROUP BY A.itemId
+	</select>  
+	
+	<select id="scmpursupplyinfo.getSupplyInfoByItemList" resultType="ScmPurSupplyInfo2" parameterType="Map">
+		SELECT * FROM (
+		Select distinct ScmPurSupplyInfo.* from ScmPurSupplyInfo
+		Where ScmPurSupplyInfo.status='A' And orgUnitNo= #{purOrgUnitNo} And itemId in(${itemId}) 
+		And ScmPurSupplyInfo.begDate &lt;=#{bizDate} And ScmPurSupplyInfo.endDate &gt;=#{bizDate}
+		And ((ScmPurSupplyInfo.isAssignOrg=1 And EXISTS(Select 1 From ScmPurSupplyRecOrg Where ScmPurSupplyInfo.id=supplyId And receiveOrgUnitNo=#{invOrgUnitNo}))  or ScmPurSupplyInfo.isAssignOrg=0)
+		ORDER BY ScmPurSupplyInfo.bizDate DESC,ScmPurSupplyInfo.updateTime DESC)A GROUP BY A.itemId
+	</select> 
+	
+	<insert id="scmpursupplyinfo.addBySupplierSource" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurSupplyInfo (orgUnitNo,vendorId,itemId,begDate,endDate,directPurchase,isAssignOrg,sourceType,sourceDtlId,status,bizDate)
+		SELECT ScmPurSupplierSource.orgUnitNo,ScmPurSupplierSource.vendorId,ScmPurSupplierSourceEntry.itemId,
+		ScmPurSupplierSource.begDate,ScmPurSupplierSource.endDate,ScmPurSupplierSource.directPurchase,
+		ScmPurSupplierSource.isAssignOrg,'S' as sourceType,ScmPurSupplierSourceEntry.id,'A' as status,ScmPurSupplierSource.bizDate
+		FROM ScmPurSupplierSource,ScmPurSupplierSourceEntry 
+		WHERE ScmPurSupplierSource.id = ScmPurSupplierSourceEntry.billId And ScmPurSupplierSource.id=#{billId}
+		ON DUPLICATE KEY UPDATE begDate=ScmPurSupplierSource.begDate,endDate=ScmPurSupplierSource.endDate,directPurchase=ScmPurSupplierSource.directPurchase,
+		isAssignOrg=ScmPurSupplierSource.isAssignOrg,sourceType='S',sourceDtlId=ScmPurSupplierSourceEntry.id,updateTime=ScmPurSupplierSource.bizDate
+	</insert>
+	
+	<insert id="scmpursupplyinfo.add" parameterType="ScmPurSupplyInfo"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurSupplyInfo (
+        orgUnitNo,
+        vendorId,
+        itemId,
+        begDate,
+        endDate,
+        directPurchase,
+        isAssignOrg,
+    	sourceType,
+    	sourceDtlId,
+        status,
+        bizDate        )
+		VALUES (
+        #{orgUnitNo},
+        #{vendorId},
+        #{itemId},
+        #{begDate},
+        #{endDate},
+        #{directPurchase},
+        #{isAssignOrg},
+    	#{sourceType},
+    	#{sourceDtlId},
+        #{status},
+        #{bizDate}        )
+	</insert>
+ 
+	<update id="scmpursupplyinfo.update" parameterType="ScmPurSupplyInfo">
+		UPDATE ScmPurSupplyInfo set
+        orgUnitNo=#{orgUnitNo},
+        vendorId=#{vendorId},
+        itemId=#{itemId},
+        begDate=#{begDate},
+        endDate=#{endDate},
+        directPurchase=#{directPurchase},
+        isAssignOrg=#{isAssignOrg},
+    	sourceType=#{sourceType},
+    	sourceDtlId=#{sourceDtlId},
+        status=#{status},
+        bizDate=#{bizDate}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpursupplyinfo.delete" parameterType="String">
+		DELETE FROM ScmPurSupplyInfo WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

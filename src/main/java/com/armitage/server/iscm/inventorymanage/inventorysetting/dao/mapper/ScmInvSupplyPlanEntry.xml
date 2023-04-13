@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvsupplyplanentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvsupplyplanentry.findAll" resultType="Scminvsupplyplanentry2" >
+	    SELECT * FROM scminvsupplyplanentry WHERE  1=1  
+	</select>
+ 
+	<select id="scminvsupplyplanentry.findAllPage" resultType="Scminvsupplyplanentry2" parameterType="Map"> 
+		SELECT * FROM scminvsupplyplanentry WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scminvsupplyplanentry.selectById" resultType="Scminvsupplyplanentry2" parameterType="Long">
+		SELECT * FROM scminvsupplyplanentry WHERE id = #{value}
+	</select> 
+	<insert id="scminvsupplyplanentry.add" parameterType="Scminvsupplyplanentry2"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvsupplyplanentry (
+        plantId,
+        lineId,
+        itemId,
+        baseUnit,
+        pieUnitId,
+        qty        )
+		VALUES (
+        #{plantId},
+        #{lineId},
+        #{itemId},
+        #{baseUnit},
+        #{pieUnitId},
+        #{qty}        )
+	</insert>
+ 
+	<update id="scminvsupplyplanentry.update" parameterType="Scminvsupplyplanentry2">
+		UPDATE scminvsupplyplanentry set
+        plantId=#{plantId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        baseUnit=#{baseUnit},
+        pieUnitId=#{pieUnitId},
+        qty=#{qty}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvsupplyplanentry.delete" parameterType="String">
+		DELETE FROM scminvsupplyplanentry WHERE id IN (${value})
+	</delete>
+	
+	<select id="scminvsupplyplanentry.selectByPlanId" resultType="scminvsupplyplanentry2" parameterType="map">
+		SELECT ScmMaterial.*,scminvsupplyrule.rulename,
+				Case WHEN ScmMaterialPurchase.purUnit is null Then a.purUnit Else ScmMaterialPurchase.purUnit end as purUnitId
+		FROM (SELECT scminvsupplyplanentry.*,scminvsupplyplan.ruleId,
+					ScmMaterial.status,scmmaterial.itemNo,scmmaterial.itemName,ScmMaterial.spec
+					,ScmMaterialGroup.classCode,ScmMaterialGroup.className
+					FROM scminvsupplyplanentry,scminvsupplyplan,ScmMaterial
+						,ScmMaterialGroup,ScmMaterialGroupDetail
+						,ScmMaterialGroupStandard
+					WHERE scminvsupplyplanentry.itemId=scmmaterial.id 
+					And scminvsupplyplan.Id= #{id}
+					and scminvsupplyplanentry.plantId=scminvsupplyplan.id 
+					And ScmMaterial.id=ScmMaterialGroupDetail.itemId 
+					And ScmMaterialGroupStandard.standardType='1'
+					And ScmMaterialGroupDetail.classId=ScmMaterialGroup.id
+					And ScmMaterialGroupDetail.standardId=ScmMaterialGroupStandard.id
+				 ) ScmMaterial
+		LEFT JOIN scminvsupplyrule On ScmMaterial.ruleid = scminvsupplyrule.id
+		LEFT JOIN ScmMaterialPurchase as a On ScmMaterial.id=a.itemId and a.orgUnitNo= #{controlUnitNo} And ScmMaterial.status='A'
+		LEFT JOIN ScmMaterialPurchase On ScmMaterial.id=ScmMaterialPurchase.itemId and ScmMaterialPurchase.orgUnitNo= #{orgUnitNo} And ScmMaterial.status='A'
+		ORDER BY ScmMaterial.lineId ASC
+	</select> 
+
+</mapper>
+ 

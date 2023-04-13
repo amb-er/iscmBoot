@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpursuppliersource">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpursuppliersource.findAll" resultType="ScmPurSupplierSource2" >
+	    SELECT * FROM ScmPurSupplierSource WHERE  1=1  
+	</select>
+ 
+	<select id="scmpursuppliersource.findAllPage" resultType="ScmPurSupplierSource2" parameterType="Map"> 
+		SELECT * FROM ScmPurSupplierSource WHERE  1=1 
+		<choose>
+			<when test="sortByDate != null and sortByDate !='' "> 
+				ORDER BY receiveDate Desc,billno Desc 
+			</when>
+			<otherwise>
+				ORDER BY billno Desc 
+			</otherwise>
+		</choose>
+	</select> 
+	<select id="scmpursuppliersource.selectById" resultType="ScmPurSupplierSource2" parameterType="Long">
+		SELECT * FROM ScmPurSupplierSource WHERE id = #{value}
+	</select> 
+	<insert id="scmpursuppliersource.add" parameterType="ScmPurSupplierSource"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurSupplierSource (
+        billNo,
+        orgUnitNo,
+        finOrgUnitNo,
+        bizDate,
+        begDate,
+        endDate,
+        vendorId,
+        buyerId,
+        purGroupId,
+        directPurchase,
+        isAssignOrg,
+        currencyNo,
+        exchangeRate,
+        creator,
+        createDate,
+        submitter,
+        submitDate,
+        editor,
+        editDate,
+        workFlowNo,
+        stepNo,
+        checker,
+        checkDate,
+        prtcount,
+        status,
+        remarks,
+        controlUnitNo        )
+		VALUES (
+        #{billNo},
+        #{orgUnitNo},
+        #{finOrgUnitNo},
+        #{bizDate},
+        #{begDate},
+        #{endDate},
+        #{vendorId},
+        #{buyerId},
+        #{purGroupId},
+        #{directPurchase},
+        #{isAssignOrg},
+        #{currencyNo},
+        #{exchangeRate},
+        #{creator},
+        #{createDate},
+        #{submitter},
+        #{submitDate},
+        #{editor},
+        #{editDate},
+        #{workFlowNo},
+        #{stepNo},
+        #{checker},
+        #{checkDate},
+        #{prtcount},
+        #{status},
+        #{remarks},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmpursuppliersource.update" parameterType="ScmPurSupplierSource">
+		UPDATE ScmPurSupplierSource set
+        billNo=#{billNo},
+        orgUnitNo=#{orgUnitNo},
+        finOrgUnitNo=#{finOrgUnitNo},
+        bizDate=#{bizDate},
+        begDate=#{begDate},
+        endDate=#{endDate},
+        vendorId=#{vendorId},
+        buyerId=#{buyerId},
+        purGroupId=#{purGroupId},
+        directPurchase=#{directPurchase},
+        isAssignOrg=#{isAssignOrg},
+        currencyNo=#{currencyNo},
+        exchangeRate=#{exchangeRate},
+        creator=#{creator},
+        createDate=#{createDate},
+        submitter=#{submitter},
+        submitDate=#{submitDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        workFlowNo=#{workFlowNo},
+        stepNo=#{stepNo},
+        checker=#{checker},
+        checkDate=#{checkDate},
+        prtcount=#{prtcount},
+        status=#{status},
+        remarks=#{remarks},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpursuppliersource.delete" parameterType="String">
+		DELETE FROM ScmPurSupplierSource WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmpurmarketpriceentry">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmpurmarketpriceentry.findAll" resultType="ScmPurMarketPriceEntry2" >
+	    SELECT * FROM ScmPurMarketPriceEntry WHERE  1=1  
+	</select>
+ 
+	<select id="scmpurmarketpriceentry.findAllPage" resultType="ScmPurMarketPriceEntry2" parameterType="Map"> 
+		SELECT * FROM ScmPurMarketPriceEntry WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmpurmarketpriceentry.selectById" resultType="ScmPurMarketPriceEntry2" parameterType="Long">
+		SELECT * FROM ScmPurMarketPriceEntry WHERE id = #{value}
+	</select> 
+	<select id="scmpurmarketpriceentry.selectByPiId" resultType="ScmPurMarketPriceEntry2" parameterType="Map">
+		SELECT ScmPurMarketPriceEntry.*,scmmaterial.itemNo as itemNo,
+		scmmaterial.itemName as itemName,scmmaterial.spec as spec,
+		ScmMeasureUnit.unitName as purUnitName
+		FROM ScmPurMarketPriceEntry
+		left join ScmMaterial on ScmPurMarketPriceEntry.itemId=ScmMaterial.id
+		left join ScmMeasureUnit on ScmPurMarketPriceEntry.purUnit=ScmMeasureUnit.id
+		WHERE ScmPurMarketPriceEntry.piId=#{piId} 
+		ORDER BY ScmPurMarketPriceEntry.lineId ASC
+	</select> 
+	<insert id="scmpurmarketpriceentry.add" parameterType="ScmPurMarketPriceEntry"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmPurMarketPriceEntry (
+        piId,
+        lineId,
+        itemId,
+        purUnit,
+        placeRequire,
+        preUseQty,
+        price,
+        remarks        )
+		VALUES (
+        #{piId},
+        #{lineId},
+        #{itemId},
+        #{purUnit},
+        #{placeRequire},
+        #{preUseQty},
+        #{price},
+        #{remarks}        )
+	</insert>
+ 
+	<update id="scmpurmarketpriceentry.update" parameterType="ScmPurMarketPriceEntry">
+		UPDATE ScmPurMarketPriceEntry set
+        piId=#{piId},
+        lineId=#{lineId},
+        itemId=#{itemId},
+        purUnit=#{purUnit},
+        placeRequire=#{placeRequire},
+        preUseQty=#{preUseQty},
+        price=#{price},
+        remarks=#{remarks}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmpurmarketpriceentry.delete" parameterType="String">
+		DELETE FROM ScmPurMarketPriceEntry WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

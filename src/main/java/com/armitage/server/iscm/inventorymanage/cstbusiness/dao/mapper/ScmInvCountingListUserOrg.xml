@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvcountinglistuserorg">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvcountinglistuserorg.findAll" resultType="ScmInvCountingListUserOrg2" >
+	    SELECT * FROM scminvcountinglistuserorg WHERE  1=1  
+	</select>
+ 
+	<select id="scminvcountinglistuserorg.findAllPage" resultType="ScmInvCountingListUserOrg2" parameterType="Map"> 
+		SELECT * FROM scminvcountinglistuserorg WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scminvcountinglistuserorg.selectById" resultType="ScmInvCountingListUserOrg2" parameterType="Long">
+		SELECT * FROM scminvcountinglistuserorg WHERE id = #{value}
+	</select> 
+	<select id="scminvcountinglistuserorg.selectByTaskId" resultType="ScmInvCountingListUserOrg2" parameterType="Map">
+		SELECT * FROM scminvcountinglistuserorg WHERE scminvcountinglistuserorg.taskId = #{taskId}
+	</select>
+	<insert id="scminvcountinglistuserorg.add" parameterType="ScmInvCountingListUserOrg"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scminvcountinglistuserorg (
+        taskId,
+        selectOrExclude,
+        useOrgUnitNo        )
+		VALUES (
+        #{taskId},
+        #{selectOrExclude},
+        #{useOrgUnitNo}        )
+	</insert>
+ 
+	<update id="scminvcountinglistuserorg.update" parameterType="ScmInvCountingListUserOrg">
+		UPDATE scminvcountinglistuserorg set
+        taskId=#{taskId},
+        selectOrExclude=#{selectOrExclude},
+        useOrgUnitNo=#{useOrgUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvcountinglistuserorg.delete" parameterType="String">
+		DELETE FROM scminvcountinglistuserorg WHERE id IN (${value})
+	</delete> 
+	
+	<delete id="scminvcountinglistuserorg.deleteByTaskId" parameterType="Map">
+		DELETE FROM scminvcountinglistuserorg WHERE taskId = #{taskId}
+	</delete> 
+
+</mapper>
+ 

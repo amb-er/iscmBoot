@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsupplierpurchaseinfo">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsupplierpurchaseinfo.findAll" resultType="Scmsupplierpurchaseinfo2" >
+	    SELECT * FROM scmsupplierpurchaseinfo WHERE  1=1  
+	</select>
+ 
+	<select id="scmsupplierpurchaseinfo.findAllPage" resultType="Scmsupplierpurchaseinfo2" parameterType="Map"> 
+		SELECT * FROM scmsupplierpurchaseinfo WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmsupplierpurchaseinfo.selectById" resultType="Scmsupplierpurchaseinfo2" parameterType="Long">
+		SELECT * FROM scmsupplierpurchaseinfo WHERE id = #{value}
+	</select> 
+	<select id="scmsupplierpurchaseinfo.selectByVendorIdAndOrgUnitNo" resultType="Scmsupplierpurchaseinfo2" parameterType="Map">
+		SELECT * FROM scmsupplierpurchaseinfo 
+		WHERE 1=1 and vendorId = #{vendorId}
+			and orgUnitNo = #{orgUnitNo}
+	</select>
+	<select id="scmsupplierpurchaseinfo.selectByVendorStatusPage" resultType="Scmsupplierpurchaseinfo2" parameterType="Map">
+		SELECT * FROM ScmSupplierpurchaseinfo WHERE vendorId = #{vendorId}	and status = #{status}
+	</select> 
+	<insert id="scmsupplierpurchaseinfo.add" parameterType="Scmsupplierpurchaseinfo"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmsupplierpurchaseinfo (
+        vendorId,
+        orgUnitNo,
+        vendorAttribute,
+        buyerId,
+        purGroupId,
+        tax,
+        taxpayerType,
+        vatRate,
+        canInvoice,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        flag,
+        freezeOrgUnitNo,
+        status,
+        controlUnitNo        )
+		VALUES (
+        #{vendorId},
+        #{orgUnitNo},
+        #{vendorAttribute},
+        #{buyerId},
+        #{purGroupId},
+        #{tax},
+        #{taxpayerType},
+        #{vatRate},
+        #{canInvoice},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{flag},
+        #{freezeOrgUnitNo},
+        #{status},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsupplierpurchaseinfo.update" parameterType="Scmsupplierpurchaseinfo">
+		UPDATE scmsupplierpurchaseinfo set
+        vendorId=#{vendorId},
+        orgUnitNo=#{orgUnitNo},
+        vendorAttribute=#{vendorAttribute},
+        buyerId=#{buyerId},
+        purGroupId=#{purGroupId},
+        tax=#{tax},
+        taxpayerType=#{taxpayerType},
+        vatRate=#{vatRate},
+        canInvoice=#{canInvoice},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        flag=#{flag},
+        freezeOrgUnitNo=#{freezeOrgUnitNo},
+        status=#{status},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsupplierpurchaseinfo.delete" parameterType="String">
+		DELETE FROM scmsupplierpurchaseinfo WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

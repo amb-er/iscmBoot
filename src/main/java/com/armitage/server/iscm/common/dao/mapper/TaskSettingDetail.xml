@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tasksettingdetail">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="tasksettingdetail.findAll" resultType="TaskSettingDetail" >
+	    SELECT * FROM TaskSettingDetail WHERE  1=1  
+	</select>
+ 
+	<select id="tasksettingdetail.findAllPage" resultType="TaskSettingDetail" parameterType="Map"> 
+		SELECT * FROM TaskSettingDetail WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="tasksettingdetail.selectById" resultType="TaskSettingDetail" parameterType="Long">
+		SELECT * FROM TaskSettingDetail WHERE id = #{value}
+	</select> 
+	<select id="tasksettingdetail.selectBySetId" resultType="TaskSettingDetail" parameterType="Map">
+		SELECT * FROM TaskSettingDetail WHERE setId = #{setId}
+	</select> 
+	<select id="tasksettingdetail.selectByCtrl" resultType="TaskSettingDetail2" parameterType="Map">
+		SELECT distinct TaskSettingDetail.*,TaskCode.code as taskCode,
+		TaskCode.channel as channel,TaskCode.productCode as productCode,
+		TaskSetting.maxDays as maxDays,TaskSetting.taskDays as taskDays
+		FROM TaskCode,TaskSetting,TaskSettingDetail WHERE TaskCode.id=TaskSetting.taskId
+		and TaskSetting.id=TaskSettingDetail.setId and TaskSettingDetail.flag=1
+		and TaskSetting.started=1 and TaskSetting.controlUnitNo=#{controlUnitNo}
+	</select> 
+	<select id="tasksettingdetail.selectByTaskObject" resultType="TaskSettingDetail2" parameterType="Map">
+		SELECT distinct TaskSettingDetail.*,TaskCode.code as taskCode,
+		TaskCode.channel as channel,TaskCode.productCode as productCode,
+		TaskSetting.maxDays as maxDays,TaskSetting.taskDays as taskDays
+		FROM TaskCode,TaskSetting,TaskSettingDetail WHERE TaskCode.id=TaskSetting.taskId
+		and TaskSetting.id=TaskSettingDetail.setId and TaskSettingDetail.flag=1
+		and TaskSetting.started=1 and TaskSetting.controlUnitNo=#{controlUnitNo} and TaskSettingDetail.taskObject=#{taskObject}
+	</select> 
+	
+	<insert id="tasksettingdetail.add" parameterType="TaskSettingDetail"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  TaskSettingDetail (
+        setId,
+        dataClass,
+        interactionMode,
+        taskObject,
+        taskCreateMode,
+        extendedParam1,
+        extendedParam2,
+        extendedParam3,
+        extendedParam4,
+        extendedParam5,
+        flag        )
+		VALUES (
+        #{setId},
+        #{dataClass},
+        #{interactionMode},
+        #{taskObject},
+        #{taskCreateMode},
+        #{extendedParam1},
+        #{extendedParam2},
+        #{extendedParam3},
+        #{extendedParam4},
+        #{extendedParam5},
+        #{flag}        )
+	</insert>
+ 
+	<update id="tasksettingdetail.update" parameterType="TaskSettingDetail">
+		UPDATE TaskSettingDetail set
+        setId=#{setId},
+        dataClass=#{dataClass},
+        interactionMode=#{interactionMode},
+        taskObject=#{taskObject},
+        taskCreateMode=#{taskCreateMode},
+        extendedParam1=#{extendedParam1},
+        extendedParam2=#{extendedParam2},
+        extendedParam3=#{extendedParam3},
+        extendedParam4=#{extendedParam4},
+        extendedParam5=#{extendedParam5},
+        flag=#{flag}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="tasksettingdetail.delete" parameterType="String">
+		DELETE FROM TaskSettingDetail WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

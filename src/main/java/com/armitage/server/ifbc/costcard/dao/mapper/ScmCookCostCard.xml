@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmcookcostcard">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmcookcostcard.findAll" resultType="ScmCookCostCard2" >
+	    SELECT * FROM ScmCookCostCard WHERE  1=1  
+	</select>
+ 
+	<select id="scmcookcostcard.findAllPage" resultType="ScmCookCostCard2" parameterType="Map"> 
+		SELECT * FROM ScmCookCostCard WHERE ((#{controlUnitNo}!=#{orgUnitNo} and (orgUnitNo=#{controlUnitNo} or orgUnitNo=#{orgUnitNo})) 
+		or (#{controlUnitNo}=#{orgUnitNo} and controlUnitNo=#{controlUnitNo})) ORDER BY id ASC 
+	</select> 
+	<select id="scmcookcostcard.selectById" resultType="ScmCookCostCard2" parameterType="Long">
+		SELECT * FROM ScmCookCostCard WHERE id = #{value}
+	</select> 
+	<select id="scmcookcostcard.selectReplaceScmCookCostCard" resultType="ScmCookCostCard2" parameterType="Map">
+		SELECT ScmCookCostCard.*,ScmCookCostCardDetail.qty FROM ScmCookCostCard,ScmCookCostCardDetail
+		 WHERE ScmCookCostCard.id=ScmCookCostCardDetail.cardId
+		 and ScmCookCostCard.flag=1
+		 and ScmCookCostCardDetail.itemId=#{itemId}
+		 ORDER BY ScmCookCostCard.id ASC 
+	</select> 
+	<select id="scmcookcostcard.selectByCookIds" resultType="ScmCookCostCard2" parameterType="Map">
+		SELECT ScmCookCostCard.*,sum(ScmCookCostCardDetail.invQty) as costRatio FROM ScmCookCostCard,ScmCookCostCardDetail
+		 WHERE ScmCookCostCard.id=ScmCookCostCardDetail.cardId
+		 and ScmCookCostCard.cookId in (${cookIds})
+		 group BY ScmCookCostCard.cookId
+		 ORDER BY ScmCookCostCard.id ASC 
+	</select> 
+	<select id="scmcookcostcard.findRepeat" resultType="ScmCookCostCard2" parameterType="Map">
+		SELECT * FROM ScmCookCostCard WHERE orgUnitNo = #{orgUnitNo} and cookId=#{cookId}
+	</select> 
+	
+	<insert id="scmcookcostcard.add" parameterType="ScmCookCostCard"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmCookCostCard (
+        orgUnitNo,
+        cookId,
+        cookCode,
+        cookName,
+        costPrice,
+        effectiveDate,
+        flag,
+        locked,
+        approvaled,
+        resOrgUnitNo,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{cookId},
+        #{cookCode},
+        #{cookName},
+        #{costPrice},
+        #{effectiveDate},
+        #{flag},
+        #{locked},
+        #{approvaled},
+        #{resOrgUnitNo},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmcookcostcard.update" parameterType="ScmCookCostCard">
+		UPDATE ScmCookCostCard set
+        orgUnitNo=#{orgUnitNo},
+        cookId=#{cookId},
+        cookCode=#{cookCode},
+        cookName=#{cookName},
+        costPrice=#{costPrice},
+        effectiveDate=#{effectiveDate},
+        flag=#{flag},
+        locked=#{locked},
+        approvaled=#{approvaled},
+        resOrgUnitNo=#{resOrgUnitNo},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmcookcostcard.delete" parameterType="String">
+		DELETE FROM ScmCookCostCard WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

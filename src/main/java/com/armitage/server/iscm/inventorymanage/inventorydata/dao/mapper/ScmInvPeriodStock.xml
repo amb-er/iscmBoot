@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scminvperiodstock">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scminvperiodstock.findAll" resultType="ScmInvPeriodStock" >
+	    SELECT * FROM ScmInvPeriodStock WHERE  1=1  
+	</select>
+ 
+	<select id="scminvperiodstock.findAllPage" resultType="ScmInvPeriodStock" parameterType="Map"> 
+		SELECT * FROM ScmInvPeriodStock WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scminvperiodstock.selectById" resultType="ScmInvPeriodStock" parameterType="Long">
+		SELECT * FROM ScmInvPeriodStock WHERE id = #{value}
+	</select> 
+	<insert id="scminvperiodstock.turnoffStock" parameterType="Map"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmInvPeriodStock (periodId,accountYear, accountPeriod,stockId,invDate,finOrgUnitNo,orgUnitNo,wareHouseId,costOrgUnitNo,
+        costCenter,itemId,unit,pieUnit,baseUnit,lot, qty, pieQty,baseQty,price,amt,taxRate,taxPrice,taxAmt,vendorId,expDate,sourceBillId)
+		Select #{periodId},#{accountYear},#{accountPeriod},id,invDate,finOrgUnitNo,orgUnitNo,wareHouseId,costOrgUnitNo,
+        costCenter,itemId,unit,pieUnit,baseUnit,lot, qty, pieQty,baseQty,price,amt,taxRate,taxPrice,taxAmt,vendorId,expDate,sourceBillId
+        From ScmInvStock Where finOrgUnitNo=#{orgUnitNo}
+	</insert>
+	<delete id="scminvperiodstock.turnbackStock" parameterType="Map">
+		DELETE FROM ScmInvPeriodStock WHERE finOrgUnitNo=#{orgUnitNo}  And periodId=#{periodId}
+	</delete> 
+
+	<insert id="scminvperiodstock.add" parameterType="ScmInvPeriodStock"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmInvPeriodStock (
+        periodId,
+        accountYear,
+        accountPeriod,
+        stockId,
+        invDate,
+        finOrgUnitNo,
+        orgUnitNo,
+        wareHouseId,
+        costOrgUnitNo,
+        costCenter,
+        itemId,
+        unit,
+        pieUnit,
+        baseUnit,
+        lot,
+        qty,
+        pieQty,
+        baseQty,
+        price,
+        amt,
+        taxRate,
+        taxPrice,
+        taxAmt,
+        vendorId,
+        expDate,
+        sourceBillId        )
+		VALUES (
+        #{periodId},
+        #{accountYear},
+        #{accountPeriod},
+        #{stockId},
+        #{invDate},
+        #{finOrgUnitNo},
+        #{orgUnitNo},
+        #{wareHouseId},
+        #{costOrgUnitNo},
+        #{costCenter},
+        #{itemId},
+        #{unit},
+        #{pieUnit},
+        #{baseUnit},
+        #{lot},
+        #{qty},
+        #{pieQty},
+        #{baseQty},
+        #{price},
+        #{amt},
+        #{taxRate},
+        #{taxPrice},
+        #{taxAmt},
+        #{vendorId},
+        #{expDate},
+        #{sourceBillId}        )
+	</insert>
+ 
+	<update id="scminvperiodstock.update" parameterType="ScmInvPeriodStock">
+		UPDATE ScmInvPeriodStock set
+        periodId=#{periodId},
+        accountYear=#{accountYear},
+        accountPeriod=#{accountPeriod},
+        stockId=#{stockId},
+        invDate=#{invDate},
+        finOrgUnitNo=#{finOrgUnitNo},
+        orgUnitNo=#{orgUnitNo},
+        wareHouseId=#{wareHouseId},
+        costOrgUnitNo=#{costOrgUnitNo},
+        costCenter=#{costCenter},
+        itemId=#{itemId},
+        unit=#{unit},
+        pieUnit=#{pieUnit},
+        baseUnit=#{baseUnit},
+        lot=#{lot},
+        qty=#{qty},
+        pieQty=#{pieQty},
+        baseQty=#{baseQty},
+        price=#{price},
+        amt=#{amt},
+        taxRate=#{taxRate},
+        taxPrice=#{taxPrice},
+        taxAmt=#{taxAmt},
+        vendorId=#{vendorId},
+        expDate=#{expDate},
+        sourceBillId=#{sourceBillId}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scminvperiodstock.delete" parameterType="String">
+		DELETE FROM ScmInvPeriodStock WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

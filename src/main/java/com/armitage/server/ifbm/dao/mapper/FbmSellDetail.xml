@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fbmselldetail">
+ 
+	<select id="fbmselldetail.selectDishSellDetail" resultType="FbmSellDetail" parameterType="Map">
+		SELECT FbmBill.accDate,FbmBillTrans.dishId,FbmDish.code as dishCode,FbmDish.name as dishName,
+		FbmStat.code as fbmStatCode,FbmStat.name as fbmStatName,FbmDishSpec.id as dishSpecId,FbmDishSpec.code as specCode,FbmDishSpec.name as specName,
+		FbmDept.code as deptCode,FbmDept.name as deptName,sum(FbmBillTrans.amount) as saleQty,sum(FbmBillTrans.total) as saleAmt,sum(FbmBillTrans.total+FbmBillTrans.discountAmount) as realSaleAmt,
+		IFNULL((Select price from FbmDishPrc Where menuId=0 and dishId=FbmBillTrans.dishId and dishSpecId=FbmBillTrans.dishSpecId and orgUnitNo=#{controlUnitNo}),0) as stdSalePrice
+		FROM FbmBill,FbmBillTrans
+		LEFT JOIN FbmDishSpec ON FbmDishSpec.id=FbmBillTrans.dishSpecId
+		Left Join FbmDept On FbmDept.id = FbmBillTrans.deptCode,
+		FbmDish
+		left join FbmDishSaleInfo A on A.dishId=FbmDish.id and A.orgUnitNo=#{controlUnitNo} and A.menuId=0
+		left join FbmDishSaleInfo B on B.dishId=FbmDish.id and B.orgUnitNo=#{orgUnitNo} and B.menuId=0
+		left join FbmStat ON FbmStat.id=(Case When B.statId is null Then A.statId Else B.statId End)
+		Where FbmBill.id=FbmBillTrans.billId And FbmBillTrans.dishId=FbmDish.id
+		And FbmBill.resOrgUnitNo=#{orgUnitNo} And FbmBill.state = '1' and FbmBill.settleTime is not null 
+		and FbmBillTrans.refBillId=0 and FbmBill.accDate &gt;= #{begDate} and FbmBill.accDate &lt;= #{endDate}
+		and FbmBillTrans.type = 1 and FbmBillTrans.void = 0
+		GROUP BY FbmBill.accDate,FbmBillTrans.dishId,FbmDish.code,FbmDish.name,FbmStat.code,
+		FbmStat.name,FbmDishSpec.code,FbmDishSpec.name,FbmBillTrans.deptCode,FbmBillTrans.deptName
+	</select> 
+	<select id="fbmselldetail.selectCookSellDetail" resultType="FbmSellCookDetail" parameterType="Map">
+		SELECT A.accDate,B.dishId,D.code as dishCode,D.name as dishName,FbmStat.code as fbmStatCode,FbmStat.name as fbmStatName,
+		C.cookId,IFNULL(FbmCook.code,0) as cookCode,IFNULL(FbmCook.name,'') as cookName, FbmDishSpec.id as dishSpecId,FbmDishSpec.code as specCode,
+		FbmDishSpec.name as specName,FbmDept.code as deptCode,FbmDept.name as deptName,sum(C.amount) as saleQty,sum(C.total) as saleAmt,sum(B.total+B.discountAmount) as realSaleAmt,
+		IFNULL((Select price from FbmCook Where id=C.cookId and controlUnitNo=#{controlUnitNo}),0) as stdSalePrice
+		FROM FbmBill A,FbmBillTrans B	
+		LEFT JOIN FbmDishSpec ON FbmDishSpec.id=B.dishSpecId
+		Left Join FbmDept On FbmDept.id = B.deptCode,
+		FbmBillTrans C
+		left join FbmCook ON FbmCook.id=C.cookId,FbmDish D
+		left join FbmDishSaleInfo T1 on T1.dishId=D.id and T1.orgUnitNo=#{controlUnitNo} and T1.menuId=0
+		left join FbmDishSaleInfo T2 on T2.dishId=D.id and T2.orgUnitNo=#{orgUnitNo} and T2.menuId=0
+		left join FbmStat ON FbmStat.id=(Case When T2.statId is null Then T1.statId Else T2.statId End)
+		Where A.id=B.billId and A.accDate &gt;= #{begDate} and A.accDate &lt;= #{endDate}
+		And A.resOrgUnitNo=#{orgUnitNo} And A.state = '1' and A.settleTime is not null 
+		and B.refBillId=0 and B.type = 1 and B.void = 0 And B.dishId=D.id
+		And C.pid=B.id And C.type = 6 And C.cookId &gt; 0
+		GROUP BY A.accDate,B.dishId,FbmStat.code,FbmStat.name,C.cookId,FbmDishSpec.id,B.deptCode,B.deptName
+	</select> 
+
+</mapper>

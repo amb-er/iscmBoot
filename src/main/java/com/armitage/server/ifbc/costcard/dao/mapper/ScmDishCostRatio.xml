@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmdishcostratio">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmdishcostratio.findAll" resultType="ScmDishCostRatio2" >
+	    SELECT * FROM scmdishcostratio WHERE  1=1  
+	</select>
+ 
+	<select id="scmdishcostratio.findAllPage" resultType="ScmDishCostRatio2" parameterType="Map"> 
+		SELECT * FROM scmdishcostratio WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmdishcostratio.selectById" resultType="ScmDishCostRatio2" parameterType="Long">
+		SELECT * FROM scmdishcostratio WHERE id = #{value}
+	</select> 
+	<select id="scmdishcostratio.selectByCardId" resultType="ScmDishCostRatio2" parameterType="Map">
+		SELECT * FROM scmdishcostratio WHERE cardId = #{cardId}
+		ORDER BY id ASC 
+	</select> 
+	<insert id="scmdishcostratio.add" parameterType="ScmDishCostRatio"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmdishcostratio (
+        cardId,
+        lineId,
+        dishSpecId,
+        costRatio        )
+		VALUES (
+        #{cardId},
+        #{lineId},
+        #{dishSpecId},
+        #{costRatio}        )
+	</insert>
+ 
+	<update id="scmdishcostratio.update" parameterType="ScmDishCostRatio">
+		UPDATE scmdishcostratio set
+        cardId=#{cardId},
+        lineId=#{lineId},
+        dishSpecId=#{dishSpecId},
+        costRatio=#{costRatio}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmdishcostratio.delete" parameterType="String">
+		DELETE FROM scmdishcostratio WHERE id IN (${value})
+	</delete> 
+
+</mapper>

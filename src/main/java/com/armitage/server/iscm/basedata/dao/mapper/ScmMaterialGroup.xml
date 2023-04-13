@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmmaterialgroup">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmmaterialgroup.findAll" resultType="ScmMaterialGroup" >
+	    SELECT * FROM ScmMaterialGroup WHERE  1=1  
+	</select>
+ 
+	<select id="scmmaterialgroup.findAllPage" resultType="ScmMaterialGroup" parameterType="Map"> 
+		SELECT * FROM ScmMaterialGroup WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmmaterialgroup.selectById" resultType="ScmMaterialGroup" parameterType="Long">
+		SELECT * FROM ScmMaterialGroup WHERE id = #{value}
+	</select> 
+	<select id="scmmaterialgroup.selectByClassCode" resultType="ScmMaterialGroup" parameterType="Long">
+		Select ScmMaterialGroup.* from ScmMaterialGroup,ScmMaterialGroupStandard 
+		Where ScmMaterialGroup.standardId=ScmMaterialGroupStandard.Id And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroup.controlUnitNo=#{controlUnitNo} And ScmMaterialGroup.classCode=#{classCode}
+	</select> 
+	<select id="scmmaterialgroup.selectByGroupLevel" resultType="ScmMaterialGroup" parameterType="Map">
+		Select ScmMaterialGroup.* from ScmMaterialGroup,ScmMaterialGroupStandard 
+		Where ScmMaterialGroup.standardId=ScmMaterialGroupStandard.Id And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroup.controlUnitNo=#{controlUnitNo} And ScmMaterialGroup.flag=1
+		And (LENGTH(ScmMaterialGroup.longNo) - LENGTH(REPLACE(ScmMaterialGroup.longNo,',',''))) = ${groupLevel}
+	</select> 
+	<select id="scmmaterialgroup.selectByGroupLevelPage" resultType="ScmMaterialGroup" parameterType="Map">
+		SELECT ScmMaterialGroup.* FROM ScmMaterialGroup,ScmMaterialGroupStandard 
+		WHERE ScmMaterialGroup.standardId=ScmMaterialGroupStandard.Id And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroup.controlUnitNo=#{controlUnitNo} And ScmMaterialGroup.flag=1
+		And (LENGTH(ScmMaterialGroup.longNo) - LENGTH(REPLACE(ScmMaterialGroup.longNo,',',''))) = ${groupLevel}
+		ORDER BY ScmMaterialGroup.classCode
+	</select> 
+	<select id="scmmaterialgroup.selectByItemId" resultType="ScmMaterialGroup" parameterType="Long">
+		Select ScmMaterialGroup.* from ScmMaterialGroup,ScmMaterialGroupStandard,ScmMaterialGroupDetail 
+		Where ScmMaterialGroup.standardId=ScmMaterialGroupStandard.Id And ScmMaterialGroupStandard.standardType='1'
+		And ScmMaterialGroup.id=ScmMaterialGroupDetail.classId and ScmMaterialGroupDetail.itemId=#{itemId}
+	</select> 
+	<select id="scmmaterialgroup.selectDownMaterialsPage" resultType="ScmMaterialGroup" parameterType="Map">
+		SELECT ScmMaterialGroup.* FROM ScmMaterialGroup,ScmMaterialGroupStandard WHERE ScmMaterialGroup.id not in (SELECT parentId FROM ScmMaterialGroup) 
+		AND ScmMaterialGroup.controlUnitNo=#{controlUnitNo} AND ScmMaterialGroup.flag=1
+		AND ScmMaterialGroup.standardId=ScmMaterialGroupStandard.Id AND ScmMaterialGroupStandard.standardType='1' ORDER BY classCode
+	</select>
+	<select id="scmmaterialgroup.queryDetailClassList" resultType="ScmMaterialGroup2" parameterType="Map">
+		SELECT DISTINCT ScmMaterialGroup.* FROM ScmMaterialGroup,ScmMaterialGroupDetail 
+		WHERE ScmMaterialGroup.controlUnitNo=#{controlUnitNo} And ScmMaterialGroup.id=ScmMaterialGroupDetail.classId
+ 		ORDER BY classCode
+	</select>
+	<select id="scmmaterialgroup.queryDetailClassListPage" resultType="ScmMaterialGroup2" parameterType="Map">
+		SELECT DISTINCT ScmMaterialGroup.* FROM ScmMaterialGroup,ScmMaterialGroupDetail,ScmMaterialGroupStandard
+		WHERE ScmMaterialGroup.controlUnitNo=#{controlUnitNo} And ScmMaterialGroup.id=ScmMaterialGroupDetail.classId 
+		AND ScmMaterialGroupStandard.standardType='1'AND ScmMaterialGroup.standardId=ScmMaterialGroupStandard.Id
+ 		ORDER BY classCode
+	</select>
+	<insert id="scmmaterialgroup.add" parameterType="ScmMaterialGroup"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmMaterialGroup (
+        guid,
+        standardId,
+        classCode,
+        className,
+        parentId,
+        longNo,
+        costTypeId,
+        costType,
+        description,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        flag,
+        controlUnitNo        )
+		VALUES (
+        #{guid},
+        #{standardId},
+        #{classCode},
+        #{className},
+        #{parentId},
+        #{longNo},
+        #{costTypeId},
+        #{costType},
+        #{description},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{flag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmmaterialgroup.update" parameterType="ScmMaterialGroup">
+		UPDATE ScmMaterialGroup set
+        guid=#{guid},
+        standardId=#{standardId},
+        classCode=#{classCode},
+        className=#{className},
+        parentId=#{parentId},
+        longNo=#{longNo},
+        costTypeId=#{costTypeId},
+        costType=#{costType},
+        description=#{description},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        flag=#{flag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmmaterialgroup.delete" parameterType="String">
+		DELETE FROM ScmMaterialGroup WHERE id IN (${value})
+	</delete> 
+
+    <select id="scmmaterialgroup.findChild" resultType="ScmMaterialGroup" parameterType="Map"> 
+        select * from scmmaterialgroup where controlUnitNo = #{controlUnitNo} and longNo like #{longNo}
+        order by scmmaterialgroup.id ASC
+    </select> 
+</mapper>
+ 

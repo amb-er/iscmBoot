@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmsystemtask">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmsystemtask.findAll" resultType="ScmSystemTask" >
+	    SELECT * FROM ScmSystemTask WHERE  1=1  
+	</select>
+ 
+	<select id="scmsystemtask.findAllPage" resultType="ScmSystemTask" parameterType="Map"> 
+		SELECT * FROM ScmSystemTask WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmsystemtask.selectById" resultType="ScmSystemTask" parameterType="Long">
+		SELECT * FROM ScmSystemTask WHERE id = #{value}
+	</select> 
+	<insert id="scmsystemtask.add" parameterType="ScmSystemTask"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmSystemTask (
+        orgUnitNo,
+        taskType,
+        taskName,
+        taskGroup,
+        cronExpression,
+        taskClass,
+        flag,
+        updateTime,
+        size,
+        controlUnitNo        )
+		VALUES (
+        #{orgUnitNo},
+        #{taskType},
+        #{taskName},
+        #{taskGroup},
+        #{cronExpression},
+        #{taskClass},
+        #{flag},
+        #{updateTime},
+        #{size},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmsystemtask.update" parameterType="ScmSystemTask">
+		UPDATE ScmSystemTask set
+        orgUnitNo=#{orgUnitNo},
+        taskType=#{taskType},
+        taskName=#{taskName},
+        taskGroup=#{taskGroup},
+        cronExpression=#{cronExpression},
+        taskClass=#{taskClass},
+        flag=#{flag},
+        updateTime=#{updateTime},
+        size=#{size},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmsystemtask.delete" parameterType="String">
+		DELETE FROM ScmSystemTask WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

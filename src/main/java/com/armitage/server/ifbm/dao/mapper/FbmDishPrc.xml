@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fbmdishprc">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="fbmdishprc.findAll" resultType="FbmDishPrc2" >
+	    SELECT * FROM FbmDishPrc WHERE  1=1  
+	</select>
+ 
+	<select id="fbmdishprc.findAllPage" resultType="FbmDishPrc2" parameterType="Map"> 
+		SELECT * FROM FbmDishPrc WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="fbmdishprc.selectById" resultType="FbmDishPrc2" parameterType="Long">
+		SELECT * FROM FbmDishPrc WHERE id = #{value}
+	</select> 
+	<select id="fbmdishprc.selectByDishIdPage" resultType="FbmDishPrc2" parameterType="Map">
+		SELECT * FROM (Select FbmDishPrc.*,FbmDishSpec.code as dishSpecCode,FbmDishSpec.name as dishSpecName
+		from FbmDishPrc,FbmDishSpec where FbmDishPrc.dishSpecId=FbmDishSpec.id 
+		and FbmDishPrc.dishId = ${dishId} and FbmDishPrc.orgUnitNo=#{orgUnitNo}
+		<if test="removeDishSpecId!=null and removeDishSpecId!=''">
+			And FbmDishPrc.dishSpecId!=${removeDishSpecId}
+		</if>) FbmDishPrc
+		WHERE 1=1
+		ORDER BY dishSpecCode
+	</select> 
+	<select id="fbmdishprc.selectByDishIdTimePage" resultType="FbmDishPrc2" parameterType="Map">
+		SELECT * FROM (Select FbmDishPrc.*,FbmDishSpec.code as dishSpecCode,FbmDishSpec.name as dishSpecName
+		from FbmDishPrc,FbmDishSpec where FbmDishPrc.dishSpecId=FbmDishSpec.id 
+		and FbmDishPrc.dishId = ${dishId} and FbmDishPrc.orgUnitNo=#{orgUnitNo}
+		<if test="begDate!=null and begDate!=''">
+            and FbmDishPrc.rateTime &gt;= #{begDate}
+         </if>
+	    <if test="endDate!=null and endDate!=''">
+            and FbmDishPrc.rateTime &lt;= #{endDate}
+         </if>) FbmDishPrc
+		WHERE 1=1
+		ORDER BY dishSpecCode
+	</select> 
+	<select id="fbmdishprc.selectByDishAndSpecId" resultType="FbmDishPrc2" parameterType="Map">
+		Select FbmDishPrc.*,FbmDishSpec.code as dishSpecCode,FbmDishSpec.name as dishSpecName
+		from FbmDishPrc,FbmDishSpec where FbmDishPrc.dishSpecId=FbmDishSpec.id 
+		and FbmDishPrc.dishId = ${dishId} and FbmDishPrc.orgUnitNo=#{orgUnitNo} And dishSpecId=${dishSpecId}
+		ORDER BY FbmDishSpec.code
+	</select> 
+	<select id="fbmdishprc.selectByDishSpecCode" resultType="FbmDishPrc2" parameterType="Map">
+		Select FbmDishPrc.*,FbmDishSpec.code as dishSpecCode,FbmDishSpec.name as dishSpecName
+		from FbmDishPrc,FbmDishSpec where FbmDishPrc.dishSpecId=FbmDishSpec.id 
+		and FbmDishPrc.dishId = ${dishId} and FbmDishSpec.code = #{dishSpecCode} and FbmDishPrc.orgUnitNo=#{orgUnitNo}
+	</select> 
+	<select id="fbmdishprc.selectDishSalePrice" resultType="FbmDishPrc2" parameterType="Map">
+		SELECT #{fbcOrgUnitNo} as orgUnitNo, A.id as dishId,
+			Case When B.dishSpecId is null Then C.dishSpecId Else B.dishSpecId end as dishSpecId,
+			#{accDate} as accDate,Case When B.price is null Then C.price Else B.price end as salePrice
+			FROM fbmdish A
+			Left Join FbmDishPrc B ON A.id=B.dishId And B.orgUnitNo=#{orgUnitNo} and B.menuId=0
+			Left Join FbmDishPrc C ON A.id=C.dishId And C.orgUnitNo=#{controlUnitNo} and C.menuId=0
+		 WHERE A.id in 
+		<foreach item="item" index="index" collection="dishList"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>	</select> 
+	<insert id="fbmdishprc.add" parameterType="FbmDishPrc"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  FbmDishPrc (
+        dishId,
+        dishSpecId,
+        orgUnitNo,
+        menuId,
+        price,
+        cost,
+        allowRebate,
+        allowDeduct,
+        deductMode,
+        deductValue,
+        lowLimit,
+        frtPackage,
+        crmItem,
+        ivCode,
+        price1,
+        price2,
+        price3,
+        price4,
+        price5,
+        price6,
+        rater,
+        rateTime,
+        sort,
+        permit,
+        remarks,
+        iSyncModFlag        )
+		VALUES (
+        #{dishId},
+        #{dishSpecId},
+        #{orgUnitNo},
+        #{menuId},
+        #{price},
+        #{cost},
+        #{allowRebate},
+        #{allowDeduct},
+        #{deductMode},
+        #{deductValue},
+        #{lowLimit},
+        #{frtPackage},
+        #{crmItem},
+        #{ivCode},
+        #{price1},
+        #{price2},
+        #{price3},
+        #{price4},
+        #{price5},
+        #{price6},
+        #{rater},
+        #{rateTime},
+        #{sort},
+        #{permit},
+        #{remarks},
+        #{iSyncModFlag}        )
+	</insert>
+ 
+	<update id="fbmdishprc.update" parameterType="FbmDishPrc">
+		UPDATE FbmDishPrc set
+        dishId=#{dishId},
+        dishSpecId=#{dishSpecId},
+        orgUnitNo=#{orgUnitNo},
+        menuId=#{menuId},
+        price=#{price},
+        cost=#{cost},
+        allowRebate=#{allowRebate},
+        allowDeduct=#{allowDeduct},
+        deductMode=#{deductMode},
+        deductValue=#{deductValue},
+        lowLimit=#{lowLimit},
+        frtPackage=#{frtPackage},
+        crmItem=#{crmItem},
+        ivCode=#{ivCode},
+        price1=#{price1},
+        price2=#{price2},
+        price3=#{price3},
+        price4=#{price4},
+        price5=#{price5},
+        price6=#{price6},
+        rater=#{rater},
+        rateTime=#{rateTime},
+        sort=#{sort},
+        permit=#{permit},
+        remarks=#{remarks},
+        iSyncModFlag=#{iSyncModFlag}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="fbmdishprc.delete" parameterType="String">
+		DELETE FROM FbmDishPrc WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

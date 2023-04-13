@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="taskcode">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="taskcode.findAll" resultType="TaskCode" >
+	    SELECT * FROM TaskCode WHERE  1=1  
+	</select>
+ 
+	<select id="taskcode.findAllPage" resultType="TaskCode" parameterType="Map"> 
+		SELECT * FROM TaskCode WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="taskcode.selectById" resultType="TaskCode" parameterType="Long">
+		SELECT * FROM TaskCode WHERE id = #{value}
+	</select> 
+	<insert id="taskcode.add" parameterType="TaskCode"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  TaskCode (
+        code,
+        name,
+        channel,
+        productCode        )
+		VALUES (
+        #{code},
+        #{name},
+        #{channel},
+        #{productCode}        )
+	</insert>
+ 
+	<update id="taskcode.update" parameterType="TaskCode">
+		UPDATE TaskCode set
+        code=#{code},
+        name=#{name},
+        channel=#{channel},
+        productCode=#{productCode}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="taskcode.delete" parameterType="String">
+		DELETE FROM TaskCode WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

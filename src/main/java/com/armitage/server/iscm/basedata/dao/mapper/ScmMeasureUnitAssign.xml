@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmmeasureunitassign">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmmeasureunitassign.findAll" resultType="ScmMeasureUnitAssign" >
+	    SELECT * FROM ScmMeasureUnitAssign WHERE  1=1  
+	</select>
+ 
+	<select id="scmmeasureunitassign.findAllPage" resultType="ScmMeasureUnitAssign" parameterType="Map"> 
+		SELECT * FROM ScmMeasureUnitAssign WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmmeasureunitassign.selectById" resultType="ScmMeasureUnitAssign" parameterType="Long">
+		SELECT * FROM ScmMeasureUnitAssign WHERE id = #{value}
+	</select> 
+	<insert id="scmmeasureunitassign.add" parameterType="ScmMeasureUnitAssign"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  ScmMeasureUnitAssign (
+        unitId,
+        toCtrUnitNo,
+        fromCtrUnitNo        )
+		VALUES (
+        #{unitId},
+        #{toCtrUnitNo},
+        #{fromCtrUnitNo}        )
+	</insert>
+ 
+	<update id="scmmeasureunitassign.update" parameterType="ScmMeasureUnitAssign">
+		UPDATE ScmMeasureUnitAssign set
+        unitId=#{unitId},
+        toCtrUnitNo=#{toCtrUnitNo},
+        fromCtrUnitNo=#{fromCtrUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmmeasureunitassign.delete" parameterType="String">
+		DELETE FROM ScmMeasureUnitAssign WHERE id IN (${value})
+	</delete> 
+
+</mapper>
+ 

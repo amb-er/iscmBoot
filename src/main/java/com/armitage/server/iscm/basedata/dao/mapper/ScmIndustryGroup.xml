@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="scmindustrygroup">
+ 
+	<!-- default parameterType="HashMap" -->
+	<select id="scmindustrygroup.findAll" resultType="ScmIndustryGroup" >
+	    SELECT * FROM scmindustrygroup WHERE  1=1  
+	</select>
+ 
+	<select id="scmindustrygroup.findAllPage" resultType="ScmIndustryGroup" parameterType="Map"> 
+		SELECT * FROM scmindustrygroup WHERE  1=1 ORDER BY id ASC 
+	</select> 
+	<select id="scmindustrygroup.selectById" resultType="ScmIndustryGroup" parameterType="Long">
+		SELECT * FROM scmindustrygroup WHERE id = #{value}
+	</select>
+	<select id="scmindustrygroup.selectForPushPage" resultType="ScmIndustryGroup" parameterType="Map">
+		SELECT * FROM scmindustrygroup WHERE controlUnitNo=#{controlUnitNo} ORDER BY updateTimeStamp ASC
+	</select>
+	<select id="scmindustrygroup.selectByClassCode" resultType="ScmIndustryGroup" parameterType="Map"> 
+        select * from scmindustrygroup where classCode = #{classCode}
+        and controlUnitNo=#{controlUnitNo}
+        order by scmindustrygroup.id ASC
+    </select>
+	<select id="scmindustrygroup.selectByTypeId" resultType="ScmIndustryGroup" parameterType="Map">
+		SELECT scmindustrygroup.* FROM scmindustrygroup,scmindustrygroupqualifytype,scmsupplierqualifytype
+		WHERE scmindustrygroup.id=scmindustrygroupqualifytype.classId
+		AND scmindustrygroupqualifytype.typeId=scmsupplierqualifytype.id
+		AND scmsupplierqualifytype.id=#{typeId} and scmindustrygroup.controlUnitNo=#{controlUnitNo}
+		group by scmindustrygroup.id order by scmindustrygroup.id asc
+	</select> 
+	<insert id="scmindustrygroup.add" parameterType="ScmIndustryGroup"  keyProperty="id" useGeneratedKeys="true"> 
+		INSERT INTO  scmindustrygroup (
+        classCode,
+        className,
+        parentId,
+        longNo,
+        description,
+        creator,
+        createDate,
+        editor,
+        editDate,
+        flag,
+        controlUnitNo        )
+		VALUES (
+        #{classCode},
+        #{className},
+        #{parentId},
+        #{longNo},
+        #{description},
+        #{creator},
+        #{createDate},
+        #{editor},
+        #{editDate},
+        #{flag},
+        #{controlUnitNo}        )
+	</insert>
+ 
+	<update id="scmindustrygroup.update" parameterType="ScmIndustryGroup">
+		UPDATE scmindustrygroup set
+        classCode=#{classCode},
+        className=#{className},
+        parentId=#{parentId},
+        longNo=#{longNo},
+        description=#{description},
+        creator=#{creator},
+        createDate=#{createDate},
+        editor=#{editor},
+        editDate=#{editDate},
+        flag=#{flag},
+        controlUnitNo=#{controlUnitNo}		 WHERE id = #{id}
+	</update>
+ 
+	<delete id="scmindustrygroup.delete" parameterType="String">
+		DELETE FROM scmindustrygroup WHERE id IN (${value})
+	</delete> 
+
+</mapper>
